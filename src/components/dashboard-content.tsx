@@ -123,7 +123,6 @@ const expiryItems = [
 export function DashboardContent() {
   return (
     <>
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {kpiCards.map((card, index) => (
           <Card key={index} className="bg-white border-[#e5e7eb] py-0">
@@ -164,75 +163,6 @@ export function DashboardContent() {
           </Card>
         ))}
       </div>
-
-      {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
- 
-        <div className="lg:col-span-2">
-          <Card className="bg-white border-[#e5e7eb]">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl font-semibold text-[#111827]">Recent Prescriptions</CardTitle>
-              <Button variant="ghost" className="text-[#0f766e] hover:text-[#0f766e]/80">
-                View All
-              </Button>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {recentPrescriptions.map((prescription, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={cn("w-12 h-12 rounded-lg flex items-center justify-center", prescription.iconColor)}
-                      >
-                        <span className="text-white font-bold">Rx</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-[#111827]">{prescription.id}</p>
-                        <p className="text-sm text-[#6b7280]">Patient: {prescription.patient}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-[#111827]">{prescription.amount}</p>
-                        <p className="text-sm text-[#6b7280]">{prescription.items}</p>
-                      </div>
-                      <Badge className={cn("px-3 py-1", prescription.statusColor)}>{prescription.status}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-   
-        <div>
-          <Card className="bg-white border-[#e5e7eb]">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-[#111827]">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-3">
-                <Button className="w-full bg-[#0f766e] hover:bg-[#0f766e]/90 text-white justify-start gap-2">
-                  <Plus className="w-4 h-4" />
-                  New Sale
-                </Button>
-                <Button className="w-full bg-[#14b8a6] hover:bg-[#14b8a6]/90 text-white justify-start gap-2">
-                  <Upload className="w-4 h-4" />
-                  Upload Prescription
-                </Button>
-                <Button className="w-full bg-[#06b6d4] hover:bg-[#06b6d4]/90 text-white justify-start gap-2">
-                  <Package className="w-4 h-4" />
-                  Add Inventory
-                </Button>
-                <Button variant="outline" className="w-full border-[#e5e7eb] justify-start gap-2 bg-transparent">
-                  <FileText className="w-4 h-4" />
-                  Generate Report
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div> */}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Prescriptions */}
