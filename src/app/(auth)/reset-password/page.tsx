@@ -3,7 +3,7 @@ import { useState, FormEvent, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-toastify';
-import { resetPassword } from '@/auth-client';
+import { resetPassword } from '@/lib/auth-client';
 
 interface PasswordState {
     password: string;

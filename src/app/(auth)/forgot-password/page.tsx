@@ -1,7 +1,7 @@
 "use client"
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
-import { forgetPassword } from '@/auth-client';
+import { forgetPassword } from '@/lib/auth-client';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState<string>('');

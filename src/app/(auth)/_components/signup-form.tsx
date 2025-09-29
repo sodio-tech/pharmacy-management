@@ -2,7 +2,7 @@ import { AvatarFallback } from '@/components/ui/avatar'
 import { FaEnvelope, FaLock, FaUser, FaUserCircle } from 'react-icons/fa'
 import { AvatarImage } from '@/components/ui/avatar'
 import { Avatar } from '@/components/ui/avatar'
-import { motion } from 'motion/react'
+import { motion, Variants } from 'motion/react'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import React, { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -11,18 +11,18 @@ import { z } from 'zod'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { signUp } from '@/auth-client'
+import { signUp } from '@/lib/auth-client'
 import { toast } from 'react-toastify'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 
 // Zod schema for form validation
 const signupSchema = z.object({
     name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-    username: z
-        .string()
-        .min(3, { message: "Username must be at least 3 characters" })
-        .max(20, { message: "Username cannot exceed 20 characters" })
-        .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers and underscores" }),
+    // username: z
+    //     .string()
+    //     .min(3, { message: "Username must be at least 3 characters" })
+    //     .max(20, { message: "Username cannot exceed 20 characters" })
+    //     .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers and underscores" }),
     email: z.string().email({ message: "Please enter a valid email address" }),
     password: z
         .string()
@@ -43,7 +43,7 @@ const SignUpForm = () => {
         resolver: zodResolver(signupSchema),
         defaultValues: {
             name: "Ayush Dixit",
-            username: "ayushdixit23",
+            // username: "ayushdixit23",
             email: "fsayush100@gmail.com",
             password: "Password1234",
             image: null,
@@ -54,18 +54,13 @@ const SignUpForm = () => {
         try {
             setIsLoading(true)
 
-            const { email, password, name, image, username } = signupData
+            const { email, password, name, image } = signupData
 
             const { error } = await signUp.email({
                 email,
                 password,
                 name,
                 image,
-
-            }, {
-                body: {
-                    username
-                }
             });
 
             if (error) {
@@ -75,7 +70,6 @@ const SignUpForm = () => {
             }
 
         } catch (error) {
-            console.log(error)
             toast.error("Login failed")
         } finally {
             setIsLoading(false)
@@ -97,7 +91,7 @@ const SignUpForm = () => {
         }
     };
 
-    const containerVariants = {
+    const containerVariants: Variants = {
         hidden: { opacity: 0 },
         visible: {
             opacity: 1,
@@ -108,7 +102,7 @@ const SignUpForm = () => {
         }
     };
 
-    const itemVariants = {
+    const itemVariants: Variants = {
         hidden: { y: 20, opacity: 0 },
         visible: {
             y: 0,
@@ -202,73 +196,47 @@ const SignUpForm = () => {
                     />
                 </motion.div>
 
-                {/* Username */}
+                {/* Password */}
                 <motion.div variants={itemVariants}>
                     <FormField
                         control={form.control}
-                        name="username"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
+                        name="password"
+                        render={({ field }) => {
+                            const [showPassword, setShowPassword] = useState(false);
+
+                            return (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
                                     <div className="relative">
+                                        {/* Lock icon on the left */}
                                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <span className="text-indigo-400 font-medium">@</span>
+                                            <FaLock className="h-5 w-5 text-indigo-400" />
                                         </div>
-                                        <Input
-                                            type='text'
-                                            placeholder="Username"
-                                            {...field}
-                                            className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
-                                        />
+
+                                        <FormControl>
+                                            <Input
+                                                type={showPassword ? "text" : "password"}
+                                                placeholder="••••••••"
+                                                className="pl-10 pr-10 py-3 border border-gray-300 rounded-md bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
+                                                {...field}
+                                            />
+                                        </FormControl>
+
+                                        {/* Toggle button (eye icon) on the right */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((prev) => !prev)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 focus:outline-none"
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+
+                                        </button>
                                     </div>
-                                </FormControl>
-                                <FormMessage className="text-xs mt-1 ml-1 text-red-500" />
-                            </FormItem>
-                        )}
-                    />
-                </motion.div>
-
-                {/* Password */}
-                <motion.div variants={itemVariants}>
-                     <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => {
-                        const [showPassword, setShowPassword] = useState(false);
-                    
-                        return (
-                          <FormItem>
-                            <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
-                            <div className="relative">
-                              {/* Lock icon on the left */}
-                              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <FaLock className="h-5 w-5 text-indigo-400" />
-                              </div>
-                    
-                              <FormControl>
-                                <Input
-                                  type={showPassword ? "text" : "password"}
-                                  placeholder="••••••••"
-                                  className="pl-10 pr-10 py-3 border border-gray-300 rounded-md bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
-                                  {...field}
-                                />
-                              </FormControl>
-                    
-                              {/* Toggle button (eye icon) on the right */}
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 focus:outline-none"
-                                tabIndex={-1}
-                              >
-                                {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-
-                              </button>
-                            </div>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        );
-                      }}
+                                    <FormMessage className="text-red-500" />
+                                </FormItem>
+                            );
+                        }}
                     />
                 </motion.div>
 

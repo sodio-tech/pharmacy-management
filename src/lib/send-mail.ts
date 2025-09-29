@@ -1,21 +1,18 @@
 'use server';
-
 import nodemailer from 'nodemailer';
 
-const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME; 
-const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD; 
+const SMTP_SERVER_USERNAME = process.env.SMTP_SERVER_USERNAME;
+// const SMTP_SERVER_PASSWORD = process.env.SMTP_SERVER_PASSWORD;
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  port: 587,
-  secure: false,
+  service: "gmail",
   auth: {
-    user: SMTP_SERVER_USERNAME,
-    pass: SMTP_SERVER_PASSWORD,
+    user: process.env.SMTP_SERVER_USERNAME,
+    pass: process.env.SMTP_SERVER_PASSWORD,
   },
 });
 
-export async function sendMail({
+export async function sendEmail({
   sendTo,
   subject,
   text,
@@ -34,7 +31,7 @@ export async function sendMail({
   }
   try {
     const info = await transporter.sendMail({
-      from: SMTP_SERVER_USERNAME, 
+      from: SMTP_SERVER_USERNAME,
       to: sendTo,
       subject,
       text,

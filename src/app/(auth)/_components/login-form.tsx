@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FaLock } from 'react-icons/fa'
 import { z } from 'zod'
-import { signIn } from '@/auth-client'
+import { signIn } from '@/lib/auth-client'
 import { toast } from 'react-toastify'
 import Link from 'next/link'
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -34,22 +34,48 @@ const LoginForm = () => {
 
     const onSubmit = async (userData: LoginFormValues) => {
         try {
-            setIsLoading(true)
-            const { data, error } = await signIn.email({ email: userData.email, password: userData.password, callbackURL: "/" })
+            setIsLoading(true);
 
-            console.log(data, error, "==================")
+            await signIn.email(
+                {
+                    email: userData.email,
+                    password: userData.password,
+                    callbackURL: "/",
+                },
+                {
+                    onSuccess: (ctx) => {
+                        const { user } = ctx.data || {};
 
-            if (error) {
-                toast.error(error.statusText || "Something went wrong!")
-            } else {
-                toast.success("Login successful")
-            }
-        } catch (error) {
-            toast.error("Login failed")
+                        if (!user) {
+                            toast.error("Login failed. Please try again.");
+                            return;
+                        }
+
+                        if (!user.emailVerified) {
+                            toast.error("Please verify your email before logging in.");
+                            return;
+                        }
+
+                        toast.success(`Welcome back, ${user.name || user.email}!`);
+                    },
+                    onError: (ctx) => {
+                        if (ctx.error.status === 403) {
+                            toast.error("Please verify your email address before logging in.");
+                        } else if (ctx.error.status === 401) {
+                            toast.error("Incorrect email or password.");
+                        } else {
+                            toast.error(ctx.error.message || "Login failed due to server error.");
+                        }
+                    },
+                }
+            );
+        } catch (err: any) {
+            toast.error(err.message || "An unexpected error occurred.");
+            console.error("Login error:", err);
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
-    }
+    };
 
     return (
         <Form  {...form}>

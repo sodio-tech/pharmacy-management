@@ -1,6 +1,6 @@
 "use client";
-import { User } from "@/auth";
-import { signOut, useSession } from "@/auth-client";
+import { User } from "../lib/auth";
+import { signOut, useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
