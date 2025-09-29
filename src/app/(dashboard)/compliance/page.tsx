@@ -1,4 +1,4 @@
-import { ComplianceDashboard } from '@/components/compliance-dashboard'
+import { ComplianceDashboard } from '@/app/(dashboard)/compliance/compliance-dashboard'
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
 import { FileText } from 'lucide-react'

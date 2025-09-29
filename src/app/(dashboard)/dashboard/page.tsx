@@ -1,4 +1,4 @@
-import { DashboardContent } from '@/components/dashboard-content'
+import { DashboardContent } from '@/app/(dashboard)/dashboard/dashboard-content'
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
 import { Button } from '@/components/ui/button'

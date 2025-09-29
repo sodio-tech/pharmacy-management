@@ -1,0 +1,67 @@
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Search, Filter, List, Grid } from "lucide-react"
+import { PrescriptionTable } from "./prescription-table"
+import { PrescriptionStats } from "./prescription-stats"
+
+export default function PrescriptionContent() {
+    return (
+        <div className="bg-[#f9fafb] min-h-screen">
+            <PrescriptionStats />
+
+            <div className="mb-6 bg-white p-4 rounded-lg border border-[#e5e7eb]">
+                <div className="flex items-center gap-4 flex-wrap">
+                    <div className="relative flex-1 min-w-[300px]">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9ca3af] w-4 h-4" />
+                        <Input
+                            placeholder="Search by patient name, doctor, or prescription ID"
+                            className="pl-10 bg-white border-[#e5e7eb]"
+                        />
+                    </div>
+
+                    <Select defaultValue="all-status">
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all-status">All Status</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="validated">Validated</SelectItem>
+                            <SelectItem value="dispensed">Dispensed</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select defaultValue="all-dates">
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="All Dates" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all-dates">All Dates</SelectItem>
+                            <SelectItem value="today">Today</SelectItem>
+                            <SelectItem value="week">This Week</SelectItem>
+                            <SelectItem value="month">This Month</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Button variant="outline" className="gap-2 bg-transparent">
+                        <Filter className="w-4 h-4" />
+                        More Filters
+                    </Button>
+
+                    <div className="flex items-center gap-1 border border-[#e5e7eb] rounded">
+                        <Button variant="ghost" size="sm" className="p-2">
+                            <List className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="p-2">
+                            <Grid className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <PrescriptionTable />
+        </div>
+    )
+}
