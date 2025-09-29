@@ -13,21 +13,25 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { signOut, useSession } from "@/lib/auth-client";
+import { usePathname, useRouter } from "next/navigation";
 
 const sidebarItems = [
-    { icon: BarChart3, label: "Dashboard", active: true },
-    { icon: Package, label: "Inventory" },
-    { icon: FileText, label: "Prescriptions" },
-    { icon: ShoppingCart, label: "Sales & POS" },
-    { icon: Users, label: "Suppliers" },
-    { icon: BarChart3, label: "Reports" },
-    { icon: Shield, label: "Compliance" },
-    { icon: Settings, label: "User Management" },
+    { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
+    { icon: Package, label: "Inventory", href: "/inventory" },
+    { icon: FileText, label: "Prescriptions", href: "/prescriptions" },
+    { icon: ShoppingCart, label: "Sales & POS", href: "/sales" },
+    { icon: Users, label: "Suppliers", href: "/suppliers" },
+    { icon: BarChart3, label: "Reports", href: "/reports" },
+    { icon: Shield, label: "Compliance", href: "/compliance" },
+    { icon: Settings, label: "User Management", href: "/users" },
 ];
 
 const Sidebar = () => {
-    const { data: session, error, isPending } = useSession();
+    const { data: session, isPending } = useSession();
     const user = session?.user;
+    const pathname = usePathname();
+    const router = useRouter();
+
     return (
         <div className="w-64 bg-white border-r border-[#e5e7eb] flex flex-col">
             {/* Logo */}
@@ -46,21 +50,29 @@ const Sidebar = () => {
             {/* Navigation */}
             <nav className="flex-1 p-4">
                 <ul className="space-y-2">
-                    {sidebarItems.map((item, index) => (
-                        <li key={index}>
-                            <button
-                                className={cn(
-                                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                                    item.active
-                                        ? "bg-[#0f766e] text-white"
-                                        : "text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]"
-                                )}
-                            >
-                                <item.icon className="w-5 h-5" />
-                                <span className="font-medium">{item.label}</span>
-                            </button>
-                        </li>
-                    ))}
+                    {sidebarItems.map((item, index) => {
+                        const isDashboard = item.href === "/dashboard";
+                        const isActive =
+                            pathname === item.href ||
+                            pathname.startsWith(item.href + "/") ||
+                            (pathname === "/" && isDashboard);
+                        return (
+                            <li key={index}>
+                                <button
+                                    onClick={() => router.push(item.href)}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                                        isActive
+                                            ? "bg-[#0f766e] text-white"
+                                            : "text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]"
+                                    )}
+                                >
+                                    <item.icon className="w-5 h-5" />
+                                    <span className="font-medium">{item.label}</span>
+                                </button>
+                            </li>
+                        );
+                    })}
                 </ul>
             </nav>
 
@@ -90,7 +102,14 @@ const Sidebar = () => {
                             variant="ghost"
                             size="sm"
                             className="w-full justify-start gap-2 text-[#6b7280] hover:text-[#111827] hover:bg-white"
-                            onClick={() => signOut()}
+                            onClick={() => signOut({
+                                fetchOptions: {
+                                    onSuccess: () => {
+                                        router.push("/login");
+                                    },
+                                },
+                            })
+                            }
                         >
                             <LogOut className="w-4 h-4" />
                             Sign Out
@@ -101,13 +120,13 @@ const Sidebar = () => {
                         variant="default"
                         size="sm"
                         className="w-full"
-                        onClick={() => window.location.href = "/login"}
+                        onClick={() => (window.location.href = "/login")}
                     >
                         Sign In
                     </Button>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

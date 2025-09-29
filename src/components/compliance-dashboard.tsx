@@ -9,7 +9,7 @@ export function ComplianceDashboard() {
     <div className="space-y-8">
       {/* Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-[#e5e7eb]">
+        <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -24,7 +24,7 @@ export function ComplianceDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#e5e7eb]">
+        <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -39,7 +39,7 @@ export function ComplianceDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#e5e7eb]">
+        <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -54,7 +54,7 @@ export function ComplianceDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#e5e7eb]">
+        <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
