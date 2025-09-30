@@ -328,20 +328,25 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {lowStockItems.map((item, index) => (
-                <div key={index} className={cn("flex items-center justify-between p-4 rounded-lg", item.bgColor)}>
+              {lowStockItems.map((item: any, index: number) => (
+                <div key={item.productId} className="flex items-center justify-between p-4 rounded-lg bg-[#fef2f2]">
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{item.icon}</span>
+                    <span className="text-2xl">💊</span>
                     <div>
                       <p className="font-semibold text-[#111827]">{item.name}</p>
-                      <p className="text-sm text-[#6b7280]">{item.stock}</p>
+                      <p className="text-sm text-[#6b7280]">Only {item.totalStock} {item.unit} left</p>
                     </div>
                   </div>
-                  <Button size="sm" className={cn("text-white", item.buttonColor)}>
+                  <Button size="sm" className="text-white bg-[#dc2626]">
                     Reorder
                   </Button>
                 </div>
               ))}
+              {lowStockItems.length === 0 && (
+                <div className="text-center py-8 text-[#6b7280]">
+                  No low stock items
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
