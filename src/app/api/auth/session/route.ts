@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedUser } from "@/lib/rbac";
+import prisma from "@/lib/prisma";
 
 // GET /api/auth/session - Get current user session with role
 export async function GET(request: NextRequest) {
