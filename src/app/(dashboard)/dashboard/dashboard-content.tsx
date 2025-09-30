@@ -240,28 +240,47 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent className="p-6 flex-1">
               <div className="space-y-4">
-                {recentPrescriptions.map((prescription, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={cn("w-12 h-12 rounded-lg flex items-center justify-center", prescription.iconColor)}
-                      >
-                        <span className="text-white font-bold">Rx</span>
+                {recentPrescriptions.map((prescription: any, index: number) => {
+                  const statusColor = {
+                    'UPLOADED': 'bg-[#dbeafe] text-[#1e40af]',
+                    'PENDING_VALIDATION': 'bg-[#fef9c3] text-[#854d0e]',
+                    'VALIDATED': 'bg-[#dcfce7] text-[#166534]',
+                    'REJECTED': 'bg-[#fee2e2] text-[#991b1b]',
+                  }[prescription.status] || 'bg-[#f3f4f6] text-[#374151]';
+
+                  const iconColor = {
+                    'VALIDATED': 'bg-[#0f766e]',
+                    'PENDING_VALIDATION': 'bg-[#ea580c]',
+                    'REJECTED': 'bg-[#dc2626]',
+                    'UPLOADED': 'bg-[#2563eb]',
+                  }[prescription.status] || 'bg-[#6b7280]';
+
+                  return (
+                    <div key={prescription.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", iconColor)}>
+                          <span className="text-white font-bold">Rx</span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#111827]">{prescription.id.slice(0, 12)}...</p>
+                          <p className="text-sm text-[#6b7280]">Patient: {prescription.patientName}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-[#111827]">{prescription.id}</p>
-                        <p className="text-sm text-[#6b7280]">Patient: {prescription.patient}</p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="font-semibold text-[#111827]">₹{prescription.amount?.toLocaleString() || '0'}</p>
+                          <p className="text-sm text-[#6b7280]">{prescription.itemCount} items</p>
+                        </div>
+                        <Badge className={cn("px-3 py-1", statusColor)}>{prescription.status}</Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-[#111827]">{prescription.amount}</p>
-                        <p className="text-sm text-[#6b7280]">{prescription.items}</p>
-                      </div>
-                      <Badge className={cn("px-3 py-1", prescription.statusColor)}>{prescription.status}</Badge>
-                    </div>
+                  );
+                })}
+                {recentPrescriptions.length === 0 && (
+                  <div className="text-center py-8 text-[#6b7280]">
+                    No recent prescriptions
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
