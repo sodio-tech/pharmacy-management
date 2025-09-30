@@ -14,19 +14,212 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  PHARMACIST
+  ADMIN
+}
+
+enum ProductCategory {
+  OTC
+  PRESCRIPTION
+  SUPPLEMENT
+}
+
+enum PrescriptionStatus {
+  UPLOADED
+  PENDING_VALIDATION
+  VALIDATED
+  REJECTED
+}
+
+enum SaleStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id            String    @id
   name          String
   email         String
   emailVerified Boolean
   image         String?
+  role          UserRole  @default(USER)
   createdAt     DateTime
   updatedAt     DateTime
   sessions      Session[]
   accounts      Account[]
+  profile       Profile?
+  sales         Sale[]
+  prescriptionsValidated Prescription[] @relation("ValidatedBy")
 
   @@unique([email])
   @@map("user")
+}
+
+model Profile {
+  id             String  @id @default(cuid())
+  userId         String  @unique
+  phone          String?
+  specialization String?
+  address        String?
+  licenseNumber  String?
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("profile")
+}
+
+model Supplier {
+  id          String    @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  gstNumber   String?
+  contactPerson String?
+  batches     Batch[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("supplier")
+}
+
+model Product {
+  id          String          @id @default(cuid())
+  sku         String          @unique
+  name        String
+  description String?
+  category    ProductCategory
+  unit        String          // e.g., "tablets", "ml", "grams"
+  hsnCode     String?
+  gstRate     Float           @default(0)
+  price       Float
+  reorderLevel Int            @default(10)
+  batches     Batch[]
+  saleItems   SaleItem[]
+  prescriptionItems PrescriptionItem[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("product")
+}
+
+model Batch {
+  id           String    @id @default(cuid())
+  batchNumber  String
+  productId    String
+  supplierId   String
+  mfgDate      DateTime
+  expiryDate   DateTime
+  quantity     Int
+  costPrice    Float
+  sellingPrice Float?
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+  saleItems    SaleItem[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([batchNumber, productId])
+  @@map("batch")
+}
+
+model Prescription {
+  id            String              @id @default(cuid())
+  patientName   String
+  patientPhone  String?
+  patientAge    Int?
+  doctorName    String?
+  uploadedBy    String
+  validatedBy   String?
+  fileUrl       String?
+  fileName      String?
+  extractedText String?
+  status        PrescriptionStatus  @default(UPLOADED)
+  notes         String?
+  items         PrescriptionItem[]
+  sales         Sale[]
+  uploadedUser  User                @relation("ValidatedBy", fields: [validatedBy], references: [id])
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@map("prescription")
+}
+
+model PrescriptionItem {
+  id             String       @id @default(cuid())
+  prescriptionId String
+  productId      String?
+  medichineName  String       // Raw extracted name from OCR
+  dosage         String?
+  quantity       Int?
+  instructions   String?
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  product        Product?     @relation(fields: [productId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("prescription_item")
+}
+
+model Sale {
+  id             String        @id @default(cuid())
+  saleNumber     String        @unique
+  customerId     String?
+  customerName   String?
+  customerPhone  String?
+  prescriptionId String?
+  soldBy         String
+  subtotal       Float
+  gstAmount      Float
+  discount       Float         @default(0)
+  totalAmount    Float
+  paymentMethod  String        @default("CASH")
+  status         SaleStatus    @default(PENDING)
+  items          SaleItem[]
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
+  soldByUser     User          @relation(fields: [soldBy], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("sale")
+}
+
+model SaleItem {
+  id           String  @id @default(cuid())
+  saleId       String
+  productId    String
+  batchId      String?
+  quantity     Int
+  unitPrice    Float
+  gstRate      Float
+  gstAmount    Float
+  totalAmount  Float
+  sale         Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product      Product @relation(fields: [productId], references: [id])
+  batch        Batch?  @relation(fields: [batchId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sale_item")
+}
+
+model ReorderSuggestion {
+  id            String   @id @default(cuid())
+  productId     String
+  currentStock  Int
+  reorderLevel  Int
+  suggestedQty  Int
+  priority      String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+  isProcessed   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("reorder_suggestion")
 }
 
 model Session {
