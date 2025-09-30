@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { X, Plus, Scan, Upload, Save, TriangleAlert as AlertTriangle } from "lucide-react"
+import { X, Scan, Save, TriangleAlert as AlertTriangle } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 
 interface AddProductModalProps {
@@ -52,7 +51,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const categories = [
     "Prescription Medicines",
-    "OTC Medicines", 
+    "OTC",
     "Supplements & Vitamins",
     "Medical Devices",
     "Personal Care",
@@ -62,7 +61,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   ]
 
   const dosageForms = [
-    "Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment", 
+    "Tablet", "Capsule", "Syrup", "Injection", "Cream", "Ointment",
     "Drops", "Inhaler", "Powder", "Gel", "Lotion", "Spray"
   ]
 
@@ -78,7 +77,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     // Validate required fields
     const requiredFields = ['name', 'category', 'sellingPrice']
     const missingFields = requiredFields.filter(field => !formData[field])
-    
+
     if (missingFields.length > 0) {
       alert(`Please fill in required fields: ${missingFields.join(', ')}`)
       return
@@ -113,7 +112,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         console.log("Product saved successfully")
         onSave(formData)
         onClose()
-        
+
         // Reset form
         setFormData({
           name: "", genericName: "", brand: "", category: "", type: "", strength: "",
@@ -177,11 +176,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.id
                     ? "border-teal-600 text-teal-600"
                     : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 <span className="text-lg">{tab.icon}</span>
                 {tab.label}
@@ -341,7 +339,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {/* Profit Margin Display */}
                   {formData.costPrice && formData.sellingPrice && (
                     <div className="p-4 bg-green-50 rounded-lg">
@@ -415,11 +413,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
                   {/* Stock Status Indicator */}
                   {formData.currentStock && formData.minStockLevel && (
-                    <div className={`p-4 rounded-lg ${
-                      parseInt(formData.currentStock) <= parseInt(formData.minStockLevel)
+                    <div className={`p-4 rounded-lg ${parseInt(formData.currentStock) <= parseInt(formData.minStockLevel)
                         ? "bg-red-50 border border-red-200"
                         : "bg-green-50 border border-green-200"
-                    }`}>
+                      }`}>
                       <div className="flex items-center gap-2">
                         {parseInt(formData.currentStock) <= parseInt(formData.minStockLevel) ? (
                           <AlertTriangle className="w-5 h-5 text-red-600" />
@@ -428,11 +425,10 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                             <span className="text-white text-xs">✓</span>
                           </div>
                         )}
-                        <span className={`font-medium ${
-                          parseInt(formData.currentStock) <= parseInt(formData.minStockLevel)
+                        <span className={`font-medium ${parseInt(formData.currentStock) <= parseInt(formData.minStockLevel)
                             ? "text-red-800"
                             : "text-green-800"
-                        }`}>
+                          }`}>
                           {parseInt(formData.currentStock) <= parseInt(formData.minStockLevel)
                             ? "Low Stock Alert"
                             : "Stock Level OK"
@@ -506,7 +502,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                           const today = new Date()
                           const expiry = new Date(formData.expiryDate)
                           const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                          
+
                           if (daysUntilExpiry < 0) {
                             return `⚠️ Expired ${Math.abs(daysUntilExpiry)} days ago`
                           } else if (daysUntilExpiry <= 30) {
@@ -536,7 +532,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                       />
                       <Label htmlFor="prescriptionRequired">Prescription Required</Label>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"

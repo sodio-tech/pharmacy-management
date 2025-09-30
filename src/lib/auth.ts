@@ -7,25 +7,25 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: 'postgresql',
     }),
-    emailVerification: {
-        autoSignInAfterVerification: true,
-        enabled: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            const verificationUrl = new URL(url);
-            verificationUrl.searchParams.set("callbackURL", "/email-verification");
-            await sendEmail({
-                sendTo: user.email,
-                subject: "Verify your email",
-                text: `Click here to verify your email: ${verificationUrl.toString()}`,
-            });
-        },
-        sendOnSignUp: true
-    },
+    // emailVerification: {
+    //     autoSignInAfterVerification: true,
+    //     enabled: true,
+    //     sendVerificationEmail: async ({ user, url }) => {
+    //         const verificationUrl = new URL(url);
+    //         verificationUrl.searchParams.set("callbackURL", "/email-verification");
+    //         await sendEmail({
+    //             sendTo: user.email,
+    //             subject: "Verify your email",
+    //             text: `Click here to verify your email: ${verificationUrl.toString()}`,
+    //         });
+    //     },
+    //     sendOnSignUp: true
+    // },
     secret: process.env.BETTER_AUTH_SECRET as string,
     emailAndPassword: {
         enabled: true,
         disableSignUp: false,
-        requireEmailVerification: true,
+        // requireEmailVerification: true,
         minPasswordLength: 8,
         maxPasswordLength: 128,
         autoSignIn: true,
