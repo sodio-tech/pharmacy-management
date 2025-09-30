@@ -16,6 +16,10 @@ class InventoryAPITester:
             'User-Agent': 'InventoryTester/1.0'
         })
         
+        # Authentication
+        self.auth_token = None
+        self.authenticated = False
+        
         # Test data storage
         self.test_data = {
             'suppliers': [],
