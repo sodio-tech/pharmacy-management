@@ -3,77 +3,28 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { CreditCard as Edit, Plus, Minus, Trash2, Eye, ChartBar as BarChart3, Package2, TriangleAlert as AlertTriangle } from "lucide-react"
+import { useState, useEffect } from "react"
 
-const products = [
-  {
-    id: "MED001",
-    name: "Paracetamol 500mg",
-    category: "Prescription",
-    categoryColor: "bg-[#dbeafe] text-[#2563eb]",
-    stock: { current: 5, total: 100, level: "low" },
-    price: "₹12.50",
-    batch: "BAT001",
-    expiry: "Dec 2024",
-    expiryColor: "text-[#dc2626]", 
-    expiryDays: 15,
-    icon: "💊",
-    iconColor: "bg-[#dbeafe]",
-    supplier: "MediCore Pharmaceuticals",
-    location: "A1-B2",
-    lastUpdated: "2 hours ago"
-  },
-  {
-    id: "MED002",
-    name: "Amoxicillin 250mg",
-    category: "Prescription",
-    categoryColor: "bg-[#dbeafe] text-[#2563eb]",
-    stock: { current: 12, total: 50, level: "medium" },
-    price: "₹25.00",
-    batch: "BAT002",
-    expiry: "Mar 2025",
-    expiryColor: "text-[#16a34a]",
-    expiryDays: 95,
-    icon: "💊",
-    iconColor: "bg-[#dcfce7]",
-    supplier: "HealthPlus Distributors", 
-    location: "B2-C3",
-    lastUpdated: "1 day ago"
-  },
-  {
-    id: "SUP001",
-    name: "Vitamin D3 1000 IU",
-    category: "Supplement",
-    categoryColor: "bg-[#dcfce7] text-[#16a34a]",
-    stock: { current: 85, total: 20, level: "high" },
-    price: "₹180.00",
-    batch: "BAT003",
-    expiry: "Jan 2025",
-    expiryColor: "text-[#16a34a]",
-    expiryDays: 45,
-    icon: "🌟",
-    iconColor: "bg-[#f3e8ff]",
-    supplier: "Wellness Supplements Ltd",
-    location: "C1-A1", 
-    lastUpdated: "30 minutes ago"
-  },
-  {
-    id: "MED003",
-    name: "Ibuprofen 400mg",
-    category: "OTC",
-    categoryColor: "bg-[#fef9c3] text-[#ca8a04]",
-    stock: { current: 0, total: 30, level: "out" },
-    price: "₹18.00",
-    batch: "BAT004",
-    expiry: "Jun 2025",
-    expiryColor: "text-[#16a34a]",
-    expiryDays: 180,
-    icon: "💊",
-    iconColor: "bg-[#fee2e2]",
-    supplier: "Generic Medicines Co",
-    location: "A2-B1",
-    lastUpdated: "Out of stock"
-  },
-]
+interface Product {
+  id: string
+  sku: string
+  name: string
+  category: "OTC" | "PRESCRIPTION" | "SUPPLEMENT"
+  price: number
+  reorderLevel: number
+  totalStock: number
+  isLowStock: boolean
+  expiringSoonCount: number
+  batches: Array<{
+    id: string
+    batchNumber: string
+    quantity: number
+    expiryDate: string
+    supplier?: {
+      name: string
+    }
+  }>
+}
 
 function getStockBar(stock: { current: number; total: number; level: string }) {
   const percentage = (stock.current / stock.total) * 100
