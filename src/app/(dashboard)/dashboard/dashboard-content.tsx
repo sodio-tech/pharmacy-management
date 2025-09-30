@@ -361,20 +361,32 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {expiryItems.map((item, index) => (
-                <div key={index} className={cn("flex items-center justify-between p-4 rounded-lg", item.bgColor)}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{item.icon}</span>
-                    <div>
-                      <p className="font-semibold text-[#111827]">{item.name}</p>
-                      <p className="text-sm text-[#6b7280]">{item.expiry}</p>
+              {expiringItems.map((batch: any, index: number) => {
+                const daysToExpiry = Math.ceil((new Date(batch.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                const bgColor = daysToExpiry <= 5 ? 'bg-[#fef2f2]' : daysToExpiry <= 15 ? 'bg-[#fff7ed]' : 'bg-[#fefce8]';
+                const buttonColor = daysToExpiry <= 5 ? 'bg-[#dc2626]' : daysToExpiry <= 15 ? 'bg-[#ea580c]' : 'bg-[#ca8a04]';
+                const buttonText = daysToExpiry <= 5 ? 'Mark Return' : daysToExpiry <= 15 ? 'Discount Sale' : 'Monitor';
+
+                return (
+                  <div key={batch.id} className={cn("flex items-center justify-between p-4 rounded-lg", bgColor)}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">💊</span>
+                      <div>
+                        <p className="font-semibold text-[#111827]">{batch.product.name}</p>
+                        <p className="text-sm text-[#6b7280]">Expires in {daysToExpiry} days</p>
+                      </div>
                     </div>
+                    <Button size="sm" className={cn("text-white", buttonColor)}>
+                      {buttonText}
+                    </Button>
                   </div>
-                  <Button size="sm" className={cn("text-white", item.buttonColor)}>
-                    {item.buttonText}
-                  </Button>
+                );
+              })}
+              {expiringItems.length === 0 && (
+                <div className="text-center py-8 text-[#6b7280]">
+                  No items expiring soon
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
