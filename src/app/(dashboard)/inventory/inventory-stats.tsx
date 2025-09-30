@@ -91,7 +91,7 @@ export function InventoryStats() {
   ]
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-      {stats.map((stat, index) => (
+      {statsCards.map((stat, index) => (
         <Card key={index} className="p-6 bg-white border border-[#e5e7eb] hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
             <div>
