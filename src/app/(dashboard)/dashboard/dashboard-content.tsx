@@ -123,6 +123,68 @@ const expiryItems = [
 ]
 
 export function DashboardContent() {
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const data = await api.getDashboardData();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8">Loading dashboard...</div>;
+  }
+
+  const kpis = dashboardData?.kpis || {};
+  const recentPrescriptions = dashboardData?.recentPrescriptions || [];
+  const lowStockItems = kpis.lowStockItems?.items || [];
+  const expiringItems = kpis.expiringItems?.batches || [];
+
+  const kpiCards = [
+    {
+      title: "Total Revenue",
+      value: `₹${(kpis.totalRevenue?.value || 0).toLocaleString()}`,
+      change: `${(kpis.totalRevenue?.change || 0).toFixed(1)}% vs last month`,
+      trend: kpis.totalRevenue?.trend || "up",
+      icon: "₹",
+      color: "bg-[#16a34a]",
+    },
+    {
+      title: "Orders Today",
+      value: (kpis.ordersToday?.value || 0).toString(),
+      change: `${(kpis.ordersToday?.change || 0).toFixed(1)}% vs yesterday`,
+      trend: kpis.ordersToday?.trend || "up",
+      icon: ShoppingCart,
+      color: "bg-[#2563eb]",
+    },
+    {
+      title: "Low Stock Items",
+      value: (kpis.lowStockItems?.value || 0).toString(),
+      change: "Requires attention",
+      trend: "warning",
+      icon: AlertTriangle,
+      color: "bg-[#ea580c]",
+    },
+    {
+      title: "Expiring Soon",
+      value: (kpis.expiringItems?.value || 0).toString(),
+      change: "Within 30 days",
+      trend: "danger",
+      icon: Clock,
+      color: "bg-[#dc2626]",
+    },
+  ];
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
