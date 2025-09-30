@@ -8,121 +8,17 @@ import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { api } from "@/lib/api"
 
-const kpiCards = [
-  {
-    title: "Total Revenue",
-    value: "₹2,45,680",
-    change: "12.5% vs last month",
-    trend: "up",
-    icon: "₹",
-    color: "bg-[#16a34a]",
-  },
-  {
-    title: "Orders Today",
-    value: "156",
-    change: "8.2% vs yesterday",
-    trend: "up",
-    icon: ShoppingCart,
-    color: "bg-[#2563eb]",
-  },
-  {
-    title: "Low Stock Items",
-    value: "23",
-    change: "Requires attention",
-    trend: "warning",
-    icon: AlertTriangle,
-    color: "bg-[#ea580c]",
-  },
-  {
-    title: "Expiring Soon",
-    value: "8",
-    change: "Within 30 days",
-    trend: "danger",
-    icon: Clock,
-    color: "bg-[#dc2626]",
-  },
-]
+type PrescriptionStatus = 'UPLOADED' | 'PENDING_VALIDATION' | 'VALIDATED' | 'REJECTED';
 
-const recentPrescriptions = [
-  {
-    id: "PRX-2024-001",
-    patient: "John Smith",
-    amount: "₹1,250",
-    items: "2 items",
-    status: "Completed",
-    statusColor: "bg-[#dcfce7] text-[#166534]",
-    iconColor: "bg-[#0f766e]",
-  },
-  {
-    id: "PRX-2024-002",
-    patient: "Maria Garcia",
-    amount: "₹890",
-    items: "3 items",
-    status: "Processing",
-    statusColor: "bg-[#fef9c3] text-[#854d0e]",
-    iconColor: "bg-[#ea580c]",
-  },
-  {
-    id: "PRX-2024-003",
-    patient: "David Johnson",
-    amount: "₹2,100",
-    items: "5 items",
-    status: "Pending",
-    statusColor: "bg-[#dbeafe] text-[#1e40af]",
-    iconColor: "bg-[#2563eb]",
-  },
-]
+// 2. Define the prescription type
+interface Prescription {
+  id: string;
+  patientName: string;
+  status: PrescriptionStatus;
+  amount?: number;
+  itemCount: number;
+}
 
-const lowStockItems = [
-  {
-    name: "Paracetamol 500mg",
-    stock: "Only 5 left",
-    icon: "💊",
-    bgColor: "bg-[#fef2f2]",
-    buttonColor: "bg-[#dc2626]",
-  },
-  {
-    name: "Amoxicillin 250mg",
-    stock: "12 left",
-    icon: "💊",
-    bgColor: "bg-[#fff7ed]",
-    buttonColor: "bg-[#ea580c]",
-  },
-  {
-    name: "Ibuprofen 400mg",
-    stock: "18 left",
-    icon: "💊",
-    bgColor: "bg-[#fefce8]",
-    buttonColor: "bg-[#ca8a04]",
-  },
-]
-
-const expiryItems = [
-  {
-    name: "Cough Syrup",
-    expiry: "Expires in 5 days",
-    icon: "💊",
-    bgColor: "bg-[#fef2f2]",
-    buttonColor: "bg-[#dc2626]",
-    buttonText: "Mark Return",
-  },
-  {
-    name: "Vitamin D3",
-    expiry: "Expires in 15 days",
-    icon: "💊",
-    bgColor: "bg-[#fff7ed]",
-    buttonColor: "bg-[#ea580c]",
-    buttonText: "Discount Sale",
-  },
-  {
-    name: "Multivitamin",
-    expiry: "Expires in 28 days",
-    icon: "💊",
-    bgColor: "bg-[#fefce8]",
-    buttonColor: "bg-[#ca8a04]",
-    buttonText: "Monitor",
-  },
-]
 
 export function DashboardContent() {
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -144,7 +40,7 @@ export function DashboardContent() {
   }, []);
 
   if (loading) {
-    return <div className="p-8">Loading dashboard...</div>;
+    return <div className="p-8 flex justify-center items-center h-full">Loading dashboard...</div>;
   }
 
   const kpis = dashboardData?.kpis || {};
@@ -242,25 +138,31 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent className="p-6 flex-1">
               <div className="space-y-4">
-                {recentPrescriptions.map((prescription: any, index: number) => {
-                  const statusColor = {
-                    'UPLOADED': 'bg-[#dbeafe] text-[#1e40af]',
-                    'PENDING_VALIDATION': 'bg-[#fef9c3] text-[#854d0e]',
-                    'VALIDATED': 'bg-[#dcfce7] text-[#166534]',
-                    'REJECTED': 'bg-[#fee2e2] text-[#991b1b]',
-                  }[prescription.status] || 'bg-[#f3f4f6] text-[#374151]';
+                {recentPrescriptions.map((prescription: Prescription, index: number) => {
+                  const statusColor: Record<PrescriptionStatus, string> = {
+                    UPLOADED: 'bg-[#dbeafe] text-[#1e40af]',
+                    PENDING_VALIDATION: 'bg-[#fef9c3] text-[#854d0e]',
+                    VALIDATED: 'bg-[#dcfce7] text-[#166534]',
+                    REJECTED: 'bg-[#fee2e2] text-[#991b1b]',
+                  };
 
-                  const iconColor = {
-                    'VALIDATED': 'bg-[#0f766e]',
-                    'PENDING_VALIDATION': 'bg-[#ea580c]',
-                    'REJECTED': 'bg-[#dc2626]',
-                    'UPLOADED': 'bg-[#2563eb]',
-                  }[prescription.status] || 'bg-[#6b7280]';
+                  const iconColor: Record<PrescriptionStatus, string> = {
+                    VALIDATED: 'bg-[#0f766e]',
+                    PENDING_VALIDATION: 'bg-[#ea580c]',
+                    REJECTED: 'bg-[#dc2626]',
+                    UPLOADED: 'bg-[#2563eb]',
+                  };
+
+                  const appliedStatusColor = statusColor[prescription.status] || 'bg-[#f3f4f6] text-[#374151]';
+                  const appliedIconColor = iconColor[prescription.status] || 'bg-[#6b7280]';
 
                   return (
-                    <div key={prescription.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
+                    <div
+                      key={prescription.id}
+                      className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg"
+                    >
                       <div className="flex items-center gap-4">
-                        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", iconColor)}>
+                        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center", appliedIconColor)}>
                           <span className="text-white font-bold">Rx</span>
                         </div>
                         <div>
@@ -273,7 +175,7 @@ export function DashboardContent() {
                           <p className="font-semibold text-[#111827]">₹{prescription.amount?.toLocaleString() || '0'}</p>
                           <p className="text-sm text-[#6b7280]">{prescription.itemCount} items</p>
                         </div>
-                        <Badge className={cn("px-3 py-1", statusColor)}>{prescription.status}</Badge>
+                        <Badge className={cn("px-3 py-1", appliedStatusColor)}>{prescription.status}</Badge>
                       </div>
                     </div>
                   );
@@ -325,7 +227,7 @@ export function DashboardContent() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-xl font-semibold text-[#111827]">Low Stock Alerts</CardTitle>
             <Badge variant="secondary" className="bg-[#fef9c3] text-[#854d0e]">
-              23 Items
+              {lowStockItems.length} Items
             </Badge>
           </CardHeader>
           <CardContent className="p-6">
@@ -358,7 +260,7 @@ export function DashboardContent() {
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-xl font-semibold text-[#111827]">Expiry Tracking</CardTitle>
             <Badge variant="secondary" className="bg-[#fee2e2] text-[#991b1b]">
-              8 Items
+              {expiringItems.length} Items
             </Badge>
           </CardHeader>
           <CardContent className="p-6">

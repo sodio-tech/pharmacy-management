@@ -5,10 +5,13 @@ import { withAuth } from "@/lib/rbac";
 // GET /api/reports/dashboard - Get dashboard statistics
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req, user) => {
+
+    console.log("eur", user)
+
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    
+
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
@@ -145,7 +148,7 @@ export async function GET(request: NextRequest) {
     // Calculate revenue change percentage
     const currentRevenue = currentMonthSales._sum.totalAmount || 0;
     const lastRevenue = lastMonthSales._sum.totalAmount || 0;
-    const revenueChange = lastRevenue > 0 
+    const revenueChange = lastRevenue > 0
       ? ((currentRevenue - lastRevenue) / lastRevenue) * 100
       : 0;
 
@@ -154,7 +157,7 @@ export async function GET(request: NextRequest) {
       ? ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100
       : 0;
 
-    // Get top selling products (current month)
+    // Top selling products (current month)
     const topProducts = await prisma.saleItem.groupBy({
       by: ['productId'],
       where: {
@@ -166,8 +169,8 @@ export async function GET(request: NextRequest) {
         },
       },
       _sum: {
-        quantity: true,
-        totalAmount: true,
+        quantity: true, // only sum the quantity from saleItem
+        // remove totalAmount here to avoid ambiguity
       },
       orderBy: {
         _sum: {
@@ -177,20 +180,34 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    // Get product details for top selling
+    // Get product details and calculate revenue from sales
     const topProductsWithDetails = await Promise.all(
       topProducts.map(async (item) => {
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
           select: { name: true, sku: true },
         });
+
+        // Sum revenue from sale items linked to this product for the month
+        const revenueAgg = await prisma.saleItem.aggregate({
+          _sum: { totalAmount: true },
+          where: {
+            productId: item.productId,
+            sale: {
+              status: "COMPLETED",
+              createdAt: { gte: startOfMonth },
+            },
+          },
+        });
+
         return {
           ...product,
           quantitySold: item._sum.quantity,
-          revenue: item._sum.totalAmount,
+          revenue: revenueAgg._sum.totalAmount || 0,
         };
       })
     );
+
 
     return NextResponse.json({
       kpis: {

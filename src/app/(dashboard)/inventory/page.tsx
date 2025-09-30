@@ -1,4 +1,5 @@
 
+"use client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -13,10 +14,20 @@ import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
 
-function InventoryContent() {
+type InventoryContentProps = {
+  isAddProductModalOpen: boolean
+  setIsAddProductModalOpen: (open: boolean) => void
+  isBarcodeScannerOpen: boolean
+  setIsBarcodeScannerOpen: (open: boolean) => void
+}
+
+function InventoryContent({
+  isAddProductModalOpen,
+  setIsAddProductModalOpen,
+  isBarcodeScannerOpen,
+  setIsBarcodeScannerOpen,
+}: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
-  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
-  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
 
   const handleProductFound = (product: any) => {
@@ -64,18 +75,16 @@ function InventoryContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === tab.id
-                      ? "border-teal-600 text-teal-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
+                    ? "border-teal-600 text-teal-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded-full ${
-                      activeTab === tab.id ? "bg-teal-100 text-teal-800" : "bg-gray-100 text-gray-800"
-                    }`}>
+                    <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded-full ${activeTab === tab.id ? "bg-teal-100 text-teal-800" : "bg-gray-100 text-gray-800"
+                      }`}>
                       {tab.count}
                     </span>
                   )}
@@ -139,7 +148,7 @@ function InventoryContent() {
               </div>
             </div>
 
-            <InventoryTable 
+            <InventoryTable
               onAddProduct={() => setIsAddProductModalOpen(true)}
               onEditProduct={handleEditProduct}
               onViewBatch={handleViewBatch}
@@ -172,6 +181,9 @@ function InventoryContent() {
 }
 
 export default function InventoryManagement() {
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
+
   return (
     <LayoutSkeleton
       header={
@@ -180,13 +192,17 @@ export default function InventoryManagement() {
           para="Manage your pharmacy stock and medicine inventory"
           children={
             <div className="flex items-center gap-3">
-              <Button className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2">
+              <Button
+                className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2"
                 onClick={() => setIsAddProductModalOpen(true)}
+              >
                 <Plus className="w-4 h-4" />
                 Add Product
               </Button>
-              <Button className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2">
+              <Button
+                className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2"
                 onClick={() => setIsBarcodeScannerOpen(true)}
+              >
                 <Scan className="w-4 h-4" />
                 Scan Barcode
               </Button>
@@ -199,7 +215,12 @@ export default function InventoryManagement() {
         />
       }
     >
-      <InventoryContent />
+      <InventoryContent
+        isAddProductModalOpen={isAddProductModalOpen}
+        setIsAddProductModalOpen={setIsAddProductModalOpen}
+        isBarcodeScannerOpen={isBarcodeScannerOpen}
+        setIsBarcodeScannerOpen={setIsBarcodeScannerOpen}
+      />
     </LayoutSkeleton>
   )
 }

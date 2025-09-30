@@ -4,7 +4,7 @@ import prisma from "./prisma";
 
 export enum UserRole {
   USER = "USER",
-  PHARMACIST = "PHARMACIST", 
+  PHARMACIST = "PHARMACIST",
   ADMIN = "ADMIN"
 }
 
@@ -26,7 +26,6 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<Authen
       return null;
     }
 
-    // Get user with role from database
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
