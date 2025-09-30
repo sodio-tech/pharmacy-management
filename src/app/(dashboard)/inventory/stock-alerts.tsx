@@ -25,6 +25,49 @@ interface StockAlert {
   suggestedOrderQty?: number
 }
 
+export function StockAlerts() {
+  const [alerts, setAlerts] = useState<StockAlert[]>([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState("all")
+
+  useEffect(() => {
+    fetchAlerts()
+  }, [])
+
+  const fetchAlerts = async () => {
+    try {
+      const response = await fetch("/api/alerts/low-stock")
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Transform API data to component format
+        const transformedAlerts = (data.alerts || []).map((alert: any) => ({
+          id: alert.productId,
+          productName: alert.name,
+          currentStock: alert.currentStock,
+          minStock: alert.reorderLevel,
+          category: alert.category,
+          location: "Main Store",
+          lastUpdated: "Just now",
+          urgency: alert.priority === "HIGH" ? 'critical' : alert.priority === "MEDIUM" ? 'warning' : 'info',
+          type: alert.stockStatus === "OUT_OF_STOCK" ? 'out_of_stock' : 'low_stock',
+          supplier: "Various",
+          suggestedOrderQty: alert.suggestedQty
+        }))
+        
+        setAlerts(transformedAlerts)
+      } else {
+        console.log("Failed to fetch alerts, using empty array")
+        setAlerts([])
+      }
+    } catch (error) {
+      console.error("Error fetching alerts:", error)
+      setAlerts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
 const mockAlerts: StockAlert[] = [
   {
     id: "1",
@@ -39,15 +82,6 @@ const mockAlerts: StockAlert[] = [
     supplier: "MediCore Pharmaceuticals",
     suggestedOrderQty: 200
   },
-  {
-    id: "2",
-    productName: "Amoxicillin 250mg",
-    currentStock: 0,
-    minStock: 30,
-    category: "Prescription Medicines", 
-    location: "B2-C3",
-    lastUpdated: "30 minutes ago",
-    urgency: 'critical',
     type: 'out_of_stock',
     supplier: "HealthPlus Distributors",
     suggestedOrderQty: 100
