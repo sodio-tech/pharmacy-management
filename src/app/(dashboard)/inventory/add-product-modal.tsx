@@ -74,9 +74,9 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate required fields
-    const requiredFields = ['name', 'category', 'mrp', 'sellingPrice', 'currentStock']
+    const requiredFields = ['name', 'category', 'sellingPrice']
     const missingFields = requiredFields.filter(field => !formData[field])
     
     if (missingFields.length > 0) {
@@ -84,17 +84,54 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       return
     }
 
-    onSave(formData)
-    onClose()
-    setFormData({
-      name: "", genericName: "", brand: "", category: "", type: "", strength: "",
-      dosageForm: "", packSize: "", barcode: "", sku: "", description: "",
-      manufacturer: "", supplier: "", batchNumber: "", manufacturingDate: "",
-      expiryDate: "", mrp: "", costPrice: "", sellingPrice: "", gstRate: "12",
-      minStockLevel: "", maxStockLevel: "", currentStock: "", location: "",
-      rackNumber: "", prescriptionRequired: false, controlledSubstance: false,
-      scheduleType: "",
-    })
+    // Generate SKU if not provided
+    const sku = formData.sku || formData.barcode || `PRD${Date.now()}`
+
+    // Transform data for backend API
+    const productData = {
+      sku: sku,
+      name: formData.name,
+      description: formData.description || "",
+      category: formData.category,
+      unit: formData.packSize || "tablets",
+      hsnCode: "",
+      gstRate: parseInt(formData.gstRate) || 12,
+      price: parseFloat(formData.sellingPrice) || 0,
+      reorderLevel: parseInt(formData.minStockLevel) || 10,
+    }
+
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(productData),
+      })
+
+      if (response.ok) {
+        console.log("Product saved successfully")
+        onSave(formData)
+        onClose()
+        
+        // Reset form
+        setFormData({
+          name: "", genericName: "", brand: "", category: "", type: "", strength: "",
+          dosageForm: "", packSize: "", barcode: "", sku: "", description: "",
+          manufacturer: "", supplier: "", batchNumber: "", manufacturingDate: "",
+          expiryDate: "", mrp: "", costPrice: "", sellingPrice: "", gstRate: "12",
+          minStockLevel: "", maxStockLevel: "", currentStock: "", location: "",
+          rackNumber: "", prescriptionRequired: false, controlledSubstance: false,
+          scheduleType: "",
+        })
+      } else {
+        const error = await response.json()
+        alert(`Failed to save product: ${error.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error("Error saving product:", error)
+      alert("Failed to save product. Please try again.")
+    }
   }
 
   const tabs = [
