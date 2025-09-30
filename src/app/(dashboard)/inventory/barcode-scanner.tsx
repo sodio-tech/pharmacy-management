@@ -90,23 +90,65 @@ export function BarcodeScanner({ isOpen, onClose, onProductFound, onProductNotFo
   const searchProduct = async (code: string) => {
     setIsLoading(true)
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const results = mockProducts.filter(product => 
-      product.barcode.includes(code) || 
-      product.name.toLowerCase().includes(code.toLowerCase()) ||
-      product.brand.toLowerCase().includes(code.toLowerCase())
-    )
-    
-    setSearchResults(results)
-    setIsLoading(false)
-    
-    if (results.length === 1) {
-      onProductFound(results[0])
-    } else if (results.length === 0) {
-      onProductNotFound(code)
+    try {
+      // First try barcode API
+      const barcodeResponse = await fetch(`/api/products/barcode?barcode=${encodeURIComponent(code)}`)
+      
+      if (barcodeResponse.ok) {
+        const data = await barcodeResponse.json()
+        setSearchResults([data.product])
+        onProductFound(data.product)
+        setIsLoading(false)
+        return
+      }
+
+      // If not found by barcode, try general search
+      const searchResponse = await fetch(`/api/products/search?q=${encodeURIComponent(code)}&limit=10`)
+      
+      if (searchResponse.ok) {
+        const searchData = await searchResponse.json()
+        setSearchResults(searchData.products || [])
+        
+        if (searchData.products && searchData.products.length === 1) {
+          onProductFound(searchData.products[0])
+        } else if (!searchData.products || searchData.products.length === 0) {
+          onProductNotFound(code)
+        }
+      } else {
+        // Fallback to mock data if API fails
+        const results = mockProducts.filter(product => 
+          product.barcode.includes(code) || 
+          product.name.toLowerCase().includes(code.toLowerCase()) ||
+          product.brand.toLowerCase().includes(code.toLowerCase())
+        )
+        
+        setSearchResults(results)
+        
+        if (results.length === 1) {
+          onProductFound(results[0])
+        } else if (results.length === 0) {
+          onProductNotFound(code)
+        }
+      }
+    } catch (error) {
+      console.error("Error searching products:", error)
+      // Use mock data as fallback
+      const results = mockProducts.filter(product => 
+        product.barcode.includes(code) || 
+        product.name.toLowerCase().includes(code.toLowerCase()) ||
+        product.brand.toLowerCase().includes(code.toLowerCase())
+      )
+      
+      setSearchResults(results)
+      
+      if (results.length === 1) {
+        onProductFound(results[0])
+      } else if (results.length === 0) {
+        onProductNotFound(code)
+      }
     }
+    
+    setIsLoading(false)
   }
 
   const handleManualEntry = () => {

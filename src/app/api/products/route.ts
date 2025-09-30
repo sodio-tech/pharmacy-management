@@ -16,8 +16,8 @@ const createProductSchema = z.object({
 });
 
 const getProductsSchema = z.object({
-  page: z.string().optional().default("1"),
-  limit: z.string().optional().default("20"),
+  page: z.string().default("1"),
+  limit: z.string().default("20"),
   category: z.enum(["OTC", "PRESCRIPTION", "SUPPLEMENT"]).optional(),
   search: z.string().optional(),
   lowStock: z.string().optional(),
@@ -29,12 +29,12 @@ export async function GET(request: NextRequest) {
   return withAuth(request, async (req, user) => {
     const { searchParams } = new URL(req.url);
     const params = getProductsSchema.parse({
-      page: searchParams.get("page"),
-      limit: searchParams.get("limit"),
-      category: searchParams.get("category"),
-      search: searchParams.get("search"),
-      lowStock: searchParams.get("lowStock"),
-      expiringSoon: searchParams.get("expiringSoon"),
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "20",
+      category: searchParams.get("category") || undefined,
+      search: searchParams.get("search") || undefined,
+      lowStock: searchParams.get("lowStock") || undefined,
+      expiringSoon: searchParams.get("expiringSoon") || undefined,
     });
 
     const page = parseInt(params.page);
@@ -168,9 +168,9 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "Product created successfully",
-        product 
+        product
       }, { status: 201 });
     },
     [UserRole.ADMIN, UserRole.PHARMACIST]
