@@ -193,98 +193,130 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product, index) => (
-            <TableRow key={index} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-              <TableCell className="pl-5">
-                <Checkbox />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 ${product.iconColor} rounded-lg flex items-center justify-center text-lg`}>
-                    {product.icon}
-                  </div>
-                  <div>
-                    <div className="font-medium text-[#111827]">{product.name}</div>
-                    <div className="text-sm text-[#6b7280]">SKU: {product.id}</div>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge className={`${product.categoryColor} border-0 font-medium`}>{product.category}</Badge>
-              </TableCell>
-              <TableCell>
-                <div className="w-24">{getStockBar(product.stock)}</div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium text-[#111827]">{product.location}</div>
-                  <div className="text-xs text-[#6b7280]">Rack: {product.location}</div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="font-medium text-[#111827]">{product.price}</div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium text-[#111827]">{product.batch}</div>
-                  <div className={`text-xs ${product.expiryColor} flex items-center gap-1`}>
-                    {product.expiryDays <= 30 && <AlertTriangle className="w-3 h-3" />}
-                    {product.expiry}
-                  </div>
-                  <div className="text-xs text-[#6b7280]">
-                    {product.expiryDays <= 30 ? `${product.expiryDays} days left` : 
-                     product.expiryDays <= 90 ? `${product.expiryDays} days` : 'Good'}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  <div className="font-medium text-[#111827]">{product.supplier}</div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-xs text-[#6b7280]">{product.lastUpdated}</div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1 flex-wrap">
+          {products.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={10} className="text-center py-8">
+                <div className="text-gray-500">
+                  <Package2 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                  <p>No products found. Add your first product to get started.</p>
                   <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-1 h-8 w-8"
-                    onClick={() => onEditProduct?.(product)}
-                    title="Edit Product"
+                    onClick={onAddProduct}
+                    className="mt-3 bg-[#0f766e] hover:bg-[#0d6660] text-white"
                   >
-                    <Edit className="w-4 h-4 text-[#6b7280]" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-1 h-8 w-8"
-                    onClick={() => onViewBatch?.(product)}
-                    title="View Batch Details"
-                  >
-                    <Eye className="w-4 h-4 text-[#6b7280]" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-1 h-8 w-8"
-                    title="Stock Analytics"
-                  >
-                    <BarChart3 className="w-4 h-4 text-[#6b7280]" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="p-1 h-8 w-8"
-                    title="Reorder Stock"
-                  >
-                    <Package2 className="w-4 h-4 text-[#6b7280]" />
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Product
                   </Button>
                 </div>
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            products.map((product, index) => {
+              const expiryInfo = getExpiryInfo(product.batches)
+              const stockLevel = getStockLevel(product.totalStock, product.reorderLevel)
+              const categoryColor = getCategoryColor(product.category)
+              
+              return (
+                <TableRow key={product.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                  <TableCell className="pl-5">
+                    <Checkbox />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center text-lg">
+                        💊
+                      </div>
+                      <div>
+                        <div className="font-medium text-[#111827]">{product.name}</div>
+                        <div className="text-sm text-[#6b7280]">SKU: {product.sku}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={`${categoryColor} border-0 font-medium`}>
+                      {product.category === "PRESCRIPTION" ? "Prescription" : 
+                       product.category === "OTC" ? "OTC" : "Supplement"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="w-24">{getStockBar(product.totalStock, product.reorderLevel)}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div className="font-medium text-[#111827]">A1-B2</div>
+                      <div className="text-xs text-[#6b7280]">Main Store</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium text-[#111827]">₹{product.price.toFixed(2)}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div className="font-medium text-[#111827]">
+                        {product.batches.length > 0 ? product.batches[0].batchNumber : "No batches"}
+                      </div>
+                      <div className={`text-xs ${expiryInfo.color} flex items-center gap-1`}>
+                        {expiryInfo.days !== null && expiryInfo.days <= 30 && <AlertTriangle className="w-3 h-3" />}
+                        {expiryInfo.text}
+                      </div>
+                      <div className="text-xs text-[#6b7280]">
+                        {expiryInfo.days !== null && expiryInfo.days <= 30 ? `${expiryInfo.days} days left` : 
+                         expiryInfo.days !== null && expiryInfo.days <= 90 ? `${expiryInfo.days} days` : 'Good'}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div className="font-medium text-[#111827]">
+                        {product.batches.length > 0 && product.batches[0].supplier ? 
+                          product.batches[0].supplier.name : "No supplier"}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs text-[#6b7280]">Just now</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1 h-8 w-8"
+                        onClick={() => onEditProduct?.(product)}
+                        title="Edit Product"
+                      >
+                        <Edit className="w-4 h-4 text-[#6b7280]" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1 h-8 w-8"
+                        onClick={() => onViewBatch?.(product)}
+                        title="View Batch Details"
+                      >
+                        <Eye className="w-4 h-4 text-[#6b7280]" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1 h-8 w-8"
+                        title="Stock Analytics"
+                      >
+                        <BarChart3 className="w-4 h-4 text-[#6b7280]" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="p-1 h-8 w-8"
+                        title="Reorder Stock"
+                      >
+                        <Package2 className="w-4 h-4 text-[#6b7280]" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })
+          )}
         </TableBody>
       </Table>
 
