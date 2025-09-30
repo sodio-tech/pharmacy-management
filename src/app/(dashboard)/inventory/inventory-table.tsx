@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { Edit, Plus, Trash2 } from "lucide-react"
+import { Edit, Plus, Minus, Trash2, Eye, BarChart3, Package2, AlertTriangle } from "lucide-react"
 
 const products = [
   {
@@ -14,9 +14,13 @@ const products = [
     price: "₹12.50",
     batch: "BAT001",
     expiry: "Dec 2024",
-    expiryColor: "text-[#dc2626]",
+    expiryColor: "text-[#dc2626]", 
+    expiryDays: 15,
     icon: "💊",
     iconColor: "bg-[#dbeafe]",
+    supplier: "MediCore Pharmaceuticals",
+    location: "A1-B2",
+    lastUpdated: "2 hours ago"
   },
   {
     id: "MED002",
@@ -28,8 +32,12 @@ const products = [
     batch: "BAT002",
     expiry: "Mar 2025",
     expiryColor: "text-[#16a34a]",
+    expiryDays: 95,
     icon: "💊",
     iconColor: "bg-[#dcfce7]",
+    supplier: "HealthPlus Distributors", 
+    location: "B2-C3",
+    lastUpdated: "1 day ago"
   },
   {
     id: "SUP001",
@@ -41,8 +49,12 @@ const products = [
     batch: "BAT003",
     expiry: "Jan 2025",
     expiryColor: "text-[#16a34a]",
+    expiryDays: 45,
     icon: "🌟",
     iconColor: "bg-[#f3e8ff]",
+    supplier: "Wellness Supplements Ltd",
+    location: "C1-A1", 
+    lastUpdated: "30 minutes ago"
   },
   {
     id: "MED003",
@@ -54,8 +66,12 @@ const products = [
     batch: "BAT004",
     expiry: "Jun 2025",
     expiryColor: "text-[#16a34a]",
+    expiryDays: 180,
     icon: "💊",
     iconColor: "bg-[#fee2e2]",
+    supplier: "Generic Medicines Co",
+    location: "A2-B1",
+    lastUpdated: "Out of stock"
   },
 ]
 
@@ -83,7 +99,11 @@ function getStockBar(stock: { current: number; total: number; level: string }) {
   )
 }
 
-export function InventoryTable() {
+export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
+  onAddProduct?: () => void
+  onEditProduct?: (product: any) => void  
+  onViewBatch?: (product: any) => void
+}) {
   return (
     <div className="bg-white rounded-lg border border-[#e5e7eb]">
       <div className="p-6 border-b border-[#e5e7eb]">
@@ -109,9 +129,11 @@ export function InventoryTable() {
             <TableHead className="text-[#6b7280] font-medium">Product</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Category</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Stock</TableHead>
+            <TableHead className="text-[#6b7280] font-medium">Location</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Price</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Batch</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Expiry</TableHead>
+            <TableHead className="text-[#6b7280] font-medium">Batch & Expiry</TableHead>
+            <TableHead className="text-[#6b7280] font-medium">Supplier</TableHead>
+            <TableHead className="text-[#6b7280] font-medium">Last Updated</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -139,24 +161,70 @@ export function InventoryTable() {
                 <div className="w-24">{getStockBar(product.stock)}</div>
               </TableCell>
               <TableCell>
+                <div className="text-sm">
+                  <div className="font-medium text-[#111827]">{product.location}</div>
+                  <div className="text-xs text-[#6b7280]">Rack: {product.location}</div>
+                </div>
+              </TableCell>
+              <TableCell>
                 <div className="font-medium text-[#111827]">{product.price}</div>
               </TableCell>
               <TableCell>
-                <div className="font-medium text-[#111827]">{product.batch}</div>
+                <div className="text-sm">
+                  <div className="font-medium text-[#111827]">{product.batch}</div>
+                  <div className={`text-xs ${product.expiryColor} flex items-center gap-1`}>
+                    {product.expiryDays <= 30 && <AlertTriangle className="w-3 h-3" />}
+                    {product.expiry}
+                  </div>
+                  <div className="text-xs text-[#6b7280]">
+                    {product.expiryDays <= 30 ? `${product.expiryDays} days left` : 
+                     product.expiryDays <= 90 ? `${product.expiryDays} days` : 'Good'}
+                  </div>
+                </div>
               </TableCell>
               <TableCell>
-                <div className={`font-medium ${product.expiryColor}`}>{product.expiry}</div>
+                <div className="text-sm">
+                  <div className="font-medium text-[#111827]">{product.supplier}</div>
+                </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
+                <div className="text-xs text-[#6b7280]">{product.lastUpdated}</div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1 flex-wrap">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-1 h-8 w-8"
+                    onClick={() => onEditProduct?.(product)}
+                    title="Edit Product"
+                  >
                     <Edit className="w-4 h-4 text-[#6b7280]" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
-                    <Plus className="w-4 h-4 text-[#6b7280]" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-1 h-8 w-8"
+                    onClick={() => onViewBatch?.(product)}
+                    title="View Batch Details"
+                  >
+                    <Eye className="w-4 h-4 text-[#6b7280]" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="p-1 h-8 w-8">
-                    <Trash2 className="w-4 h-4 text-[#6b7280]" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-1 h-8 w-8"
+                    title="Stock Analytics"
+                  >
+                    <BarChart3 className="w-4 h-4 text-[#6b7280]" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="p-1 h-8 w-8"
+                    title="Reorder Stock"
+                  >
+                    <Package2 className="w-4 h-4 text-[#6b7280]" />
                   </Button>
                 </div>
               </TableCell>
