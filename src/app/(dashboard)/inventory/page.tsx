@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Scan, Download, Filter, List, Grid, AlertTriangle, Package } from "lucide-react"
+import { Search, Plus, Scan, Download, ListFilter as Filter, List, Grid2x2 as Grid, TriangleAlert as AlertTriangle, Package } from "lucide-react"
 import { InventoryStats } from "./inventory-stats"
 import { InventoryTable } from "./inventory-table"
 import { AddProductModal } from "./add-product-modal"

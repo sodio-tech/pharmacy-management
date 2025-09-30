@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Filter, Calendar, Package, AlertTriangle, Truck, Eye, Download } from "lucide-react"
+import { Search, ListFilter as Filter, Calendar, Package, TriangleAlert as AlertTriangle, Truck, Eye, Download } from "lucide-react"
 
 interface BatchInfo {
   id: string

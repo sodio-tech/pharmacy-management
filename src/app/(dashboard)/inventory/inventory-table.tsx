@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { Edit, Plus, Minus, Trash2, Eye, BarChart3, Package2, AlertTriangle } from "lucide-react"
+import { CreditCard as Edit, Plus, Minus, Trash2, Eye, ChartBar as BarChart3, Package2, TriangleAlert as AlertTriangle } from "lucide-react"
 
 const products = [
   {
