@@ -1,4 +1,4 @@
-export const DEFAULT_REDIRECT_PATH = "/";
+export const DEFAULT_REDIRECT_PATH = "/dashboard";
 
 export const DEFAULT_RESTRICTED_REDIRECT_PATH = "/login";
 

@@ -39,7 +39,7 @@ const LoginForm = () => {
                     email: userData.email,
                     password: userData.password,
                     rememberMe: rememberMe,
-                    callbackURL: "/",
+                    callbackURL: "/dashboard",
                 },
                 {
                     onSuccess: (ctx) => {
