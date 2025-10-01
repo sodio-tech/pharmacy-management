@@ -5,9 +5,6 @@ import { withAuth } from "@/lib/rbac";
 // GET /api/reports/dashboard - Get dashboard statistics
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req, user) => {
-
-    console.log("eur", user)
-
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);

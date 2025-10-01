@@ -1,93 +1,147 @@
-import { AvatarFallback } from '@/components/ui/avatar'
-import { FaEnvelope, FaLock, FaUser, FaUserCircle } from 'react-icons/fa'
-import { AvatarImage } from '@/components/ui/avatar'
-import { Avatar } from '@/components/ui/avatar'
-import { motion, Variants } from 'motion/react'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import React, { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
-import { signUp } from '@/lib/auth-client'
-import { toast } from 'react-toastify'
-import { FiEye, FiEyeOff } from 'react-icons/fi'
+"use client";
+import { motion, type Variants } from "motion/react";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { signUp } from "@/lib/auth-client";
+import { toast } from "react-toastify";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { Check, X, ShieldAlert, ArrowRight } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import Link from "next/link";
 
-// Zod schema for form validation
-const signupSchema = z.object({
-    name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-    // username: z
-    //     .string()
-    //     .min(3, { message: "Username must be at least 3 characters" })
-    //     .max(20, { message: "Username cannot exceed 20 characters" })
-    //     .regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers and underscores" }),
-    email: z.string().email({ message: "Please enter a valid email address" }),
-    password: z
-        .string()
-        .min(8, { message: "Password must be at least 8 characters" })
-        .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-        .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
-        .regex(/[0-9]/, { message: "Password must contain at least one number" }),
-    image: z.any().optional(),
-});
+const signupSchema = z
+    .object({
+        firstName: z
+            .string()
+            .min(2, { message: "First name must be at least 2 characters" }),
+        lastName: z
+            .string()
+            .min(2, { message: "Last name must be at least 2 characters" }),
+        email: z.string().email({ message: "Please enter a valid email address" }),
+        phoneNumber: z
+            .string()
+            .min(10, { message: "Please enter a valid phone number" }),
+        pharmacyName: z.string().min(2, { message: "Pharmacy name is required" }),
+        drugLicenseNumber: z
+            .string()
+            .min(5, { message: "Drug license number is required" }),
+        password: z
+            .string()
+            .min(8, { message: "Password must be at least 8 characters" })
+            .regex(/[A-Z]/, {
+                message: "Password must contain at least one uppercase letter",
+            })
+            .regex(/[0-9]/, { message: "Password must contain at least one number" }),
+        confirmPassword: z.string(),
+        agreeToTerms: z
+            .boolean()
+            .refine((val) => val === true, {
+                message: "You must agree to the terms",
+            }),
+        receiveUpdates: z.boolean().optional(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords don't match",
+        path: ["confirmPassword"],
+    });
 
-type SignUpFormValues = z.infer<typeof signupSchema>
+type SignUpFormValues = z.infer<typeof signupSchema>;
 
 const SignUpForm = () => {
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
-            name: "Ayush Dixit",
-            // username: "ayushdixit23",
-            email: "fsayush100@gmail.com",
-            password: "Password1234",
-            image: null,
+            firstName: "",
+            lastName: "",
+            email: "",
+            phoneNumber: "",
+            pharmacyName: "",
+            drugLicenseNumber: "",
+            password: "",
+            confirmPassword: "",
+            agreeToTerms: false,
+            receiveUpdates: false,
         },
     });
 
-    const onSubmit = async (signupData: SignUpFormValues) => {
-        try {
-            setIsLoading(true)
+    const password = form.watch("password");
 
-            const { email, password, name, image } = signupData
-
-            const { error } = await signUp.email({
-                email,
-                password,
-                name,
-                image,
-            });
-
-            if (error) {
-                toast.error(error.message)
-            } else {
-                toast.success("Account created successfully, please verify your email to login")
-            }
-
-        } catch (error) {
-            toast.error("Login failed")
-        } finally {
-            setIsLoading(false)
-        }
+    const passwordChecks = {
+        length: password?.length >= 8,
+        uppercase: /[A-Z]/.test(password || ""),
+        number: /[0-9]/.test(password || ""),
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files && e.target.files[0];
-        if (file) {
-            form.setValue("image", file);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                if (result) {
-                    setAvatarPreview(result);
+    const onSubmit = async (signupData: SignUpFormValues) => {
+        try {
+            setIsLoading(true);
+
+            const { email, password, firstName, lastName } = signupData;
+            const name = `${firstName} ${lastName}`;
+
+            await signUp.email(
+                {
+                    email,
+                    password,
+                    name,
+                },
+                {
+                    body: {
+                        phoneNumber: signupData.phoneNumber,
+                        pharmacyName: signupData.pharmacyName,
+                        drugLicenseNumber: signupData.drugLicenseNumber,
+                    },
+                    onSuccess: () => {
+                        toast.success(
+                            "Registration successful! Please check your email to verify your account.",
+                        );
+                    },
+                    onError: (ctx) => {
+                        switch (ctx.error.status) {
+                            case 400:
+                                toast.error("Invalid request. Please check your inputs.")
+                                break
+                            case 401:
+                                toast.error("Unauthorized request.")
+                                break
+                            case 409:
+                                toast.error("This email is already registered.")
+                                break
+                            case 429:
+                                toast.error("Too many attempts. Please wait before retrying.")
+                                break
+                            case 500:
+                                toast.error("Server error. Please try again later.")
+                                break
+                            default:
+                                toast.error(
+                                    ctx.error.message ||
+                                    "Something went wrong. Please try again.",
+                                )
+                        }
+                    },
                 }
-            };
-            reader.readAsDataURL(file);
+            );
+        } catch (error) {
+            toast.error("Registration failed");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -96,79 +150,91 @@ const SignUpForm = () => {
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.1,
-                delayChildren: 0.2
-            }
-        }
+                staggerChildren: 0.05,
+                delayChildren: 0.1,
+            },
+        },
     };
 
     const itemVariants: Variants = {
-        hidden: { y: 20, opacity: 0 },
+        hidden: { y: 10, opacity: 0 },
         visible: {
             y: 0,
             opacity: 1,
-            transition: { type: "spring", stiffness: 300, damping: 24 }
-        }
+            transition: { type: "spring", stiffness: 300, damping: 24 },
+        },
     };
 
     return (
-        <Form  {...form}>
+        <Form {...form}>
             <motion.form
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
+                className="space-y-5"
             >
-                {/* Profile Image */}
                 <motion.div
                     variants={itemVariants}
-                    className="flex flex-col items-center space-y-2 mb-6"
+                    className="bg-[#e0f2f1] border border-[#b2dfdb] rounded-lg p-4 flex gap-3"
                 >
-                    <Avatar className="w-24 h-24 border-2 border-indigo-100">
-                        <AvatarImage src={avatarPreview || ""} className='object-cover rounded-full' />
-                        <AvatarFallback className="bg-indigo-100 text-indigo-700">
-                            <FaUserCircle className="w-12 h-12" />
-                        </AvatarFallback>
-                    </Avatar>
-
-                    <Label htmlFor="image" className="cursor-pointer inline-flex items-center mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-500">
-                        Upload profile picture
-                    </Label>
-                    <Input
-                        id="image"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                    />
+                    <ShieldAlert className="w-5 h-5 text-[#0f766e] flex-shrink-0 mt-0.5" />
+                    <div>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                            Admin Registration
+                        </h3>
+                        <p className="text-xs text-gray-700">
+                            Only pharmacy administrators can create accounts. Pharmacist
+                            accounts are created by admins.
+                        </p>
+                    </div>
                 </motion.div>
 
-                {/* Name */}
-                <motion.div variants={itemVariants}>
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <FaUser className="h-5 w-5 text-indigo-400" />
-                                        </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <motion.div variants={itemVariants}>
+                        <FormField
+                            control={form.control}
+                            name="firstName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-medium text-gray-700">
+                                        First Name
+                                    </FormLabel>
+                                    <FormControl>
                                         <Input
-                                            placeholder="Full Name"
+                                            placeholder="John"
                                             {...field}
-                                            className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
+                                            className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
                                         />
-                                    </div>
-                                </FormControl>
-                                <FormMessage className="text-xs mt-1 ml-1 text-red-500" />
-                            </FormItem>
-                        )}
-                    />
-                </motion.div>
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+                    </motion.div>
 
+                    <motion.div variants={itemVariants}>
+                        <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-medium text-gray-700">
+                                        Last Name
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder="Doe"
+                                            {...field}
+                                            className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs" />
+                                </FormItem>
+                            )}
+                        />
+                    </motion.div>
+                </div>
 
                 {/* Email */}
                 <motion.div variants={itemVariants}>
@@ -177,20 +243,85 @@ const SignUpForm = () => {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Email Address
+                                </FormLabel>
                                 <FormControl>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <FaEnvelope className="h-5 w-5 text-indigo-400" />
-                                        </div>
-                                        <Input
-                                            type="email"
-                                            placeholder="Email address"
-                                            {...field}
-                                            className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm"
-                                        />
-                                    </div>
+                                    <Input
+                                        type="email"
+                                        placeholder="john@pharmacy.com"
+                                        {...field}
+                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                    />
                                 </FormControl>
-                                <FormMessage className="text-xs mt-1 ml-1 text-red-500" />
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <FormField
+                        control={form.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Phone Number
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="tel"
+                                        placeholder="+1 (555) 000-0000"
+                                        {...field}
+                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <FormField
+                        control={form.control}
+                        name="pharmacyName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Pharmacy Name
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Your Pharmacy Name"
+                                        {...field}
+                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <FormField
+                        control={form.control}
+                        name="drugLicenseNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Drug License Number
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="DL-XXXXXXXX"
+                                        {...field}
+                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
                             </FormItem>
                         )}
                     />
@@ -201,66 +332,221 @@ const SignUpForm = () => {
                     <FormField
                         control={form.control}
                         name="password"
-                        render={({ field }) => {
-                            const [showPassword, setShowPassword] = useState(false);
-
-                            return (
-                                <FormItem>
-                                    <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
-                                    <div className="relative">
-                                        {/* Lock icon on the left */}
-                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <FaLock className="h-5 w-5 text-indigo-400" />
-                                        </div>
-
-                                        <FormControl>
-                                            <Input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="••••••••"
-                                                className="pl-10 pr-10 py-3 border border-gray-300 rounded-md bg-white text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full"
-                                                {...field}
-                                            />
-                                        </FormControl>
-
-                                        {/* Toggle button (eye icon) on the right */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword((prev) => !prev)}
-                                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 focus:outline-none"
-                                            tabIndex={-1}
-                                        >
-                                            {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
-
-                                        </button>
-                                    </div>
-                                    <FormMessage className="text-red-500" />
-                                </FormItem>
-                            );
-                        }}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Password
+                                </FormLabel>
+                                <div className="relative">
+                                    <FormControl>
+                                        <Input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            className="pr-10 border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((prev) => !prev)}
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <FiEyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <FiEye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
                     />
                 </motion.div>
 
-                {/* Submit Button */}
+                <motion.div variants={itemVariants} className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs">
+                        {passwordChecks.length ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <X className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span
+                            className={
+                                passwordChecks.length ? "text-green-600" : "text-gray-500"
+                            }
+                        >
+                            At least 8 characters
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                        {passwordChecks.uppercase ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <X className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span
+                            className={
+                                passwordChecks.uppercase ? "text-green-600" : "text-gray-500"
+                            }
+                        >
+                            One uppercase letter
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                        {passwordChecks.number ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                            <X className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span
+                            className={
+                                passwordChecks.number ? "text-green-600" : "text-gray-500"
+                            }
+                        >
+                            One number
+                        </span>
+                    </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Confirm Password
+                                </FormLabel>
+                                <div className="relative">
+                                    <FormControl>
+                                        <Input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            placeholder="••••••••"
+                                            className="pr-10 border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                                        tabIndex={-1}
+                                    >
+                                        {showConfirmPassword ? (
+                                            <FiEyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <FiEye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="space-y-3">
+                    <FormField
+                        control={form.control}
+                        name="agreeToTerms"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="border-gray-300 data-[state=checked]:bg-[#0f766e] data-[state=checked]:border-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel className="text-xs font-normal text-gray-700">
+                                        I agree to the{" "}
+                                        <Link
+                                            href="/terms"
+                                            className="text-[#0f766e] hover:underline"
+                                        >
+                                            Terms of Service
+                                        </Link>{" "}
+                                        and{" "}
+                                        <Link
+                                            href="/privacy"
+                                            className="text-[#0f766e] hover:underline"
+                                        >
+                                            Privacy Policy
+                                        </Link>
+                                    </FormLabel>
+                                    <FormMessage className="text-xs" />
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="receiveUpdates"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="border-gray-300 data-[state=checked]:bg-[#0f766e] data-[state=checked]:border-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel className="text-xs font-normal text-gray-700">
+                                        I want to receive updates about new features and pharmacy
+                                        regulations
+                                    </FormLabel>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
                 <motion.div variants={itemVariants}>
                     <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-white bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-medium transition duration-200"
+                        className="w-full bg-[#0f766e] hover:bg-[#0d5f5a] text-white font-medium py-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <>
-                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <svg
+                                    className="animate-spin h-4 w-4 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    ></path>
                                 </svg>
                                 Creating account...
                             </>
-                        ) : "Create Account"}
+                        ) : (
+                            <>
+                                Create Account
+                                <ArrowRight className="w-4 h-4" />
+                            </>
+                        )}
                     </Button>
                 </motion.div>
             </motion.form>
         </Form>
-    )
-}
+    );
+};
 
-export default SignUpForm
+export default SignUpForm;
