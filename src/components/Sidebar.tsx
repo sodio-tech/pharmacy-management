@@ -9,6 +9,9 @@ import {
     Shield,
     Settings,
     LogOut,
+    CreditCard,
+    UserCheck,
+    User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
@@ -23,7 +26,9 @@ const sidebarItems = [
     { icon: Users, label: "Suppliers", href: "/suppliers" },
     { icon: BarChart3, label: "Reports", href: "/reports" },
     { icon: Shield, label: "Compliance", href: "/compliance" },
-    { icon: Settings, label: "User Management", href: "/users" },
+    { icon: UserCheck, label: "User Management", href: "/users" },
+    { icon: CreditCard, label: "Subscription", href: "/subscription" },
+    { icon: User, label: "Profile", href: "/profile" },
 ];
 
 const Sidebar = () => {

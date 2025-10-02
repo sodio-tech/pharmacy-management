@@ -67,16 +67,16 @@ const SignUpForm = () => {
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
-            firstName: "",
-            lastName: "",
-            email: "",
-            phoneNumber: "",
-            pharmacyName: "",
-            drugLicenseNumber: "",
-            password: "",
-            confirmPassword: "",
-            agreeToTerms: false,
-            receiveUpdates: false,
+            firstName: "Ayush",
+            lastName: "Dixit",
+            email: "ayush@gmail.com",
+            phoneNumber: "9876543210",
+            pharmacyName: "Ayush Pharmacy",
+            drugLicenseNumber: "DL-1234567890",
+            password: "Ayush@123",
+            confirmPassword: "Ayush@123",
+            agreeToTerms: true,
+            receiveUpdates: true,
         },
     });
 
@@ -106,6 +106,7 @@ const SignUpForm = () => {
                         phoneNumber: signupData.phoneNumber,
                         pharmacyName: signupData.pharmacyName,
                         drugLicenseNumber: signupData.drugLicenseNumber,
+                        role: 'ADMIN', // All signups are admins initially
                     },
                     onSuccess: () => {
                         toast.success(

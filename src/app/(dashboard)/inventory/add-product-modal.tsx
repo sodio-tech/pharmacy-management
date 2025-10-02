@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +20,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     name: "",
     genericName: "",
     brand: "",
-    category: "",
+    category: "OTC", // Set default category
     type: "",
     strength: "",
     dosageForm: "",
@@ -49,15 +49,16 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const [activeTab, setActiveTab] = useState("basic")
 
+
   const categories = [
-    "Prescription Medicines",
-    "OTC",
-    "Supplements & Vitamins",
-    "Medical Devices",
-    "Personal Care",
-    "Baby Care",
-    "First Aid",
-    "Ayurvedic/Herbal"
+    { value: "PRESCRIPTION", label: "Prescription Medicines" },
+    { value: "OTC", label: "OTC" },
+    { value: "SUPPLEMENT", label: "Supplements & Vitamins" },
+    { value: "MEDICAL_DEVICE", label: "Medical Devices" },
+    { value: "PERSONAL_CARE", label: "Personal Care" },
+    { value: "BABY_CARE", label: "Baby Care" },
+    { value: "FIRST_AID", label: "First Aid" },
+    { value: "AYURVEDIC", label: "Ayurvedic/Herbal" }
   ]
 
   const dosageForms = [
@@ -75,11 +76,17 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const handleSave = async () => {
     // Validate required fields
-    const requiredFields = ['name', 'category', 'sellingPrice']
-    const missingFields = requiredFields.filter(field => !formData[field])
+    const requiredFields = ['name', 'category', 'sellingPrice'] as const
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData])
 
     if (missingFields.length > 0) {
       alert(`Please fill in required fields: ${missingFields.join(', ')}`)
+      return
+    }
+
+    // Additional category validation
+    if (!formData.category || formData.category === '') {
+      alert('Please select a category')
       return
     }
 
@@ -91,13 +98,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       sku: sku,
       name: formData.name,
       description: formData.description || "",
-      category: formData.category,
+      category: (formData.category || "OTC").trim().toUpperCase(), // Clean and normalize category
       unit: formData.packSize || "tablets",
       hsnCode: "",
       gstRate: parseInt(formData.gstRate) || 12,
       price: parseFloat(formData.sellingPrice) || 0,
       reorderLevel: parseInt(formData.minStockLevel) || 10,
     }
+
 
     try {
       const response = await fetch("/api/products", {
@@ -115,7 +123,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
         // Reset form
         setFormData({
-          name: "", genericName: "", brand: "", category: "", type: "", strength: "",
+          name: "", genericName: "", brand: "", category: "OTC", type: "", strength: "",
           dosageForm: "", packSize: "", barcode: "", sku: "", description: "",
           manufacturer: "", supplier: "", batchNumber: "", manufacturingDate: "",
           expiryDate: "", mrp: "", costPrice: "", sellingPrice: "", gstRate: "12",
@@ -227,8 +235,8 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.value} value={category.value}>
+                            {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>

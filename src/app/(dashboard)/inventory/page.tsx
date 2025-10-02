@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Scan, Download, ListFilter as Filter, List, Grid2x2 as Grid, TriangleAlert as AlertTriangle, Package } from "lucide-react"
+import { Search, Plus, Scan, Download, ListFilter as Filter, List, Grid2x2 as Grid, TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
 import { InventoryStats } from "./inventory-stats"
 import { InventoryTable } from "./inventory-table"
 import { AddProductModal } from "./add-product-modal"
@@ -13,12 +13,15 @@ import { BatchTracking } from "./batch-tracking"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
+import { useSession } from "@/lib/auth-client"
+import { toast } from "react-toastify"
 
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
   setIsAddProductModalOpen: (open: boolean) => void
   isBarcodeScannerOpen: boolean
   setIsBarcodeScannerOpen: (open: boolean) => void
+  canAddProducts?: boolean
 }
 
 function InventoryContent({
@@ -26,6 +29,7 @@ function InventoryContent({
   setIsAddProductModalOpen,
   isBarcodeScannerOpen,
   setIsBarcodeScannerOpen,
+  canAddProducts = true,
 }: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
   const [selectedProduct, setSelectedProduct] = useState(null)
@@ -59,8 +63,7 @@ function InventoryContent({
         const data = await response.json()
         console.log("Product saved successfully:", data)
         setIsAddProductModalOpen(false)
-        // Refresh the inventory table
-        window.location.reload()
+        toast.success("Product saved successfully")
       } else {
         console.error("Failed to save product:", response.statusText)
       }
@@ -134,9 +137,14 @@ function InventoryContent({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all-categories">All Categories</SelectItem>
-                    <SelectItem value="prescription">Prescription</SelectItem>
-                    <SelectItem value="otc">OTC</SelectItem>
-                    <SelectItem value="supplement">Supplement</SelectItem>
+                    <SelectItem value="PRESCRIPTION">Prescription</SelectItem>
+                    <SelectItem value="OTC">OTC</SelectItem>
+                    <SelectItem value="SUPPLEMENT">Supplement</SelectItem>
+                    <SelectItem value="MEDICAL_DEVICE">Medical Device</SelectItem>
+                    <SelectItem value="PERSONAL_CARE">Personal Care</SelectItem>
+                    <SelectItem value="BABY_CARE">Baby Care</SelectItem>
+                    <SelectItem value="FIRST_AID">First Aid</SelectItem>
+                    <SelectItem value="AYURVEDIC">Ayurvedic</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -173,6 +181,7 @@ function InventoryContent({
               onAddProduct={() => setIsAddProductModalOpen(true)}
               onEditProduct={handleEditProduct}
               onViewBatch={handleViewBatch}
+              canAddProducts={canAddProducts}
             />
           </>
         )}
@@ -204,6 +213,13 @@ function InventoryContent({
 export default function InventoryManagement() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
+  const { data: session } = useSession()
+  const user = session?.user
+
+  console.log(user, "user")
+
+  // Check if user has permission to add products
+  const canAddProducts = user?.role === 'ADMIN' || user?.role === 'PHARMACIST'
 
   return (
     <LayoutSkeleton
@@ -213,20 +229,29 @@ export default function InventoryManagement() {
           para="Manage your pharmacy stock and medicine inventory"
           children={
             <div className="flex items-center gap-3">
-              <Button
-                className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2"
-                onClick={() => setIsAddProductModalOpen(true)}
-              >
-                <Plus className="w-4 h-4" />
-                Add Product
-              </Button>
-              <Button
-                className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2"
-                onClick={() => setIsBarcodeScannerOpen(true)}
-              >
-                <Scan className="w-4 h-4" />
-                Scan Barcode
-              </Button>
+              {canAddProducts ? (
+                <>
+                  <Button
+                    className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2"
+                    onClick={() => setIsAddProductModalOpen(true)}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Product
+                  </Button>
+                  <Button
+                    className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2"
+                    onClick={() => setIsBarcodeScannerOpen(true)}
+                  >
+                    <Scan className="w-4 h-4" />
+                    Scan Barcode
+                  </Button>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm">Read-only access</span>
+                </div>
+              )}
               <Button className="bg-[#06b6d4] hover:bg-[#0891b2] text-white gap-2">
                 <Download className="w-4 h-4" />
                 Export
@@ -241,6 +266,7 @@ export default function InventoryManagement() {
         setIsAddProductModalOpen={setIsAddProductModalOpen}
         isBarcodeScannerOpen={isBarcodeScannerOpen}
         setIsBarcodeScannerOpen={setIsBarcodeScannerOpen}
+        canAddProducts={canAddProducts}
       />
     </LayoutSkeleton>
   )

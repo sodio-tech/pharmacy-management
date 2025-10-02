@@ -15,8 +15,25 @@ datasource db {
 }
 
 enum UserRole {
-  USER
+  PHARMACIST
   ADMIN
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+enum ProductCategory {
+  OTC
+  PRESCRIPTION
+  SUPPLEMENT
+  MEDICAL_DEVICE
+  PERSONAL_CARE
+  BABY_CARE
+  FIRST_AID
+  AYURVEDIC
 }
 
 enum PrescriptionStatus {
@@ -34,21 +51,25 @@ enum SaleStatus {
 }
 
 model User {
-  id                String   @id @default(cuid())
+  id                String           @id @default(cuid())
   name              String
-  email             String   @unique
-  emailVerified     Boolean  @default(false)
+  email             String           @unique
+  emailVerified     Boolean          @default(false)
   phoneNumber       String
   pharmacyName      String
   drugLicenseNumber String
   image             String?
-  role              UserRole @default(USER)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  role              UserRole         @default(PHARMACIST)
+  subscriptionTier  SubscriptionTier @default(FREE)
+  isActive          Boolean          @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   sessions               Session[]
   accounts               Account[]
   profile                Profile?
+  subscription           Subscription?
   sales                  Sale[]
   prescriptionsValidated Prescription[] @relation("ValidatedBy")
 
@@ -62,11 +83,32 @@ model Profile {
   specialization String?
   address        String?
   licenseNumber  String?
+  qualifications String?  // Educational qualifications
+  experience     Int?     // Years of experience
+  bio            String?  // Bio/description
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@map("profile")
+}
+
+model Subscription {
+  id                String           @id @default(cuid())
+  userId            String           @unique
+  tier              SubscriptionTier @default(FREE)
+  maxAdmins         Int              @default(1)
+  maxPharmacists    Int              @default(1)
+  currentAdmins     Int              @default(0)
+  currentPharmacists Int             @default(0)
+  isActive          Boolean          @default(true)
+  expiresAt         DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscription")
 }
 
 model Supplier {
@@ -89,7 +131,7 @@ model Product {
   sku               String             @unique
   name              String
   description       String?
-  category          String?
+  category          ProductCategory    @default(OTC)
   unit              String
   hsnCode           String?
   gstRate           Float              @default(0)

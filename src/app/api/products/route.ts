@@ -7,7 +7,7 @@ const createProductSchema = z.object({
   sku: z.string().min(3).max(50),
   name: z.string().min(2).max(200),
   description: z.string().max(1000).optional(),
-  category: z.enum(["OTC", "PRESCRIPTION", "SUPPLEMENT"]),
+  category: z.enum(["OTC", "PRESCRIPTION", "SUPPLEMENT", "MEDICAL_DEVICE", "PERSONAL_CARE", "BABY_CARE", "FIRST_AID", "AYURVEDIC"]),
   unit: z.string().min(1).max(20),
   hsnCode: z.string().max(20).optional(),
   gstRate: z.number().min(0).max(100).default(0),
@@ -18,7 +18,7 @@ const createProductSchema = z.object({
 const getProductsSchema = z.object({
   page: z.string().default("1"),
   limit: z.string().default("20"),
-  category: z.enum(["OTC", "PRESCRIPTION", "SUPPLEMENT"]).optional(),
+  category: z.enum(["OTC", "PRESCRIPTION", "SUPPLEMENT", "MEDICAL_DEVICE", "PERSONAL_CARE", "BABY_CARE", "FIRST_AID", "AYURVEDIC"]).optional(),
   search: z.string().optional(),
   lowStock: z.string().optional(),
   expiringSoon: z.string().optional(),
@@ -137,6 +137,12 @@ export async function POST(request: NextRequest) {
     request,
     async (req, user) => {
       const body = await req.json();
+      
+      // Ensure category is properly formatted
+      if (body.category) {
+        body.category = body.category.trim().toUpperCase();
+      }
+      
       const productData = createProductSchema.parse(body);
 
       // Check if SKU already exists
@@ -148,6 +154,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { error: "Product with this SKU already exists" },
           { status: 400 }
+        );
+      }
+
+      // Check free tier limits
+      const { checkProductLimit } = await import("@/lib/subscription");
+      const canAddProduct = await checkProductLimit(user.id);
+      
+      if (!canAddProduct) {
+        return NextResponse.json(
+          { 
+            error: "Product limit exceeded for current subscription tier. Upgrade to add more products.",
+            limitReached: true,
+            currentTier: "FREE",
+            maxProducts: 20
+          },
+          { status: 403 }
         );
       }
 

@@ -12,7 +12,16 @@ export const auth = betterAuth({
             phoneNumber: { type: 'string', required: true },
             pharmacyName: { type: 'string', required: true },
             drugLicenseNumber: { type: 'string', required: true },
+            role: { type: 'string', required: true, defaultValue: 'PHARMACIST' },
         }
+    },
+    session: {
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60,
+        },
+        updateAge: 24 * 60 * 60, // 24 hours
+        expiresIn: 60 * 60 * 24 * 7, // 7 days
     },
     // emailVerification: {
     //     autoSignInAfterVerification: true,
@@ -54,12 +63,6 @@ export const auth = betterAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
         }
 
-    },
-    session: {
-        cookieCache: {
-            enabled: true,
-            maxAge: 5 * 60,
-        },
     },
 })
 

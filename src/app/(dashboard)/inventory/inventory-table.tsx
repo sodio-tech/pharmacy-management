@@ -50,10 +50,11 @@ function getStockBar(stock: { current: number; total: number; level: string }) {
   )
 }
 
-export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
+export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch, canAddProducts = true }: {
   onAddProduct?: () => void
   onEditProduct?: (product: any) => void  
   onViewBatch?: (product: any) => void
+  canAddProducts?: boolean
 }) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,6 +89,16 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
         return "bg-[#fef9c3] text-[#ca8a04]"
       case "SUPPLEMENT":
         return "bg-[#dcfce7] text-[#16a34a]"
+      case "MEDICAL_DEVICE":
+        return "bg-[#e0e7ff] text-[#3730a3]"
+      case "PERSONAL_CARE":
+        return "bg-[#fdf2f8] text-[#be185d]"
+      case "BABY_CARE":
+        return "bg-[#f0f9ff] text-[#0369a1]"
+      case "FIRST_AID":
+        return "bg-[#fef2f2] text-[#dc2626]"
+      case "AYURVEDIC":
+        return "bg-[#f0fdf4] text-[#166534]"
       default:
         return "bg-[#f3f4f6] text-[#6b7280]"
     }
@@ -199,13 +210,15 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
                 <div className="text-gray-500">
                   <Package2 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                   <p>No products found. Add your first product to get started.</p>
-                  <Button 
-                    onClick={onAddProduct}
-                    className="mt-3 bg-[#0f766e] hover:bg-[#0d6660] text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Product
-                  </Button>
+                  {canAddProducts && (
+                    <Button 
+                      onClick={onAddProduct}
+                      className="mt-3 bg-[#0f766e] hover:bg-[#0d6660] text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Product
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -234,7 +247,13 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
                   <TableCell>
                     <Badge className={`${categoryColor} border-0 font-medium`}>
                       {product.category === "PRESCRIPTION" ? "Prescription" : 
-                       product.category === "OTC" ? "OTC" : "Supplement"}
+                       product.category === "OTC" ? "OTC" : 
+                       product.category === "SUPPLEMENT" ? "Supplement" :
+                       product.category === "MEDICAL_DEVICE" ? "Medical Device" :
+                       product.category === "PERSONAL_CARE" ? "Personal Care" :
+                       product.category === "BABY_CARE" ? "Baby Care" :
+                       product.category === "FIRST_AID" ? "First Aid" :
+                       product.category === "AYURVEDIC" ? "Ayurvedic" : product.category}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -277,15 +296,17 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 flex-wrap">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-1 h-8 w-8"
-                        onClick={() => onEditProduct?.(product)}
-                        title="Edit Product"
-                      >
-                        <Edit className="w-4 h-4 text-[#6b7280]" />
-                      </Button>
+                      {canAddProducts && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-1 h-8 w-8"
+                          onClick={() => onEditProduct?.(product)}
+                          title="Edit Product"
+                        >
+                          <Edit className="w-4 h-4 text-[#6b7280]" />
+                        </Button>
+                      )}
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -303,14 +324,16 @@ export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch }: {
                       >
                         <BarChart3 className="w-4 h-4 text-[#6b7280]" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-1 h-8 w-8"
-                        title="Reorder Stock"
-                      >
-                        <Package2 className="w-4 h-4 text-[#6b7280]" />
-                      </Button>
+                      {canAddProducts && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-1 h-8 w-8"
+                          title="Reorder Stock"
+                        >
+                          <Package2 className="w-4 h-4 text-[#6b7280]" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
