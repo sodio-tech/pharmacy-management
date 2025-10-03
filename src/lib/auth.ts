@@ -20,8 +20,12 @@ export const auth = betterAuth({
             enabled: true,
             maxAge: 5 * 60,
         },
-        updateAge: 24 * 60 * 60, // 24 hours
+        updateAge: 24 * 60 * 60,
         expiresIn: 60 * 60 * 24 * 7, // 7 days
+    },
+    rateLimit: {
+        window: 10,
+        max: 100,
     },
     // emailVerification: {
     //     autoSignInAfterVerification: true,
