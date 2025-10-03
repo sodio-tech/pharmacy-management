@@ -9,4 +9,4 @@ export const RESTRICTED_PATHS = [
     "/forgot-password"
 ];
 
-export const API = process.env.NEXT_PUBLIC_API;
+export const API = process.env.NEXT_PUBLIC_API || 'http://localhost:8080/api';

@@ -47,31 +47,6 @@ function InventoryContent({
     // Pre-fill barcode in add product form
   }
 
-  const handleSaveProduct = async (productData: any) => {
-    console.log("Saving product:", productData)
-    
-    try {
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(productData),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Product saved successfully:", data)
-        setIsAddProductModalOpen(false)
-        toast.success("Product saved successfully")
-      } else {
-        console.error("Failed to save product:", response.statusText)
-      }
-    } catch (error) {
-      console.error("Error saving product:", error)
-    }
-  }
-
   const handleEditProduct = (product: any) => {
     setSelectedProduct(product)
     setIsAddProductModalOpen(true)
@@ -197,7 +172,6 @@ function InventoryContent({
           setIsAddProductModalOpen(false)
           setSelectedProduct(null)
         }}
-        onSave={handleSaveProduct}
       />
 
       <BarcodeScanner

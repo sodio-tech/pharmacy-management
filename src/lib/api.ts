@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080/api';
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -7,17 +7,39 @@ export interface ApiResponse<T = any> {
 }
 
 class ApiClient {
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    try {
+      const { getSession } = await import('@/lib/auth-client');
+      const session = await getSession();
+      
+      if (session?.token) {
+        return {
+          'Authorization': `Bearer ${session.token}`,
+        };
+      }
+    } catch (error) {
+      console.warn('Failed to get session:', error);
+    }
+    
+    return {};
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${API_BASE}${endpoint}`;
     
+    // Get authentication headers
+    const authHeaders = await this.getAuthHeaders();
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...options.headers,
       },
+      credentials: 'include', // Important for cookies
       ...options,
     };
 
