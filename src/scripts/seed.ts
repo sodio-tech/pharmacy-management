@@ -1,7 +1,9 @@
-import prisma from '../lib/prisma';
+import { PrismaClient } from '../generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 
-async function seedDatabase() {
+const prisma = new PrismaClient();
+
+async function seedDatabase(): Promise<void> {
   try {
     console.log('🌱 Starting database seeding...');
 

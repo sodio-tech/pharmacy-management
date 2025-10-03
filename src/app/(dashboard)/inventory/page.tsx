@@ -1,9 +1,7 @@
 
 "use client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Plus, Scan, Download, ListFilter as Filter, List, Grid2x2 as Grid, TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
+import { Plus, Scan, Download,TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
 import { InventoryStats } from "./inventory-stats"
 import { InventoryTable } from "./inventory-table"
 import { AddProductModal } from "./add-product-modal"
@@ -14,7 +12,6 @@ import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
 import { useSession } from "@/lib/auth-client"
-import { toast } from "react-toastify"
 
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
@@ -97,61 +94,6 @@ function InventoryContent({
         {activeTab === "inventory" && (
           <>
             <InventoryStats />
-
-            {/* Search and Filters */}
-            <div className="mb-6 bg-white p-4 rounded-lg border border-[#e5e7eb]">
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="relative flex-1 min-w-[300px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9ca3af] w-4 h-4" />
-                  <Input placeholder="Search by name, batch, or barcode..." className="pl-10 bg-white border-[#e5e7eb]" />
-                </div>
-
-                <Select defaultValue="all-categories">
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-categories">All Categories</SelectItem>
-                    <SelectItem value="PRESCRIPTION">Prescription</SelectItem>
-                    <SelectItem value="OTC">OTC</SelectItem>
-                    <SelectItem value="SUPPLEMENT">Supplement</SelectItem>
-                    <SelectItem value="MEDICAL_DEVICE">Medical Device</SelectItem>
-                    <SelectItem value="PERSONAL_CARE">Personal Care</SelectItem>
-                    <SelectItem value="BABY_CARE">Baby Care</SelectItem>
-                    <SelectItem value="FIRST_AID">First Aid</SelectItem>
-                    <SelectItem value="AYURVEDIC">Ayurvedic</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select defaultValue="all-stock">
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="All Stock Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-stock">All Stock Status</SelectItem>
-                    <SelectItem value="in-stock">In Stock</SelectItem>
-                    <SelectItem value="low-stock">Low Stock</SelectItem>
-                    <SelectItem value="out-of-stock">Out of Stock</SelectItem>
-                    <SelectItem value="expiring">Expiring Soon</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button variant="outline" className="gap-2 bg-transparent">
-                  <Filter className="w-4 h-4" />
-                  More Filters
-                </Button>
-
-                <div className="flex items-center gap-1 border border-[#e5e7eb] rounded">
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <List className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
             <InventoryTable
               onAddProduct={() => setIsAddProductModalOpen(true)}
               onEditProduct={handleEditProduct}
@@ -168,9 +110,14 @@ function InventoryContent({
       {/* Modals */}
       <AddProductModal
         isOpen={isAddProductModalOpen}
+        product={selectedProduct}
         onClose={() => {
           setIsAddProductModalOpen(false)
           setSelectedProduct(null)
+        }}
+        onSuccess={(product) => {
+          // Refresh the inventory table or handle success
+          console.log('Product saved:', product)
         }}
       />
 
@@ -189,11 +136,8 @@ export default function InventoryManagement() {
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
   const { data: session } = useSession()
   const user = session?.user
-
-  console.log(user, "user")
-
-  // Check if user has permission to add products
-  const canAddProducts = user?.role === 'ADMIN' || user?.role === 'PHARMACIST'
+  // @ts-ignore
+  const canAddProducts = user?.role === 'ADMIN'
 
   return (
     <LayoutSkeleton

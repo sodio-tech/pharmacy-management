@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "./auth";
-import prisma from "./prisma";
 
 export enum UserRole {
-  USER = "USER",
   PHARMACIST = "PHARMACIST",
   ADMIN = "ADMIN"
 }
@@ -17,34 +14,29 @@ export type AuthenticatedUser = {
 
 export async function getAuthenticatedUser(request: NextRequest): Promise<AuthenticatedUser | null> {
   try {
-    // Get session using Better Auth
-    const session = await auth.api.getSession({
-      headers: request.headers as any
-    });
-
-    if (!session || !session.user) {
-      return null;
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true
+    // Get session from Express backend
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/me`, {
+      headers: {
+        'Cookie': request.headers.get('cookie') || '',
+        'Authorization': request.headers.get('authorization') || '',
       }
     });
 
-    if (!user) {
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (!data.user) {
       return null;
     }
 
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      role: user.role as UserRole
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.name,
+      role: data.user.role as UserRole
     };
   } catch (error) {
     console.error("Error getting authenticated user:", error);

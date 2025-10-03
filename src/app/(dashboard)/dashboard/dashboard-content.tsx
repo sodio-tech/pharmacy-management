@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
-import { api } from "@/lib/api"
 
 type PrescriptionStatus = 'UPLOADED' | 'PENDING_VALIDATION' | 'VALIDATED' | 'REJECTED';
 
@@ -27,7 +26,19 @@ export function DashboardContent() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const data = await api.getDashboardData();
+        // const data = await api.getDashboardData();
+        const data = {
+          kpis: {
+            totalRevenue: {
+              value: 100000,
+              change: 10,
+              trend: "up"
+            },
+          },
+          recentPrescriptions: [],
+          lowStockItems: [],
+          expiringItems: [],
+        };
         setDashboardData(data);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);

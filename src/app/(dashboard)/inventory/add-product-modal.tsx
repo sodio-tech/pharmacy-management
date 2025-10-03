@@ -8,17 +8,20 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { X, Save, Package } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
-import axios from "axios"
-import { API } from "@/app/utils/constants"
 import { toast } from "react-toastify"
 import { getSession, useSession } from "@/lib/auth-client"
+import { inventoryService, Product } from "@/services/inventoryService"
 
 interface AddProductModalProps {
   isOpen: boolean
   onClose: () => void
+  product?: Product | null // Product to edit (null for add mode)
+  onSuccess?: (product: Product) => void // Callback when product is created/updated
 }
 
-export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
+export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProductModalProps) {
+  const isEditMode = !!product
+  
   const [formData, setFormData] = useState({
     name: "Paracetamol 500mg",
     description: "Paracetamol is a common pain reliever and fever reducer.",
@@ -40,6 +43,47 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
   const { data: session } = useSession()
   const [error, setError] = useState("")
   const [userRole, setUserRole] = useState<string | null>("ADMIN")
+
+  // Populate form when editing
+  useEffect(() => {
+    if (product && isEditMode) {
+      setFormData({
+        name: product.name || "",
+        description: product.description || "",
+        generic_name: product.generic_name || "",
+        manufacturer: product.manufacturer || "",
+        barcode: product.barcode || "",
+        qr_code: product.qr_code || "",
+        category: product.category || "OTC",
+        unit_price: product.unit_price?.toString() || "",
+        selling_price: product.selling_price?.toString() || "",
+        unit_of_measure: product.unit_of_measure || "tablets",
+        pack_size: product.pack_size?.toString() || "1",
+        min_stock_level: product.min_stock_level?.toString() || "10",
+        max_stock_level: product.max_stock_level?.toString() || "1000",
+        requires_prescription: product.requires_prescription || false,
+      })
+    } 
+    // else {
+    //   // Reset form for add mode
+    //   setFormData({
+    //     name: "",
+    //     description: "",
+    //     generic_name: "",
+    //     manufacturer: "",
+    //     barcode: "",
+    //     qr_code: "",
+    //     category: "OTC",
+    //     unit_price: "",
+    //     selling_price: "",
+    //     unit_of_measure: "tablets",
+    //     pack_size: "1",
+    //     min_stock_level: "10",
+    //     max_stock_level: "1000",
+    //     requires_prescription: false,
+    //   })
+    // }
+  }, [product, isEditMode])
 
   const categories = [
     { value: "OTC", label: "OTC (Over The Counter)" },
@@ -84,28 +128,17 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
   const handleSave = async () => {
     if (!validateForm()) return
 
-    console.log(session?.session.token, "session.token")
-
     setIsLoading(true)
     setError("")
 
     try {
-      // Get authentication session
-   
-      
-      if (!session?.session.token) {
-        setError("You must be logged in to create products")
-        toast.error("Please log in to create products")
-        return
-      }
-
       const productData = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        generic_name: formData.generic_name.trim() || null,
-        manufacturer: formData.manufacturer.trim() || null,
-        barcode: formData.barcode.trim() || null,
-        qr_code: formData.qr_code.trim() || null,
+        description: formData.description.trim() || undefined,
+        generic_name: formData.generic_name.trim() || undefined,
+        manufacturer: formData.manufacturer.trim() || undefined,
+        barcode: formData.barcode.trim() || undefined,
+        qr_code: formData.qr_code.trim() || undefined,
         category: formData.category,
         unit_price: Number.parseFloat(formData.unit_price),
         selling_price: Number.parseFloat(formData.selling_price),
@@ -116,35 +149,29 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
         requires_prescription: formData.requires_prescription,
       }
 
-      // Call backend API with authentication
-      const response = await axios.post(`${API}/products`, productData, {
-        headers: {
-          'Authorization': `Bearer ${session?.session.token}`,
-          'Content-Type': 'application/json'
-        }
-      })
+      let result: Product
 
-      if (response.data.success) {
-        toast.success("Product saved successfully")
-        resetForm()
-        onClose()
+      if (isEditMode && product) {  
+        result = await inventoryService.updateProduct(product.id, productData)
+        toast.success("Product updated successfully!")
       } else {
-        setError(response.data.error || "Failed to create product")
+        // Create new product
+        result = await inventoryService.createProduct(productData)
+        toast.success("Product created successfully!")
       }
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess(result)
+      }
+
+      onClose()
     } catch (err: any) {
-      console.error('Error creating product:', err)
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} product:`, err)
       
-      if (err.response?.status === 401) {
-        setError("Authentication required. Please log in.")
-        toast.error("Please log in to create products")
-      } else if (err.response?.status === 403) {
-        setError("Access denied. Only admins can create products.")
-        toast.error("You don't have permission to create products")
-      } else {
-        const errorMessage = err.response?.data?.error || err.message || "Failed to create product"
-        setError(errorMessage)
-        toast.error(errorMessage)
-      }
+      const errorMessage = err.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -201,8 +228,12 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
               <Package className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Add New Product</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">Fill in the product details below</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {isEditMode ? 'Edit Product' : 'Add New Product'}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                {isEditMode ? 'Update the product details below' : 'Fill in the product details below'}
+              </p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-full">
@@ -511,7 +542,7 @@ export function AddProductModal({ isOpen, onClose }: AddProductModalProps) {
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Product
+                  {isEditMode ? 'Update Product' : 'Save Product'}
                 </>
               )}
             </Button>

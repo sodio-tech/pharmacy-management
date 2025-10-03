@@ -57,7 +57,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [errors, setErrors] = useState<Partial<BatchFormData>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchProductAndSuppliers();
@@ -93,7 +93,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<BatchFormData> = {};
+    const newErrors: Record<string, string> = {};
     
     if (!formData.batchNumber.trim()) newErrors.batchNumber = "Batch number is required";
     if (!formData.supplierId) newErrors.supplierId = "Supplier is required";
@@ -165,7 +165,11 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -339,7 +343,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
                   type="number"
                   min="1"
                   value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleInputChange("quantity", Number(e.target.value) || 0)}
                   placeholder="0"
                   className={errors.quantity ? "border-red-500" : ""}
                   data-testid="quantity-input"

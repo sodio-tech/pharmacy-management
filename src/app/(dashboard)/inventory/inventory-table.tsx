@@ -1,358 +1,414 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+"use client"
+
+import { useState, useEffect } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { CreditCard as Edit, Plus, Minus, Trash2, Eye, ChartBar as BarChart3, Package2, TriangleAlert as AlertTriangle } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Search,
+  Plus,
+  Edit,
+  Eye,
+  Package2,
+  BarChart3,
+  Filter,
+  List,
+  Grid
+} from "lucide-react"
+import { inventoryService, Product } from "@/services/inventoryService"
+import { toast } from "react-toastify"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface Product {
-  id: string
-  sku: string
-  name: string
-  category: "OTC" | "PRESCRIPTION" | "SUPPLEMENT"
-  price: number
-  reorderLevel: number
-  totalStock: number
-  isLowStock: boolean
-  expiringSoonCount: number
-  batches: Array<{
-    id: string
-    batchNumber: string
-    quantity: number
-    expiryDate: string
-    supplier?: {
-      name: string
-    }
-  }>
-}
-
-function getStockBar(stock: { current: number; total: number; level: string }) {
-  const percentage = (stock.current / stock.total) * 100
-  let barColor = "bg-[#16a34a]" // green for good stock
-
-  if (stock.level === "low")
-    barColor = "bg-[#dc2626]" // red for low stock
-  else if (stock.level === "medium")
-    barColor = "bg-[#ea580c]" // orange for medium stock
-  else if (stock.level === "out") barColor = "bg-[#6b7280]" // gray for out of stock
-
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between text-sm mb-1">
-        <span className="font-medium">
-          {stock.current} / {stock.total} min
-        </span>
-      </div>
-      <div className="w-full bg-[#f3f4f6] rounded-full h-2">
-        <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
-      </div>
-    </div>
-  )
-}
-
-export function InventoryTable({ onAddProduct, onEditProduct, onViewBatch, canAddProducts = true }: {
-  onAddProduct?: () => void
-  onEditProduct?: (product: any) => void  
-  onViewBatch?: (product: any) => void
+interface InventoryTableProps {
+  onAddProduct: () => void
+  onEditProduct: (product: Product) => void
+  onViewBatch: (product: Product) => void
   canAddProducts?: boolean
-}) {
+}
+
+export function InventoryTable({
+  onAddProduct,
+  onEditProduct,
+  onViewBatch,
+  canAddProducts = true
+}: InventoryTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [activeFilter, setActiveFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     fetchProducts()
-  }, [])
+  }, [searchTerm, selectedCategory, activeFilter, page])
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/products")
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data.products || [])
-      } else {
-        console.log("Failed to fetch products, using empty array")
-        setProducts([])
+      setLoading(true)
+      const filters = {
+        search: searchTerm,
+        category: selectedCategory === "all" ? "" : selectedCategory,
+        page,
+        limit: 20,
+        lowStock: activeFilter === "lowStock",
+        expiringSoon: activeFilter === "expiringSoon"
       }
+
+      const response = await inventoryService.getProducts(filters)
+      setProducts(response.data)
+      setTotalPages(response.pagination.total_pages)
     } catch (error) {
       console.error("Error fetching products:", error)
-      setProducts([])
+      toast.error("Failed to load products")
     } finally {
       setLoading(false)
     }
   }
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "PRESCRIPTION":
-        return "bg-[#dbeafe] text-[#2563eb]"
-      case "OTC":
-        return "bg-[#fef9c3] text-[#ca8a04]"
-      case "SUPPLEMENT":
-        return "bg-[#dcfce7] text-[#16a34a]"
-      case "MEDICAL_DEVICE":
-        return "bg-[#e0e7ff] text-[#3730a3]"
-      case "PERSONAL_CARE":
-        return "bg-[#fdf2f8] text-[#be185d]"
-      case "BABY_CARE":
-        return "bg-[#f0f9ff] text-[#0369a1]"
-      case "FIRST_AID":
-        return "bg-[#fef2f2] text-[#dc2626]"
-      case "AYURVEDIC":
-        return "bg-[#f0fdf4] text-[#166534]"
-      default:
-        return "bg-[#f3f4f6] text-[#6b7280]"
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${productName}"?`)) {
+      return
+    }
+
+    try {
+      await inventoryService.deleteProduct(productId)
+      toast.success("Product deleted successfully")
+      fetchProducts()
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      toast.error("Failed to delete product")
     }
   }
 
-  const getStockLevel = (totalStock: number, reorderLevel: number) => {
-    if (totalStock === 0) return "out"
-    if (totalStock <= reorderLevel) return "low"
-    if (totalStock <= reorderLevel * 2) return "medium"
-    return "high"
+  // Helper functions for the table
+  const getStockLevel = (currentStock: number, reorderLevel: number) => {
+    if (currentStock === 0) return { level: "out", color: "text-red-600", bg: "bg-red-100" }
+    if (currentStock <= reorderLevel) return { level: "low", color: "text-orange-600", bg: "bg-orange-100" }
+    if (currentStock <= reorderLevel * 1.5) return { level: "medium", color: "text-yellow-600", bg: "bg-yellow-100" }
+    return { level: "good", color: "text-green-600", bg: "bg-green-100" }
   }
 
-  const getStockBar = (totalStock: number, reorderLevel: number) => {
-    const level = getStockLevel(totalStock, reorderLevel)
-    const percentage = Math.min((totalStock / Math.max(reorderLevel * 3, 1)) * 100, 100)
-    
-    let barColor = "bg-[#16a34a]" // green for good stock
-    if (level === "low") barColor = "bg-[#dc2626]" // red for low stock
-    else if (level === "medium") barColor = "bg-[#ea580c]" // orange for medium stock
-    else if (level === "out") barColor = "bg-[#6b7280]" // gray for out of stock
+  const getStockBar = (currentStock: number, reorderLevel: number) => {
+    const stockLevel = getStockLevel(currentStock, reorderLevel)
+    const percentage = Math.min((currentStock / (reorderLevel * 2)) * 100, 100)
 
     return (
-      <div className="w-full">
-        <div className="flex items-center justify-between text-sm mb-1">
-          <span className="font-medium">
-            {totalStock} / {reorderLevel} min
-          </span>
-        </div>
-        <div className="w-full bg-[#f3f4f6] rounded-full h-2">
-          <div className={`h-2 rounded-full ${barColor}`} style={{ width: `${Math.min(percentage, 100)}%` }} />
-        </div>
+      <div className="w-full bg-gray-200 rounded-full h-2">
+        <div
+          className={`h-2 rounded-full ${stockLevel.bg.replace('bg-', 'bg-').replace('-100', '-500')}`}
+          style={{ width: `${percentage}%` }}
+        />
       </div>
     )
   }
 
-  const getExpiryInfo = (batches: Product['batches']) => {
+  const getExpiryInfo = (batches: any[]) => {
     if (!batches || batches.length === 0) {
-      return { text: "No batches", color: "text-gray-400", days: null }
+      return { text: "No batches", color: "text-gray-500", days: null }
     }
 
-    const sortedBatches = [...batches].sort((a, b) => 
-      new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
-    )
-    
-    const nearestExpiry = sortedBatches[0]
-    const expiryDate = new Date(nearestExpiry.expiryDate)
     const today = new Date()
-    const daysToExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (daysToExpiry < 0) {
-      return { text: "Expired", color: "text-[#dc2626]", days: Math.abs(daysToExpiry) }
-    } else if (daysToExpiry <= 30) {
-      return { text: expiryDate.toLocaleDateString(), color: "text-[#dc2626]", days: daysToExpiry }
-    } else if (daysToExpiry <= 90) {
-      return { text: expiryDate.toLocaleDateString(), color: "text-[#ea580c]", days: daysToExpiry }
+    const nearestExpiry = batches
+      .map(batch => new Date(batch.expiryDate))
+      .sort((a, b) => a.getTime() - b.getTime())[0]
+
+    const daysUntilExpiry = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (daysUntilExpiry < 0) {
+      return { text: "Expired", color: "text-red-600", days: daysUntilExpiry }
+    } else if (daysUntilExpiry <= 7) {
+      return { text: "Expires soon", color: "text-red-600", days: daysUntilExpiry }
+    } else if (daysUntilExpiry <= 30) {
+      return { text: "Expiring soon", color: "text-orange-600", days: daysUntilExpiry }
     } else {
-      return { text: expiryDate.toLocaleDateString(), color: "text-[#16a34a]", days: daysToExpiry }
+      return { text: "Good", color: "text-green-600", days: daysUntilExpiry }
     }
+  }
+
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      OTC: "bg-blue-100 text-blue-800",
+      PRESCRIPTION: "bg-red-100 text-red-800",
+      SUPPLEMENTS: "bg-green-100 text-green-800",
+      MEDICAL_DEVICES: "bg-purple-100 text-purple-800",
+      COSMETICS: "bg-pink-100 text-pink-800",
+      OTHER: "bg-gray-100 text-gray-800"
+    }
+    return colors[category] || colors.OTHER
   }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg border border-[#e5e7eb]">
-        <div className="p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading products...</p>
+      <Card className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
         </div>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg border border-[#e5e7eb]">
-      <div className="p-6 border-b border-[#e5e7eb]">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#111827]">Product Inventory</h2>
-          <div className="flex items-center gap-4 text-sm text-[#6b7280]">
-            <span>Showing 1-20 of 1,247 products</span>
-            <select className="border border-[#e5e7eb] rounded px-2 py-1">
-              <option>20 per page</option>
-              <option>50 per page</option>
-              <option>100 per page</option>
-            </select>
+    <div className="space-y-6">
+      {/* Search and Filters */}
+
+      <div className="mb-6 bg-white p-4 rounded-lg border border-[#e5e7eb]">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="relative flex-1 min-w-[300px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9ca3af] w-4 h-4" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, batch, or barcode..." className="pl-10 bg-white border-[#e5e7eb]" />
+          </div>
+
+          <Select
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            defaultValue="all">
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="OTC">OTC (Over The Counter)</SelectItem>
+              <SelectItem value="PRESCRIPTION">Prescription Medicines</SelectItem>
+              <SelectItem value="SUPPLEMENTS">Supplements & Vitamins</SelectItem>
+              <SelectItem value="MEDICAL_DEVICES">Medical Devices</SelectItem>
+              <SelectItem value="COSMETICS">Cosmetics</SelectItem>
+              <SelectItem value="OTHER">Other</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={activeFilter}
+            onValueChange={setActiveFilter}
+            defaultValue="all">
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="All Stock Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stock Status</SelectItem>
+              <SelectItem value="lowStock">Low Stock</SelectItem>
+              <SelectItem value="outOfStock">Out of Stock</SelectItem>
+              <SelectItem value="expiringSoon">Expiring Soon</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button variant="outline" className="gap-2 bg-transparent">
+            <Filter className="w-4 h-4" />
+            More Filters
+          </Button>
+
+          <div className="flex items-center gap-1 border border-[#e5e7eb] rounded">
+            <Button variant="ghost" size="sm" className="p-2">
+              <List className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" className="p-2">
+              <Grid className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-[#e5e7eb]">
-            <TableHead className="w-12 pl-5">
-              <Checkbox />
-            </TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Product</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Category</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Stock</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Location</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Price</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Batch & Expiry</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Supplier</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Last Updated</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={10} className="text-center py-8">
-                <div className="text-gray-500">
-                  <Package2 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p>No products found. Add your first product to get started.</p>
-                  {canAddProducts && (
-                    <Button 
-                      onClick={onAddProduct}
-                      className="mt-3 bg-[#0f766e] hover:bg-[#0d6660] text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Product
-                    </Button>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          ) : (
-            products.map((product, index) => {
-              const expiryInfo = getExpiryInfo(product.batches)
-              const stockLevel = getStockLevel(product.totalStock, product.reorderLevel)
-              const categoryColor = getCategoryColor(product.category)
-              
-              return (
-                <TableRow key={product.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
-                  <TableCell className="pl-5">
-                    <Checkbox />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center text-lg">
-                        💊
-                      </div>
-                      <div>
-                        <div className="font-medium text-[#111827]">{product.name}</div>
-                        <div className="text-sm text-[#6b7280]">SKU: {product.sku}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={`${categoryColor} border-0 font-medium`}>
-                      {product.category === "PRESCRIPTION" ? "Prescription" : 
-                       product.category === "OTC" ? "OTC" : 
-                       product.category === "SUPPLEMENT" ? "Supplement" :
-                       product.category === "MEDICAL_DEVICE" ? "Medical Device" :
-                       product.category === "PERSONAL_CARE" ? "Personal Care" :
-                       product.category === "BABY_CARE" ? "Baby Care" :
-                       product.category === "FIRST_AID" ? "First Aid" :
-                       product.category === "AYURVEDIC" ? "Ayurvedic" : product.category}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="w-24">{getStockBar(product.totalStock, product.reorderLevel)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium text-[#111827]">A1-B2</div>
-                      <div className="text-xs text-[#6b7280]">Main Store</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-[#111827]">₹{product.price.toFixed(2)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium text-[#111827]">
-                        {product.batches.length > 0 ? product.batches[0].batchNumber : "No batches"}
-                      </div>
-                      <div className={`text-xs ${expiryInfo.color} flex items-center gap-1`}>
-                        {expiryInfo.days !== null && expiryInfo.days <= 30 && <AlertTriangle className="w-3 h-3" />}
-                        {expiryInfo.text}
-                      </div>
-                      <div className="text-xs text-[#6b7280]">
-                        {expiryInfo.days !== null && expiryInfo.days <= 30 ? `${expiryInfo.days} days left` : 
-                         expiryInfo.days !== null && expiryInfo.days <= 90 ? `${expiryInfo.days} days` : 'Good'}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div className="font-medium text-[#111827]">
-                        {product.batches.length > 0 && product.batches[0].supplier ? 
-                          product.batches[0].supplier.name : "No supplier"}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-xs text-[#6b7280]">Just now</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {canAddProducts && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="p-1 h-8 w-8"
-                          onClick={() => onEditProduct?.(product)}
-                          title="Edit Product"
-                        >
-                          <Edit className="w-4 h-4 text-[#6b7280]" />
-                        </Button>
-                      )}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-1 h-8 w-8"
-                        onClick={() => onViewBatch?.(product)}
-                        title="View Batch Details"
-                      >
-                        <Eye className="w-4 h-4 text-[#6b7280]" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="p-1 h-8 w-8"
-                        title="Stock Analytics"
-                      >
-                        <BarChart3 className="w-4 h-4 text-[#6b7280]" />
-                      </Button>
-                      {canAddProducts && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="p-1 h-8 w-8"
-                          title="Reorder Stock"
-                        >
-                          <Package2 className="w-4 h-4 text-[#6b7280]" />
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )
-            })
-          )}
-        </TableBody>
-      </Table>
 
-      <div className="p-4 border-t border-[#e5e7eb] flex items-center justify-between">
-        <div className="text-sm text-[#6b7280]">Showing 1 to 20 of 1,247 results</div>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">Previous</button>
-          <button className="px-3 py-1 text-sm bg-[#0f766e] text-white rounded">1</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">2</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">3</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">Next</button>
-        </div>
-      </div>
+      {/* Products Table */}
+      <Card className="overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-[#e5e7eb]">
+              <TableHead className="w-12 pl-5">
+                <Checkbox />
+              </TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Product</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Category</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Stock</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Unit Price</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Selling Price</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Manufacturer</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Barcode</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Last Updated</TableHead>
+              <TableHead className="text-[#6b7280] font-medium">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="text-center py-8">
+                  <div className="text-gray-500">
+                    <Package2 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                    <p>No products found. Add your first product to get started.</p>
+                    {canAddProducts && (
+                      <Button onClick={onAddProduct} className="mt-3 bg-[#0f766e] hover:bg-[#0d6660] text-white">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Product
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              products.map((product) => {
+                return (
+                  <TableRow key={product.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
+                    <TableCell className="pl-5">
+                      <Checkbox />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center text-lg">
+                          {product.image_url ? (
+                            <img
+                              src={product.image_url || "/placeholder.svg"}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            "💊"
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium text-[#111827]">{product.name}</div>
+                          <div className="text-sm text-[#6b7280]">
+                            {product.generic_name || `SKU: ${product.id.slice(0, 8)}`}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`${getCategoryColor(product.category)} border-0 font-medium`}>
+                        {product.category === "PRESCRIPTION"
+                          ? "Prescription"
+                          : product.category === "OTC"
+                            ? "OTC"
+                            : product.category === "SUPPLEMENTS"
+                              ? "Supplement"
+                              : product.category === "MEDICAL_DEVICES"
+                                ? "Medical Device"
+                                : product.category === "COSMETICS"
+                                  ? "Personal Care"
+                                  : product.category === "OTHER"
+                                    ? "Other"
+                                    : product.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="w-24">{getStockBar(50, product.min_stock_level)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-[#111827]">₹{Number(product?.unit_price || 0).toFixed(2)}</div>
+                      <div className="text-xs text-[#6b7280]">{product.unit_of_measure}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-[#111827]">₹{Number(product?.selling_price || 0).toFixed(2)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium text-[#111827]">{product.manufacturer || "N/A"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div className="font-medium text-[#111827]">{product.barcode || "N/A"}</div>
+                        {product.qr_code && (
+                          <div className="text-xs text-[#6b7280]">QR: {product.qr_code.slice(0, 8)}...</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-xs text-[#6b7280]">{new Date(product.updated_at).toLocaleDateString()}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {canAddProducts && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8"
+                            onClick={() => onEditProduct?.(product)}
+                            title="Edit Product"
+                          >
+                            <Edit className="w-4 h-4 text-[#6b7280]" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-1 h-8 w-8"
+                          onClick={() => onViewBatch?.(product)}
+                          title="View Batch Details"
+                        >
+                          <Eye className="w-4 h-4 text-[#6b7280]" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="p-1 h-8 w-8" title="Stock Analytics">
+                          <BarChart3 className="w-4 h-4 text-[#6b7280]" />
+                        </Button>
+                        {canAddProducts && (
+                          <Button variant="ghost" size="sm" className="p-1 h-8 w-8" title="Reorder Stock">
+                            <Package2 className="w-4 h-4 text-[#6b7280]" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <Button
+                variant="outline"
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing page <span className="font-medium">{page}</span> of{" "}
+                  <span className="font-medium">{totalPages}</span>
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md"
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md"
+                  >
+                    Next
+                  </Button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

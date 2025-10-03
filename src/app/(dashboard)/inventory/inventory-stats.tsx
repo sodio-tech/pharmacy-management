@@ -1,19 +1,17 @@
 import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
-
-interface StatsData {
-  totalProducts: number
-  lowStockCount: number
-  expiringSoonCount: number
-  totalStockValue: number
-}
+import { inventoryService, InventorySummary } from "@/services/inventoryService"
+import { toast } from "react-toastify"
 
 export function InventoryStats() {
-  const [stats, setStats] = useState<StatsData>({
+  const [stats, setStats] = useState<InventorySummary>({
     totalProducts: 0,
     lowStockCount: 0,
+    outOfStockCount: 0,
     expiringSoonCount: 0,
     totalStockValue: 0,
+    totalStockUnits: 0,
+    turnoverRate: 0,
   })
   const [loading, setLoading] = useState(true)
 
@@ -23,20 +21,12 @@ export function InventoryStats() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/inventory/stock")
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data.summary || {
-          totalProducts: 0,
-          lowStockCount: 0,
-          expiringSoonCount: 0,
-          totalStockValue: 0,
-        })
-      } else {
-        console.log("Failed to fetch stats, using defaults")
-      }
+      setLoading(true)
+      const data = await inventoryService.getInventoryStock()
+      setStats(data.summary)
     } catch (error) {
       console.error("Error fetching stats:", error)
+      toast.error("Failed to load inventory statistics")
     } finally {
       setLoading(false)
     }
@@ -46,7 +36,7 @@ export function InventoryStats() {
     {
       title: "Total Products",
       value: loading ? "..." : stats.totalProducts.toString(), 
-      change: "+12 this week",
+      change: "Active products",
       changeType: "positive" as const,
       icon: "📦",
       color: "text-[#2563eb]",
@@ -55,34 +45,34 @@ export function InventoryStats() {
     {
       title: "Low Stock",
       value: loading ? "..." : stats.lowStockCount.toString(),
-      change: "Need attention", 
-      changeType: "negative" as const,
+      change: stats.lowStockCount > 0 ? "Need attention" : "All good", 
+      changeType: stats.lowStockCount > 0 ? "negative" as const : "positive" as const,
       icon: "⚠️",
-      color: "text-[#ea580c]",
-      bgColor: "bg-[#ffedd5]",
+      color: stats.lowStockCount > 0 ? "text-[#ea580c]" : "text-[#16a34a]",
+      bgColor: stats.lowStockCount > 0 ? "bg-[#ffedd5]" : "bg-[#dcfce7]",
     },
     {
       title: "Out of Stock",
-      value: loading ? "..." : "0",
-      change: "All in stock",
-      changeType: "positive" as const,
+      value: loading ? "..." : stats.outOfStockCount.toString(),
+      change: stats.outOfStockCount > 0 ? "Urgent restock needed" : "All in stock",
+      changeType: stats.outOfStockCount > 0 ? "negative" as const : "positive" as const,
       icon: "🔴",
-      color: "text-[#dc2626]",
-      bgColor: "bg-[#fee2e2]",
+      color: stats.outOfStockCount > 0 ? "text-[#dc2626]" : "text-[#16a34a]",
+      bgColor: stats.outOfStockCount > 0 ? "bg-[#fee2e2]" : "bg-[#dcfce7]",
     },
     {
       title: "Expiring Soon",
       value: loading ? "..." : stats.expiringSoonCount.toString(),
       change: "Within 30 days",
-      changeType: "warning" as const,
+      changeType: stats.expiringSoonCount > 0 ? "warning" as const : "positive" as const,
       icon: "⏰",
-      color: "text-[#ca8a04]",
-      bgColor: "bg-[#fef9c3]",
+      color: stats.expiringSoonCount > 0 ? "text-[#ca8a04]" : "text-[#16a34a]",
+      bgColor: stats.expiringSoonCount > 0 ? "bg-[#fef9c3]" : "bg-[#dcfce7]",
     },
     {
-      title: "Total Stock Units",
-      value: loading ? "..." : stats.totalStockValue.toString(),
-      change: "Total inventory",
+      title: "Stock Value",
+      value: loading ? "..." : `₹${stats.totalStockValue.toLocaleString()}`,
+      change: `${stats.totalStockUnits} units`,
       changeType: "positive" as const,
       icon: "💰",
       color: "text-[#16a34a]",
