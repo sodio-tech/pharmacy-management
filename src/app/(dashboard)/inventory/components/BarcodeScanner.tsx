@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { X, Scan, Camera, Search, Package, AlertCircle } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 interface BarcodeScannerProps {
   onClose: () => void;
