@@ -6,7 +6,8 @@ export const RESTRICTED_PATHS = [
     "/login",
     "/signup",
     "/reset-password",
-    "/forgot-password"
+    "/forgot-password",
+    "/verify-email"
 ];
 
 export const API = process.env.NEXT_PUBLIC_API || 'http://localhost:8080/api';

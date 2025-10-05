@@ -20,6 +20,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Check, X, ShieldAlert, ArrowRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const signupSchema = z
     .object({
@@ -63,6 +64,7 @@ const SignUpForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const router = useRouter();
 
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(signupSchema),
@@ -112,6 +114,9 @@ const SignUpForm = () => {
                         toast.success(
                             "Registration successful! Please check your email to verify your account.",
                         );
+                        setTimeout(() => {
+                            router.push(`/verify-email?email=${encodeURIComponent(signupData.email)}`)
+                        }, 1000)
                     },
                     onError: (ctx) => {
                         switch (ctx.error.status) {
