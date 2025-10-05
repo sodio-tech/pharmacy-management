@@ -26,7 +26,7 @@ const LoginForm = () => {
         resolver: zodResolver(loginSchema),
         defaultValues: {
             email: "fsayush100@gmail.com",
-            password: "Ayush@123",
+            password: "Ayushdixit@123",
         },
     })
 
@@ -130,7 +130,7 @@ const LoginForm = () => {
                 <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
                     <input
                         type="checkbox"
-                        className="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                        className="h-4 w-4 border-gray-300 rounded accent-teal-600"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
                     />
