@@ -62,8 +62,7 @@ export function InventoryTable({
       const response = await inventoryService.getProducts(filters)
       setProducts(response.data)
       setTotalPages(response.pagination.total_pages)
-    } catch (error) {
-      console.error("Error fetching products:", error)
+    } catch (error: any) {
       toast.error("Failed to load products")
     } finally {
       setLoading(false)
@@ -79,8 +78,7 @@ export function InventoryTable({
       await inventoryService.deleteProduct(productId)
       toast.success("Product deleted successfully")
       fetchProducts()
-    } catch (error) {
-      console.error("Error deleting product:", error)
+    } catch (error: any) {
       toast.error("Failed to delete product")
     }
   }

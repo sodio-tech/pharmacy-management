@@ -24,8 +24,7 @@ export function InventoryStats() {
       setLoading(true)
       const data = await inventoryService.getInventoryStock()
       setStats(data.summary)
-    } catch (error) {
-      console.error("Error fetching stats:", error)
+    } catch (error: any) {
       toast.error("Failed to load inventory statistics")
     } finally {
       setLoading(false)

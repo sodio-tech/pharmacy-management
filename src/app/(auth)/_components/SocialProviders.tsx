@@ -20,19 +20,14 @@ const SocialProviders = () => {
             }
             const { error } = await signIn.social(
                 { provider, callbackURL: DEFAULT_REDIRECT_PATH },
-                {
-                    body: {
-                        username: "testusername",
-                    },
-                },
             )
             if (error) {
-                toast.error(error.message)
+                toast.error(error.message || "Something went wrong")
             } else {
-                toast.success("Login successful")
+                toast.success("Login successful!")
             }
-        } catch (error) {
-            console.log(error)
+        } catch (error: any) {
+            toast.error(error.message || "Something went wrong")
         } finally {
             if (provider === "google") {
                 setGoogleLoading(false)

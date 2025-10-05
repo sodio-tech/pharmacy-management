@@ -32,13 +32,11 @@ function InventoryContent({
   const [selectedProduct, setSelectedProduct] = useState(null)
 
   const handleProductFound = (product: any) => {
-    console.log("Product found:", product)
     setIsBarcodeScannerOpen(false)
     // Handle found product logic
   }
 
   const handleProductNotFound = (barcode: string) => {
-    console.log("Product not found for barcode:", barcode)
     setIsBarcodeScannerOpen(false)
     setIsAddProductModalOpen(true)
     // Pre-fill barcode in add product form
@@ -114,10 +112,6 @@ function InventoryContent({
         onClose={() => {
           setIsAddProductModalOpen(false)
           setSelectedProduct(null)
-        }}
-        onSuccess={(product) => {
-          // Refresh the inventory table or handle success
-          console.log('Product saved:', product)
         }}
       />
 

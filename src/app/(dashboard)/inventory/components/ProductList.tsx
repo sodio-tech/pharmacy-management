@@ -75,8 +75,7 @@ export function ProductList({
       } else {
         toast.error("Failed to fetch products");
       }
-    } catch (error) {
-      console.error("Error fetching products:", error);
+    } catch (error: any) {
       toast.error("Error loading products");
     } finally {
       setLoading(false);
@@ -101,8 +100,7 @@ export function ProductList({
         const error = await response.json();
         toast.error(error.error || "Failed to delete product");
       }
-    } catch (error) {
-      console.error("Error deleting product:", error);
+    } catch (error: any) {
       toast.error("Error deleting product");
     }
   };

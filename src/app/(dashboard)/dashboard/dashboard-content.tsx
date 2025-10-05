@@ -18,7 +18,6 @@ interface Prescription {
   itemCount: number;
 }
 
-
 export function DashboardContent() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +40,6 @@ export function DashboardContent() {
         };
         setDashboardData(data);
       } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
       } finally {
         setLoading(false);
       }

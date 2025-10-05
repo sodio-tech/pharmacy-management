@@ -57,8 +57,7 @@ export function BatchTracking() {
               ...product,
               batches: stockData.stock.batches
             }
-          } catch (error) {
-            console.error(`Error fetching batches for product ${product.id}:`, error)
+          } catch (error: any) {
             return {
               ...product,
               batches: []
@@ -68,8 +67,7 @@ export function BatchTracking() {
       )
       
       setProducts(productsWithBatches)
-    } catch (error) {
-      console.error("Error fetching products with batches:", error)
+    } catch (error: any) {
       toast.error("Failed to load batch information")
     } finally {
       setLoading(false)

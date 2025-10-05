@@ -73,8 +73,7 @@ export function BarcodeScanner({ isOpen, onClose, onProductFound, onProductNotFo
       if (videoRef.current) {
         videoRef.current.srcObject = stream
       }
-    } catch (error) {
-      console.error("Error accessing camera:", error)
+    } catch (error: any) {
       setIsScanning(false)
     }
   }
@@ -130,8 +129,7 @@ export function BarcodeScanner({ isOpen, onClose, onProductFound, onProductNotFo
           onProductNotFound(code)
         }
       }
-    } catch (error) {
-      console.error("Error searching products:", error)
+    } catch (error: any) {
       // Use mock data as fallback
       const results = mockProducts.filter(product => 
         product.barcode.includes(code) || 

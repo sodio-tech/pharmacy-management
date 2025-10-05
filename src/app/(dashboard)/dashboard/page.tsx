@@ -12,7 +12,6 @@ const page = () => {
             children={
                 <DashboardContent />
             }
-
             header={<DynamicHeader
                 maintext="Pharmacy Dashboard"
                 para="Welcome back, manage your pharmacy operations"

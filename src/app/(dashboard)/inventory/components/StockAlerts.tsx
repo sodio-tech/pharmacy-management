@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { X, RefreshCw, AlertTriangle, Package, Check, Bell, Calendar } from "lucide-react";
@@ -75,8 +75,7 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
       } else {
         toast.error("Failed to fetch alerts");
       }
-    } catch (error) {
-      console.error("Error fetching alerts:", error);
+    } catch (error: any) {
       toast.error("Error loading alerts");
     } finally {
       setLoading(false);
@@ -95,8 +94,7 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
       } else {
         toast.error("Failed to refresh alerts");
       }
-    } catch (error) {
-      console.error("Error refreshing alerts:", error);
+    } catch (error: any) {
       toast.error("Error refreshing alerts");
     } finally {
       setRefreshing(false);
@@ -135,8 +133,7 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
       } else {
         toast.error("Failed to mark alert as processed");
       }
-    } catch (error) {
-      console.error("Error processing alert:", error);
+    } catch (error: any) {
       toast.error("Error processing alert");
     } finally {
       setProcessingIds(prev => {

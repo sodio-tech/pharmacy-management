@@ -26,9 +26,8 @@ export default function ForgotPassword() {
                 setMessage('Reset link sent! Please check your email inbox.');
             }
             setEmail('');
-        } catch (err) {
+        } catch (err: any) {
             setError('Failed to send reset link. Please try again.');
-            console.error(err);
         } finally {
             setIsSubmitting(false);
         }

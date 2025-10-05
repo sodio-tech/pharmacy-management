@@ -20,7 +20,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 const LoginForm = () => {
     const [isLoading, setIsLoading] = useState(false)
-    const [rememberMe, setRememberMe] = useState(false)
+    const [rememberMe, setRememberMe] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -70,7 +70,6 @@ const LoginForm = () => {
             )
         } catch (err: any) {
             toast.error(err.message || "An unexpected error occurred.")
-            console.error("Login error:", err)
         } finally {
             setIsLoading(false)
         }

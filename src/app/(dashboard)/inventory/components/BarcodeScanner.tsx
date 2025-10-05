@@ -76,8 +76,7 @@ export function BarcodeScanner({ onClose, onSuccess }: BarcodeScannerProps) {
         const errorData = await response.json();
         setError(errorData.error || "Error searching for products");
       }
-    } catch (error) {
-      console.error("Error searching products:", error);
+    } catch (error: any) {
       setError("Network error while searching");
     } finally {
       setIsLoading(false);
@@ -101,8 +100,7 @@ export function BarcodeScanner({ onClose, onSuccess }: BarcodeScannerProps) {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch (error) {
-      console.error("Error accessing camera:", error);
+    } catch (error: any) {
       setError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
       toast.error("Camera access denied");

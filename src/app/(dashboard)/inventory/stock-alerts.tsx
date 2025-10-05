@@ -30,8 +30,7 @@ export function StockAlerts() {
       const data = await inventoryService.getInventoryStock()
       setLowStockProducts(data.alerts.lowStockProducts)
       setExpiringProducts(data.alerts.expiringProducts)
-    } catch (error) {
-      console.error("Error fetching alerts:", error)
+    } catch (error: any) {
       toast.error("Failed to load stock alerts")
     } finally {
       setLoading(false)

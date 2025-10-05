@@ -167,8 +167,6 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
 
       onClose()
     } catch (err: any) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} product:`, err)
-      
       const errorMessage = err.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
       setError(errorMessage)
       toast.error(errorMessage)

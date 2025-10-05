@@ -85,7 +85,6 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
         setSuppliers(suppliersData.suppliers || []);
       }
     } catch (error) {
-      console.error("Error fetching data:", error);
       toast.error("Error loading data");
     } finally {
       setLoadingData(false);
@@ -153,8 +152,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
         const error = await response.json();
         toast.error(error.error || "Failed to add batch");
       }
-    } catch (error) {
-      console.error("Error adding batch:", error);
+    } catch (error: any) {
       toast.error("Error adding batch");
     } finally {
       setLoading(false);
