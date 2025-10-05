@@ -69,8 +69,8 @@ const SignUpForm = () => {
         defaultValues: {
             firstName: "Ayush",
             lastName: "Dixit",
-            email: "ayush@gmail.com",
-            phoneNumber: "9876543210",
+            email: "fsayush100@gmail.com",
+            phoneNumber: "7521847004",
             pharmacyName: "Ayush Pharmacy",
             drugLicenseNumber: "DL-1234567890",
             password: "Ayush@123",
@@ -371,11 +371,11 @@ const SignUpForm = () => {
                         {passwordChecks.length ? (
                             <Check className="w-4 h-4 text-green-500" />
                         ) : (
-                            <X className="w-4 h-4 text-gray-400" />
+                            <X className="w-4 h-4 text-red-400" />
                         )}
                         <span
                             className={
-                                passwordChecks.length ? "text-green-600" : "text-gray-500"
+                                passwordChecks.length ? "text-green-600" : "text-red-500"
                             }
                         >
                             At least 8 characters
@@ -385,11 +385,11 @@ const SignUpForm = () => {
                         {passwordChecks.uppercase ? (
                             <Check className="w-4 h-4 text-green-500" />
                         ) : (
-                            <X className="w-4 h-4 text-gray-400" />
+                            <X className="w-4 h-4 text-red-400" />
                         )}
                         <span
                             className={
-                                passwordChecks.uppercase ? "text-green-600" : "text-gray-500"
+                                passwordChecks.uppercase ? "text-green-600" : "text-red-500"
                             }
                         >
                             One uppercase letter
@@ -399,11 +399,11 @@ const SignUpForm = () => {
                         {passwordChecks.number ? (
                             <Check className="w-4 h-4 text-green-500" />
                         ) : (
-                            <X className="w-4 h-4 text-gray-400" />
+                            <X className="w-4 h-4 text-red-400" />
                         )}
                         <span
                             className={
-                                passwordChecks.number ? "text-green-600" : "text-gray-500"
+                                passwordChecks.number ? "text-green-600" : "text-red-500"
                             }
                         >
                             One number
