@@ -14,9 +14,17 @@ export function InventoryStats() {
     turnoverRate: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [realTimeUpdates, setRealTimeUpdates] = useState(false)
 
   useEffect(() => {
     fetchStats()
+
+    // Set up real-time updates
+    const interval = setInterval(() => {
+      fetchStats()
+    }, 30000) // Update every 30 seconds
+
+    return () => clearInterval(interval)
   }, [])
 
   const fetchStats = async () => {
@@ -24,8 +32,10 @@ export function InventoryStats() {
       setLoading(true)
       const data = await inventoryService.getInventoryStock()
       setStats(data.summary)
+      setRealTimeUpdates(true)
     } catch (error: any) {
       toast.error("Failed to load inventory statistics")
+      setRealTimeUpdates(false)
     } finally {
       setLoading(false)
     }
@@ -34,7 +44,7 @@ export function InventoryStats() {
   const statsCards = [
     {
       title: "Total Products",
-      value: loading ? "..." : stats.totalProducts.toString(), 
+      value: loading ? "..." : stats.totalProducts.toString(),
       change: "Active products",
       changeType: "positive" as const,
       icon: "📦",
@@ -44,7 +54,7 @@ export function InventoryStats() {
     {
       title: "Low Stock",
       value: loading ? "..." : stats.lowStockCount.toString(),
-      change: stats.lowStockCount > 0 ? "Need attention" : "All good", 
+      change: stats.lowStockCount > 0 ? "Need attention" : "All good",
       changeType: stats.lowStockCount > 0 ? "negative" as const : "positive" as const,
       icon: "⚠️",
       color: stats.lowStockCount > 0 ? "text-[#ea580c]" : "text-[#16a34a]",
@@ -92,12 +102,11 @@ export function InventoryStats() {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <span className={`text-xs ${
-              stat.changeType === "positive" ? "text-green-600" :
-              stat.changeType === "negative" ? "text-red-600" :
-              stat.changeType === "warning" ? "text-yellow-600" :
-              "text-gray-600"
-            }`}>
+            <span className={`text-xs ${stat.changeType === "positive" ? "text-green-600" :
+                stat.changeType === "negative" ? "text-red-600" :
+                  stat.changeType === "warning" ? "text-yellow-600" :
+                    "text-gray-600"
+              }`}>
               {stat.changeType === "positive" && "↗"}
               {stat.changeType === "negative" && "↘"}
               {stat.changeType === "warning" && "⚠"}

@@ -191,9 +191,9 @@ class InventoryService {
     try {
       const response = await backendApi.post('/products', productData);
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating product:', error);
-      throw new Error('Failed to create product');
+      throw new Error(error.response.data.error || 'Failed to create product');
     }
   }
 

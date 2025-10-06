@@ -23,19 +23,20 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   const isEditMode = !!product
   
   const [formData, setFormData] = useState({
-    name: "Paracetamol 500mg",
-    description: "Paracetamol is a common pain reliever and fever reducer.",
-    generic_name: "Paracetamol",
-    manufacturer: "Pfizer Inc.",
-    barcode: "1234567890123",
-    qr_code: "1234567890123",
+    // Updated to a different product - Ibuprofen
+    name: "Ibuprofen 400mg",
+    description: "Ibuprofen is a nonsteroidal anti-inflammatory drug (NSAID) used to treat pain, fever, and inflammation.",
+    generic_name: "Ibuprofen",
+    manufacturer: "Johnson & Johnson",
+    barcode: "9876543210987",
+    qr_code: "9876543210987",
     category: "OTC",
-    unit_price: "10.00",
-    selling_price: "15.00",
+    unit_price: "8.50",
+    selling_price: "12.75",
     unit_of_measure: "tablets",
     pack_size: "1",
-    min_stock_level: "10",
-    max_stock_level: "1000",
+    min_stock_level: "15",
+    max_stock_level: "800",
     requires_prescription: false,
   })
 

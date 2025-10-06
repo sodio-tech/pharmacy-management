@@ -16,7 +16,8 @@ import {
   BarChart3,
   Filter,
   List,
-  Grid
+  Grid,
+  Trash2
 } from "lucide-react"
 import { inventoryService, Product } from "@/services/inventoryService"
 import { toast } from "react-toastify"
@@ -26,6 +27,7 @@ interface InventoryTableProps {
   onAddProduct: () => void
   onEditProduct: (product: Product) => void
   onViewBatch: (product: Product) => void
+  onAddBatch: (productId: string) => void
   canAddProducts?: boolean
 }
 
@@ -33,6 +35,7 @@ export function InventoryTable({
   onAddProduct,
   onEditProduct,
   onViewBatch,
+  onAddBatch,
   canAddProducts = true
 }: InventoryTableProps) {
   const [products, setProducts] = useState<Product[]>([])
@@ -42,6 +45,9 @@ export function InventoryTable({
   const [activeFilter, setActiveFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     fetchProducts()
@@ -69,65 +75,33 @@ export function InventoryTable({
     }
   }
 
-  const handleDeleteProduct = async (productId: string, productName: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${productName}"?`)) {
-      return
-    }
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product)
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return
 
     try {
-      await inventoryService.deleteProduct(productId)
+      setIsDeleting(true)
+      await inventoryService.deleteProduct(productToDelete.id)
       toast.success("Product deleted successfully")
       fetchProducts()
+      setDeleteModalOpen(false)
+      setProductToDelete(null)
     } catch (error: any) {
       toast.error("Failed to delete product")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  // Helper functions for the table
-  const getStockLevel = (currentStock: number, reorderLevel: number) => {
-    if (currentStock === 0) return { level: "out", color: "text-red-600", bg: "bg-red-100" }
-    if (currentStock <= reorderLevel) return { level: "low", color: "text-orange-600", bg: "bg-orange-100" }
-    if (currentStock <= reorderLevel * 1.5) return { level: "medium", color: "text-yellow-600", bg: "bg-yellow-100" }
-    return { level: "good", color: "text-green-600", bg: "bg-green-100" }
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false)
+    setProductToDelete(null)
   }
-
-  const getStockBar = (currentStock: number, reorderLevel: number) => {
-    const stockLevel = getStockLevel(currentStock, reorderLevel)
-    const percentage = Math.min((currentStock / (reorderLevel * 2)) * 100, 100)
-
-    return (
-      <div className="w-full bg-gray-200 rounded-full h-2">
-        <div
-          className={`h-2 rounded-full ${stockLevel.bg.replace('bg-', 'bg-').replace('-100', '-500')}`}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    )
-  }
-
-  const getExpiryInfo = (batches: any[]) => {
-    if (!batches || batches.length === 0) {
-      return { text: "No batches", color: "text-gray-500", days: null }
-    }
-
-    const today = new Date()
-    const nearestExpiry = batches
-      .map(batch => new Date(batch.expiryDate))
-      .sort((a, b) => a.getTime() - b.getTime())[0]
-
-    const daysUntilExpiry = Math.ceil((nearestExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-    if (daysUntilExpiry < 0) {
-      return { text: "Expired", color: "text-red-600", days: daysUntilExpiry }
-    } else if (daysUntilExpiry <= 7) {
-      return { text: "Expires soon", color: "text-red-600", days: daysUntilExpiry }
-    } else if (daysUntilExpiry <= 30) {
-      return { text: "Expiring soon", color: "text-orange-600", days: daysUntilExpiry }
-    } else {
-      return { text: "Good", color: "text-green-600", days: daysUntilExpiry }
-    }
-  }
-
+  
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
       OTC: "bg-blue-100 text-blue-800",
@@ -224,7 +198,6 @@ export function InventoryTable({
               </TableHead>
               <TableHead className="text-[#6b7280] font-medium">Product</TableHead>
               <TableHead className="text-[#6b7280] font-medium">Category</TableHead>
-              <TableHead className="text-[#6b7280] font-medium">Stock</TableHead>
               <TableHead className="text-[#6b7280] font-medium">Unit Price</TableHead>
               <TableHead className="text-[#6b7280] font-medium">Selling Price</TableHead>
               <TableHead className="text-[#6b7280] font-medium">Manufacturer</TableHead>
@@ -294,9 +267,7 @@ export function InventoryTable({
                                     : product.category}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="w-24">{getStockBar(50, product.min_stock_level)}</div>
-                    </TableCell>
+                    
                     <TableCell>
                       <div className="font-medium text-[#111827]">₹{Number(product?.unit_price || 0).toFixed(2)}</div>
                       <div className="text-xs text-[#6b7280]">{product.unit_of_measure}</div>
@@ -340,12 +311,30 @@ export function InventoryTable({
                         >
                           <Eye className="w-4 h-4 text-[#6b7280]" />
                         </Button>
+                        {canAddProducts && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8"
+                            onClick={() => onAddBatch(product.id)}
+                            title="Add Batch"
+                          >
+                            <Plus className="w-4 h-4 text-[#6b7280]" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" className="p-1 h-8 w-8" title="Stock Analytics">
                           <BarChart3 className="w-4 h-4 text-[#6b7280]" />
                         </Button>
+                      
                         {canAddProducts && (
-                          <Button variant="ghost" size="sm" className="p-1 h-8 w-8" title="Reorder Stock">
-                            <Package2 className="w-4 h-4 text-[#6b7280]" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="p-1 h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                            onClick={() => handleDeleteClick(product)}
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4 text-[#6b7280] hover:text-red-600" />
                           </Button>
                         )}
                       </div>
@@ -407,6 +396,57 @@ export function InventoryTable({
           </div>
         )}
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && productToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete <span className="font-semibold">"{productToDelete.name}"</span>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                This will permanently remove the product from your inventory.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleDeleteCancel}
+                disabled={isDeleting}
+                className="px-4 py-2"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isDeleting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </div>
+                ) : (
+                  "Delete Product"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

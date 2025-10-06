@@ -8,6 +8,7 @@ import { AddProductModal } from "./add-product-modal"
 import { BarcodeScanner } from "./barcode-scanner"
 import { StockAlerts } from "./stock-alerts"
 import { BatchTracking } from "./batch-tracking"
+import { AddBatchModal } from "./components/AddBatchModal"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
@@ -30,6 +31,8 @@ function InventoryContent({
 }: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false)
+  const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
 
   const handleProductFound = (product: any) => {
     setIsBarcodeScannerOpen(false)
@@ -50,6 +53,18 @@ function InventoryContent({
   const handleViewBatch = (product: any) => {
     setActiveTab("batch-tracking")
   }
+
+  const handleAddBatch = (productId: string) => {
+    setSelectedProductForBatch(productId)
+    setIsAddBatchModalOpen(true)
+  }
+
+  const handleBatchSuccess = () => {
+    setIsAddBatchModalOpen(false)
+    setSelectedProductForBatch(null)
+    // Refresh data if needed
+  }
+
 
   const tabs = [
     { id: "inventory", label: "Inventory", icon: Package, count: 1247 },
@@ -96,6 +111,7 @@ function InventoryContent({
               onAddProduct={() => setIsAddProductModalOpen(true)}
               onEditProduct={handleEditProduct}
               onViewBatch={handleViewBatch}
+              onAddBatch={handleAddBatch}
               canAddProducts={canAddProducts}
             />
           </>
@@ -104,6 +120,18 @@ function InventoryContent({
         {activeTab === "alerts" && <StockAlerts />}
         {activeTab === "batch-tracking" && <BatchTracking />}
       </div>
+
+      {/* Batch Modal */}
+      {isAddBatchModalOpen && selectedProductForBatch && (
+        <AddBatchModal
+          productId={selectedProductForBatch}
+          onClose={() => {
+            setIsAddBatchModalOpen(false)
+            setSelectedProductForBatch(null)
+          }}
+          onSuccess={handleBatchSuccess}
+        />
+      )}
 
       {/* Modals */}
       <AddProductModal
@@ -121,6 +149,7 @@ function InventoryContent({
         onProductFound={handleProductFound}
         onProductNotFound={handleProductNotFound}
       />
+
     </>
   )
 }
