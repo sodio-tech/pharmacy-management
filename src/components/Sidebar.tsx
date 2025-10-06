@@ -27,7 +27,7 @@ const sidebarItems = [
     { icon: BarChart3, label: "Reports", href: "/reports" },
     { icon: Shield, label: "Compliance", href: "/compliance" },
     { icon: UserCheck, label: "User Management", href: "/users" },
-    { icon: CreditCard, label: "Subscription", href: "/subscription" },
+    { icon: CreditCard, label: "Subscription", href: "/profile?tab=subscription" },
     { icon: User, label: "Profile", href: "/profile" },
 ];
 
