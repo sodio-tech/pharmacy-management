@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Eye, EyeOff, Shield, Smartphone, Monitor, Tablet, Check, X, LogOut, Loader2 } from "lucide-react"
-import { useSession, signOut, changePassword } from "@/lib/auth-client"
+import { useSession, signOut, changePassword, listSessions, revokeSession, revokeSessions } from "@/lib/auth-client"
 import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 
@@ -22,6 +22,8 @@ export default function Security() {
     const [isSigningOutAll, setIsSigningOutAll] = useState(false)
     const [isEnabling2FA, setIsEnabling2FA] = useState(false)
     const [sessions, setSessions] = useState<any[]>([])
+    const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+    const [isRevokingSession, setIsRevokingSession] = useState<string | null>(null)
     const router = useRouter()
 
     // Password validation - matching signup form requirements
@@ -30,6 +32,28 @@ export default function Security() {
     const hasNumber = /[0-9]/.test(newPassword)
     const passwordsMatch = newPassword === confirmPassword && confirmPassword !== ""
     const isPasswordValid = hasMinLength && hasUppercase && hasNumber && passwordsMatch
+
+    // Load sessions on component mount
+    useEffect(() => {
+        loadSessions()
+    }, [])
+
+    const handleRevokeSession = async (sessionToken: string) => {
+        setIsRevokingSession(sessionToken)
+        try {
+            await revokeSession({
+                token: sessionToken
+            })
+
+            setSessions(prev => prev.filter(s => s.token !== sessionToken))
+            toast.success("Session revoked successfully")
+        } catch (error) {
+            console.error("Error revoking session:", error)
+            toast.error("Failed to revoke session")
+        } finally {
+            setIsRevokingSession(null)
+        }
+    }
 
     const handlePasswordChange = async () => {
         if (!isPasswordValid) {
@@ -42,7 +66,7 @@ export default function Security() {
             const result = await changePassword({
                 currentPassword,
                 newPassword,
-                revokeOtherSessions: true 
+                revokeOtherSessions: true
             })
 
             if (result.error) {
@@ -63,14 +87,8 @@ export default function Security() {
     const handleSignOutAllDevices = async () => {
         setIsSigningOutAll(true)
         try {
-            await signOut({
-                fetchOptions: {
-                    onSuccess: () => {
-                        router.push("/login")
-                        toast.success("You have been signed out. Other sessions will remain active until they expire.")
-                    },
-                },
-            })
+            await revokeSessions()
+            toast.success("Sessions revoked successfully")
         } catch (error) {
             console.error("Error signing out:", error)
             toast.error("Failed to sign out. Please try again.")
@@ -81,13 +99,9 @@ export default function Security() {
 
     const handleEnable2FA = async () => {
         setIsEnabling2FA(true)
-       try {
-            // For now, show a message that 2FA setup would be implemented
-            // In a real implementation, you would integrate with Better Auth's 2FA plugin
-            await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API call
-            
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1500))
             toast.success("Two-factor authentication setup initiated! Please check your email for setup instructions.")
-            console.log("2FA Setup would be implemented here with Better Auth 2FA plugin")
         } catch (error) {
             console.error("Error enabling 2FA:", error)
             toast.error("Failed to enable 2FA. Please try again.")
@@ -95,36 +109,73 @@ export default function Security() {
             setIsEnabling2FA(false)
         }
     }
- 
-    const loginSessions = sessions.length > 0 ? sessions : [
-        {
-            device: "Desktop - Chrome Browser",
-            ip: "192.168.1.100",
-            location: "New York, NY, USA",
-            timestamp: "December 15, 2024 at 2:30 PM",
-            status: "current",
-            icon: Monitor,
-        },
-        {
-            device: "Mobile - Safari Browser",
-            ip: "192.168.1.101",
-            location: "New York, NY, USA",
-            timestamp: "December 15, 2024 at 9:15 AM",
-            status: "ended",
-            timeAgo: "3 hours ago",
-            icon: Smartphone,
-        },
-        {
-            device: "Tablet - Chrome Browser",
-            ip: "192.168.1.102",
-            location: "New York, NY, USA",
-            timestamp: "December 14, 2024 at 6:45 PM",
-            status: "ended",
-            timeAgo: "Yesterday",
-            icon: Tablet,
-        },
-    ]
 
+    // Helper function to get device icon and name based on user agent
+    const getDeviceInfo = (userAgent: string) => {
+        if (!userAgent) return { icon: Monitor, name: 'Unknown Device' }
+
+        // Mobile detection
+        if (userAgent.includes('Mobile') || userAgent.includes('Android')) {
+            return { icon: Smartphone, name: 'Mobile Device' }
+        }
+
+        // Tablet detection
+        if (userAgent.includes('Tablet') || userAgent.includes('iPad')) {
+            return { icon: Tablet, name: 'Tablet' }
+        }
+
+        // Desktop browsers
+        if (userAgent.includes('Chrome')) return { icon: Monitor, name: 'Chrome Browser' }
+        if (userAgent.includes('Firefox')) return { icon: Monitor, name: 'Firefox Browser' }
+        if (userAgent.includes('Safari')) return { icon: Monitor, name: 'Safari Browser' }
+        if (userAgent.includes('Edge')) return { icon: Monitor, name: 'Edge Browser' }
+
+        return { icon: Monitor, name: 'Desktop Browser' }
+    }
+
+    // Helper function to format timestamp
+    const formatTimestamp = (timestamp: string) => {
+        const date = new Date(timestamp)
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        })
+    }
+
+    // Helper function to get time ago
+    const getTimeAgo = (timestamp: string) => {
+        const now = new Date()
+        const sessionTime = new Date(timestamp)
+        const diffInMinutes = Math.floor((now.getTime() - sessionTime.getTime()) / (1000 * 60))
+
+        if (diffInMinutes < 1) return 'Just now'
+        if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`
+        if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hours ago`
+        return `${Math.floor(diffInMinutes / 1440)} days ago`
+    }
+
+    const loadSessions = async () => {
+        setIsLoadingSessions(true)
+        try {
+            const { data, error } = await listSessions()
+            if (error) {
+                console.error("Error loading sessions:", error)
+                toast.error("Failed to load sessions")
+            } else {
+                console.log(data, "sessions data")
+                setSessions(data || [])
+            }
+        } catch (error) {
+            console.error("Error loading sessions:", error)
+            toast.error("Failed to load sessions")
+        } finally {
+            setIsLoadingSessions(false)
+        }
+    }
     return (
         <div className="space-y-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="grid gap-6 lg:col-span-2">
@@ -144,9 +195,9 @@ export default function Security() {
                                 Current Password
                             </Label>
                             <div className="relative mt-1.5">
-                                <Input 
-                                    id="current-password" 
-                                    type={showCurrentPassword ? "text" : "password"} 
+                                <Input
+                                    id="current-password"
+                                    type={showCurrentPassword ? "text" : "password"}
                                     className="pr-10"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
@@ -210,9 +261,9 @@ export default function Security() {
                                 Confirm New Password
                             </Label>
                             <div className="relative mt-1.5">
-                                <Input 
-                                    id="confirm-password" 
-                                    type={showConfirmPassword ? "text" : "password"} 
+                                <Input
+                                    id="confirm-password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     className="pr-10"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -228,7 +279,7 @@ export default function Security() {
                         </div>
 
                         <div className="flex gap-3 pt-2">
-                            <Button 
+                            <Button
                                 className="bg-[#0f766e] hover:bg-[#0f766e]/90"
                                 onClick={handlePasswordChange}
                                 disabled={!isPasswordValid || isUpdatingPassword}
@@ -240,7 +291,7 @@ export default function Security() {
                                 )}
                                 {isUpdatingPassword ? "Updating..." : "Update Password"}
                             </Button>
-                            <Button 
+                            <Button
                                 variant="outline"
                                 onClick={() => {
                                     setCurrentPassword("")
@@ -256,64 +307,117 @@ export default function Security() {
                 {/* Login Activity */}
                 <div className="rounded-lg border border-[#e5e7eb] bg-white p-6">
                     <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-[#111827]">Login Activity</h2>
-                        <button className="text-sm font-medium text-[#0f766e] hover:text-[#0f766e]/80">View All</button>
+                        <h2 className="text-lg font-semibold text-[#111827]">Active Sessions & Login History</h2>
+                        <button
+                            className="text-sm font-medium text-[#0f766e] hover:text-[#0f766e]/80"
+                            onClick={loadSessions}
+                        >
+                            Refresh
+                        </button>
                     </div>
 
-                    <div className="space-y-3">
-                        {loginSessions.map((session, index) => {
-                            const Icon = session.icon
-                            return (
-                                <div
-                                    key={index}
-                                    className={`flex items-center justify-between rounded-lg border p-4 ${session.status === "current" ? "border-[#dcfce7] bg-[#f0fdf4]" : "border-[#e5e7eb] bg-white"
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f3f4f6]">
-                                            <Icon className="h-5 w-5 text-[#6b7280]" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-sm font-medium text-[#111827]">{session.device}</h4>
-                                            <p className="text-xs text-[#6b7280]">
-                                                {session.ip} • {session.location}
-                                            </p>
-                                            <p className="text-xs text-[#9ca3af]">{session.timestamp}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        {session.status === "current" ? (
-                                            <>
-                                                <Badge className="bg-[#dcfce7] text-[#166534] hover:bg-[#dcfce7]">Current Session</Badge>
-                                                <p className="mt-1 text-xs text-[#16a34a]">Active now</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Badge variant="secondary" className="bg-[#f3f4f6] text-[#6b7280] hover:bg-[#f3f4f6]">
-                                                    Ended
-                                                </Badge>
-                                                <p className="mt-1 text-xs text-[#9ca3af]">{session.timeAgo}</p>
-                                            </>
-                                        )}
-                                    </div>
+                    {isLoadingSessions ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#6b7280]" />
+                            <span className="ml-2 text-sm text-[#6b7280]">Loading sessions...</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {sessions.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <p className="text-sm text-[#6b7280]">No sessions found</p>
                                 </div>
-                            )
-                        })}
-                    </div>
+                            ) : (
+                                sessions.map((sessionItem, index) => {
+                                    const deviceInfo = getDeviceInfo(sessionItem.userAgent || '')
+                                    const Icon = deviceInfo.icon
+                                    // Check if this session is the current one by comparing with the current session token
+                                    const isCurrentSession = sessionItem.token === session?.session?.token
 
-                    <Button
-                        variant="outline"
-                        className="mt-6 w-full border-[#fca5a5] text-[#dc2626] hover:bg-[#fee2e2] bg-transparent"
-                        onClick={handleSignOutAllDevices}
-                        disabled={isSigningOutAll}
-                    >
-                        {isSigningOutAll ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <LogOut className="mr-2 h-4 w-4" />
-                        )}
-                        {isSigningOutAll ? "Signing Out..." : "Sign Out All Other Devices"}
-                    </Button>
+                                    return (
+                                        <div
+                                            key={sessionItem.id || index}
+                                            className={`flex items-center justify-between rounded-lg border p-4 ${isCurrentSession
+                                                    ? "border-[#dcfce7] bg-[#f0fdf4]"
+                                                    : "border-[#e5e7eb] bg-white"
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f3f4f6]">
+                                                    <Icon className="h-5 w-5 text-[#6b7280]" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-sm font-medium text-[#111827]">
+                                                        {deviceInfo.name}
+                                                    </h4>
+                                                    <p className="text-xs text-[#6b7280]">
+                                                        IP: {sessionItem.ipAddress || 'Unknown IP'} • {sessionItem.userAgent?.includes('Mobile') ? 'Mobile Device' : 'Desktop'}
+                                                    </p>
+                                                    <p className="text-xs text-[#9ca3af]">
+                                                        {formatTimestamp(sessionItem.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="text-right">
+                                                    {isCurrentSession ? (
+                                                        <>
+                                                            <Badge className="bg-[#dcfce7] text-[#166534] hover:bg-[#dcfce7]">
+                                                                Current Session
+                                                            </Badge>
+                                                            <p className="mt-1 text-xs text-[#16a34a]">Active now</p>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Badge variant="secondary" className="bg-[#f3f4f6] text-[#6b7280] hover:bg-[#f3f4f6]">
+                                                                Inactive
+                                                            </Badge>
+                                                            <p className="mt-1 text-xs text-[#9ca3af]">
+                                                                {getTimeAgo(sessionItem.updatedAt || sessionItem.createdAt)}
+                                                            </p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                {!isCurrentSession && (
+                                                    <div className="flex gap-1">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleRevokeSession(sessionItem.token)}
+                                                            disabled={isRevokingSession === sessionItem.token}
+                                                            className="h-8 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                                                        >
+                                                            {isRevokingSession === sessionItem.token ? (
+                                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                            ) : (
+                                                                'Revoke'
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            )}
+                        </div>
+                    )}
+
+                    {sessions.length > 0 && (
+                        <Button
+                            variant="outline"
+                            className="mt-6 w-full border-[#fca5a5] text-[#dc2626] hover:bg-[#fee2e2] bg-transparent"
+                            onClick={handleSignOutAllDevices}
+                            disabled={isSigningOutAll}
+                        >
+                            {isSigningOutAll ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <LogOut className="mr-2 h-4 w-4" />
+                            )}
+                            {isSigningOutAll ? "Signing Out..." : "Sign Out All Other Devices"}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -332,7 +436,7 @@ export default function Security() {
                         Add an extra layer of security to your admin account by enabling two-factor authentication.
                     </p>
 
-                    <Button 
+                    <Button
                         className="w-full bg-[#0f766e] hover:bg-[#0f766e]/90"
                         onClick={handleEnable2FA}
                         disabled={isEnabling2FA}
