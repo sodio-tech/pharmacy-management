@@ -9,6 +9,7 @@ import { Eye, EyeOff, Shield, Smartphone, Monitor, Tablet, Check, X, LogOut, Loa
 import { useSession, signOut, changePassword, listSessions, revokeSession, revokeSessions } from "@/lib/auth-client"
 import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
+import TwoFactorAuth from "./TwoFactorAuth"
 
 export default function Security() {
     const { data: session } = useSession()
@@ -421,41 +422,7 @@ export default function Security() {
                 </div>
             </div>
 
-
-            {/* Two-Factor Authentication */}
-            <div className="rounded-lg border max-h-fit border-[#e5e7eb] bg-white p-6">
-                <h2 className="mb-6 text-lg font-semibold text-[#111827]">Two-Factor Authentication</h2>
-
-                <div className="flex flex-col items-center text-center">
-                    <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#fee2e2]">
-                        <Shield className="h-10 w-10 text-[#dc2626]" />
-                    </div>
-
-                    <h3 className="mb-2 text-base font-semibold text-[#111827]">Not Enabled</h3>
-                    <p className="mb-6 text-sm text-[#6b7280]">
-                        Add an extra layer of security to your admin account by enabling two-factor authentication.
-                    </p>
-
-                    <Button
-                        className="w-full bg-[#0f766e] hover:bg-[#0f766e]/90"
-                        onClick={handleEnable2FA}
-                        disabled={isEnabling2FA}
-                    >
-                        {isEnabling2FA ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Smartphone className="mr-2 h-4 w-4" />
-                        )}
-                        {isEnabling2FA ? "Enabling..." : "Enable 2FA"}
-                    </Button>
-
-                    <p className="mt-4 text-xs text-[#9ca3af]">
-                        Supports authenticator apps like:
-                        <br />
-                        Google Authenticator, Authy, Microsoft Authenticator
-                    </p>
-                </div>
-            </div>
+            <TwoFactorAuth user={session?.user} />
         </div>
     )
 }

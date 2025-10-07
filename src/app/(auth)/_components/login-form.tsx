@@ -7,9 +7,10 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { signIn } from "@/lib/auth-client"
+import { signIn, twoFactor } from "@/lib/auth-client"
 import { toast } from "react-toastify"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -22,6 +23,7 @@ const LoginForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [rememberMe, setRememberMe] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
+    const router = useRouter()
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -42,8 +44,15 @@ const LoginForm = () => {
                     callbackURL: "/dashboard",
                 },
                 {
-                    onSuccess: (ctx) => {
-                        const { user } = ctx.data || {}
+                    onSuccess: async (ctx) => {
+                        const { user, twoFactorRedirect } = ctx.data || {}
+
+                        if (twoFactorRedirect) {
+                            toast.success("Otp sent to " + userData.email + " Please check your email")
+                            await twoFactor.sendOtp()
+                            router.push(`/2fa-verification?email=${encodeURIComponent(userData.email)}`)
+                            return
+                        }
 
                         if (!user) {
                             toast.error("Login failed. Please try again.")
