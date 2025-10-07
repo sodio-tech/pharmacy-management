@@ -1,13 +1,21 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Filter, List, Grid } from "lucide-react"
 import { PrescriptionTable } from "./prescription-table"
 import { PrescriptionStats } from "./prescription-stats"
+import { PrescriptionContentProps } from "./types"
 
-export default function PrescriptionContent() {
+export default function PrescriptionContent({ onViewPrescription }: PrescriptionContentProps) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all-status');
+    const [dateFilter, setDateFilter] = useState('all-dates');
+
     return (
-        <div className="bg-[#f9fafb] min-h-screen">
+        <div className="bg-[#f9fafb]">
             <PrescriptionStats />
 
             <div className="mb-6 bg-white p-4 rounded-lg border border-[#e5e7eb]">
@@ -17,23 +25,26 @@ export default function PrescriptionContent() {
                         <Input
                             placeholder="Search by patient name, doctor, or prescription ID"
                             className="pl-10 bg-white border-[#e5e7eb]"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    <Select defaultValue="all-status">
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="All Status" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all-status">All Status</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="validated">Validated</SelectItem>
-                            <SelectItem value="dispensed">Dispensed</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="UPLOADED">Uploaded</SelectItem>
+                            <SelectItem value="PENDING_VALIDATION">Pending Validation</SelectItem>
+                            <SelectItem value="VALIDATED">Validated</SelectItem>
+                            <SelectItem value="DISPENSED">Dispensed</SelectItem>
+                            <SelectItem value="REJECTED">Rejected</SelectItem>
                         </SelectContent>
                     </Select>
 
-                    <Select defaultValue="all-dates">
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="All Dates" />
                         </SelectTrigger>
@@ -61,7 +72,12 @@ export default function PrescriptionContent() {
                 </div>
             </div>
 
-            <PrescriptionTable />
+            <PrescriptionTable 
+                onViewPrescription={onViewPrescription}
+                searchTerm={searchTerm}
+                statusFilter={statusFilter}
+                dateFilter={dateFilter}
+            />
         </div>
     )
 }

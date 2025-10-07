@@ -23,7 +23,6 @@ type TabType =
     | "security"
     | "subscription"
     | "organization"
-    | "notifications";
 
 export default function AdminProfilePage() {
     const searchParams = useSearchParams();
@@ -35,7 +34,6 @@ export default function AdminProfilePage() {
         { id: "security" as TabType, label: "Security", icon: Shield },
         { id: "subscription" as TabType, label: "Subscription", icon: CreditCard },
         { id: "organization" as TabType, label: "Organization", icon: Building2 },
-        { id: "notifications" as TabType, label: "Notifications", icon: BellRing },
     ];
 
     return (
@@ -95,7 +93,6 @@ export default function AdminProfilePage() {
                 {activeTab === "organization" && (
                     <Organization />
                 )}
-
             </div>
         </LayoutSkeleton>
     );
