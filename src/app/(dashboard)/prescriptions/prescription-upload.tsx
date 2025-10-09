@@ -17,7 +17,7 @@ import {
 } from "./types";
 
 interface Medication extends CreatePrescriptionMedicationRequest {
-  id: string;
+  // No id field - backend will generate it
 }
 
 export function PrescriptionUpload({ onUpload, onCancel, loading = false }: PrescriptionUploadProps) {
@@ -38,7 +38,6 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
   });
   const [medications, setMedications] = useState<Medication[]>([
     {
-      id: "1",
       medication_name: "Lisinopril",
       generic_name: "Lisinopril",
       dosage: "10mg",
@@ -50,7 +49,6 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
       substitution_allowed: true
     },
     {
-      id: "2", 
       medication_name: "Metformin",
       generic_name: "Metformin HCl",
       dosage: "500mg",
@@ -81,7 +79,6 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
 
   const addMedication = () => {
     const newMedication: Medication = {
-      id: Date.now().toString(),
       medication_name: "",
       generic_name: "",
       dosage: "",
@@ -95,16 +92,16 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
     setMedications(prev => [...prev, newMedication]);
   };
 
-  const updateMedication = (id: string, field: string, value: any) => {
+  const updateMedication = (index: number, field: string, value: any) => {
     setMedications(prev => 
-      prev.map(med => 
-        med.id === id ? { ...med, [field]: value } : med
+      prev.map((med, i) => 
+        i === index ? { ...med, [field]: value } : med
       )
     );
   };
 
-  const removeMedication = (id: string) => {
-    setMedications(prev => prev.filter(med => med.id !== id));
+  const removeMedication = (index: number) => {
+    setMedications(prev => prev.filter((_, i) => i !== index));
   };
 
   const processOCR = async () => {
@@ -160,9 +157,8 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
         setFormData(prev => ({ ...prev, doctor_name: mockOCRResult.doctor_info.name }));
       }
       
-      // Auto-populate medications
+      // Auto-populate medications (remove id field - backend will generate it)
       const extractedMedications = mockOCRResult.medications.map((med: ExtractedMedication, index: number) => ({
-        id: (Date.now() + index).toString(),
         medication_name: med.name,
         generic_name: "",
         dosage: med.dosage,
@@ -453,13 +449,13 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
           </CardHeader>
           <CardContent className="space-y-4">
             {medications.map((medication, index) => (
-              <Card key={medication.id} className="p-4">
+              <Card key={index} className="p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="font-medium">Medication {index + 1}</h4>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => removeMedication(medication.id)}
+                    onClick={() => removeMedication(index)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -470,7 +466,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Label>Medication Name *</Label>
                     <Input
                       value={medication.medication_name}
-                      onChange={(e) => updateMedication(medication.id, "medication_name", e.target.value)}
+                      onChange={(e) => updateMedication(index, "medication_name", e.target.value)}
                       placeholder="Enter medication name"
                     />
                   </div>
@@ -478,7 +474,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Label>Generic Name</Label>
                     <Input
                       value={medication.generic_name}
-                      onChange={(e) => updateMedication(medication.id, "generic_name", e.target.value)}
+                      onChange={(e) => updateMedication(index, "generic_name", e.target.value)}
                       placeholder="Enter generic name"
                     />
                   </div>
@@ -486,7 +482,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Label>Dosage *</Label>
                     <Input
                       value={medication.dosage}
-                      onChange={(e) => updateMedication(medication.id, "dosage", e.target.value)}
+                      onChange={(e) => updateMedication(index, "dosage", e.target.value)}
                       placeholder="e.g., 10mg"
                     />
                   </div>
@@ -494,7 +490,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Label>Frequency *</Label>
                     <Select
                       value={medication.frequency}
-                      onValueChange={(value) => updateMedication(medication.id, "frequency", value)}
+                      onValueChange={(value) => updateMedication(index, "frequency", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select frequency" />
@@ -512,7 +508,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Label>Duration</Label>
                     <Input
                       value={medication.duration}
-                      onChange={(e) => updateMedication(medication.id, "duration", e.target.value)}
+                      onChange={(e) => updateMedication(index, "duration", e.target.value)}
                       placeholder="e.g., 30 days"
                     />
                   </div>
@@ -521,7 +517,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                     <Input
                       type="number"
                       value={medication.quantity}
-                      onChange={(e) => updateMedication(medication.id, "quantity", parseInt(e.target.value) || 0)}
+                      onChange={(e) => updateMedication(index, "quantity", parseInt(e.target.value) || 0)}
                       placeholder="Enter quantity"
                     />
                   </div>
@@ -531,7 +527,7 @@ export function PrescriptionUpload({ onUpload, onCancel, loading = false }: Pres
                   <Label>Instructions</Label>
                   <Textarea
                     value={medication.instructions}
-                    onChange={(e) => updateMedication(medication.id, "instructions", e.target.value)}
+                    onChange={(e) => updateMedication(index, "instructions", e.target.value)}
                     placeholder="Enter special instructions"
                     rows={2}
                   />

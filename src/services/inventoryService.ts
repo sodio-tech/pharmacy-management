@@ -232,6 +232,69 @@ class InventoryService {
       throw new Error('Failed to search products');
     }
   }
+
+  // Generate presigned URL for direct upload
+  async generatePresignedUrl(fileName: string, contentType: string): Promise<{ url: string; key: string; presignedUrl: string }> {
+    try {
+      const response = await backendApi.post('/upload/presigned-url', {
+        fileName,
+        contentType
+      });
+
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error generating presigned URL:', error);
+      throw new Error(error.response?.data?.error || 'Failed to generate presigned URL');
+    }
+  }
+
+  // Upload file directly to S3 using presigned URL
+  async uploadFileToS3(file: File, presignedUrl: string): Promise<void> {
+    try {
+      const response = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('S3 upload error:', response.status, errorText);
+        throw new Error(`Failed to upload file to S3: ${response.status} ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error uploading file to S3:', error);
+      throw new Error('Failed to upload file to S3');
+    }
+  }
+
+  // Complete image upload process
+  async uploadProductImage(file: File): Promise<{ url: string; key: string }> {
+    try {
+      // Step 1: Get presigned URL from backend
+      const { url, key, presignedUrl } = await this.generatePresignedUrl(file.name, file.type);
+      
+      // Step 2: Upload file directly to S3 using presigned URL
+      await this.uploadFileToS3(file, presignedUrl);
+      
+      return { url, key };
+    } catch (error: any) {
+      console.error('Error uploading product image:', error);
+      throw new Error(error.message || 'Failed to upload product image');
+    }
+  }
+
+  // Delete uploaded image
+  async deleteImage(key: string): Promise<void> {
+    try {
+      await backendApi.delete(`/upload/${key}`);
+    } catch (error: any) {
+      console.error('Error deleting image:', error);
+      throw new Error(error.response?.data?.error || 'Failed to delete image');
+    }
+  }
 }
 
 export const inventoryService = new InventoryService();

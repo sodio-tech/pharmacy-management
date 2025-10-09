@@ -10,9 +10,12 @@ import { prescriptionService } from "@/services/prescriptionService"
 
 export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter, dateFilter }: PrescriptionTableProps) {
   const [items, setItems] = useState<Prescription[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true) // Start with loading true
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState<number>(0)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [pageSize, setPageSize] = useState<number>(20)
+  const [totalPages, setTotalPages] = useState<number>(0)
 
   const filters = useMemo(() => {
     const f: any = {}
@@ -26,10 +29,10 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
       // simple range example: today/week/month handled server-side if supported; otherwise ignore
       f.date_range = dateFilter
     }
-    f.page = 1
-    f.limit = 20
+    f.page = currentPage
+    f.limit = pageSize
     return f
-  }, [searchTerm, statusFilter, dateFilter])
+  }, [searchTerm, statusFilter, dateFilter, currentPage, pageSize])
 
   useEffect(() => {
     let cancelled = false
@@ -41,6 +44,7 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
         if (cancelled) return
         setItems(res.prescriptions)
         setTotal(res.pagination?.total ?? res.prescriptions.length)
+        setTotalPages(res.pagination?.total_pages ?? 1)
       } catch (e: any) {
         if (cancelled) return
         setError(e?.response?.data?.error || 'Failed to load prescriptions')
@@ -62,17 +66,35 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
     } catch { return '-' }
   }
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter, dateFilter])
+
+  const retryFetch = () => {
+    setError(null)
+    setLoading(true)
+    // The useEffect will trigger a new fetch due to the loading state change
+  }
+
   return (
     <div className="bg-white rounded-lg border border-[#e5e7eb]">
       <div className="p-6 border-b border-[#e5e7eb]">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-[#111827]">Recent Prescriptions</h2>
           <div className="flex items-center gap-4 text-sm text-[#6b7280]">
-            <span>Showing {Math.min(items.length, 20)} of {total} prescriptions</span>
-            <select className="border border-[#e5e7eb] rounded px-2 py-1">
-              <option>20 per page</option>
-              <option>50 per page</option>
-              <option>100 per page</option>
+            <span>Showing {items.length} of {total} prescriptions</span>
+            <select 
+              className="border border-[#e5e7eb] rounded px-2 py-1"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setCurrentPage(1) // Reset to first page when changing page size
+              }}
+            >
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
             </select>
           </div>
         </div>
@@ -90,32 +112,55 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
             <TableHead className="text-[#6b7280] font-medium">Date</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Medications</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Status</TableHead>
+            <TableHead className="text-[#6b7280] font-medium">Validation</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {loading && (
+          {loading ? (
             <TableRow>
-              <TableCell colSpan={8}>
-                <div className="p-6 text-sm text-[#6b7280]">Loading prescriptions...</div>
+              <TableCell colSpan={9}>
+                <div className="p-6 text-sm text-[#6b7280] flex items-center justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0f766e]"></div>
+                    Loading prescriptions...
+                  </div>
+                </div>
               </TableCell>
             </TableRow>
-          )}
-          {!loading && error && (
+          ) : error ? (
             <TableRow>
-              <TableCell colSpan={8}>
-                <div className="p-6 text-sm text-red-600">{error}</div>
+              <TableCell colSpan={9}>
+                <div className="p-6 text-sm text-red-600 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-red-500 mb-2">⚠️</div>
+                    <div className="font-medium">{error}</div>
+                    <button 
+                      onClick={retryFetch} 
+                      className="mt-2 text-xs text-blue-600 hover:underline"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
               </TableCell>
             </TableRow>
-          )}
-          {!loading && !error && items.length === 0 && (
+          ) : items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8}>
-                <div className="p-6 text-sm text-[#6b7280]">No prescriptions found.</div>
+              <TableCell colSpan={9}>
+                <div className="p-6 text-sm text-[#6b7280] flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-gray-400 mb-2">📋</div>
+                    <div className="font-medium">No prescriptions found</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Try adjusting your search or filters
+                    </div>
+                  </div>
+                </div>
               </TableCell>
             </TableRow>
-          )}
-          {!loading && !error && items.map((prescription) => (
+          ) : (
+            items.map((prescription) => (
             <TableRow key={prescription.id} className="border-b border-[#f3f4f6] hover:bg-[#f9fafb]">
               <TableCell className="pl-5">
                 <Checkbox />
@@ -159,13 +204,39 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
               </TableCell>
               <TableCell>
                 <div>
-                  <div className="font-medium text-[#111827]">-</div>
-                  <div className="text-sm text-[#6b7280]">View details</div>
+                  <div className="font-medium text-[#111827]">
+                    {prescription.medications && prescription.medications.length > 0 
+                      ? `${prescription.medications.length} medication${prescription.medications.length > 1 ? 's' : ''}`
+                      : 'No medications'
+                    }
+                  </div>
+                  <div className="text-sm text-[#6b7280]">
+                    {prescription.medications && prescription.medications.length > 0 
+                      ? prescription.medications.slice(0, 2).map(med => med.medication_name).join(', ') + 
+                        (prescription.medications.length > 2 ? '...' : '')
+                      : 'View details'
+                    }
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
                 <Badge className="border-0 font-medium">
                   {prescription.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  className={`border-0 font-medium ${
+                    prescription.validation_status === 'APPROVED' 
+                      ? 'bg-green-100 text-green-800' 
+                      : prescription.validation_status === 'REJECTED'
+                      ? 'bg-red-100 text-red-800'
+                      : prescription.validation_status === 'NEEDS_REVISION'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
+                  {prescription.validation_status}
                 </Badge>
               </TableCell>
               <TableCell>
@@ -198,20 +269,55 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
                 </div>
               </TableCell>
             </TableRow>
-          ))}
+            ))
+          )}
         </TableBody>
       </Table>
 
-      <div className="p-4 border-t border-[#e5e7eb] flex items-center justify-between">
-        <div className="text-sm text-[#6b7280]">Showing 1 to {Math.min(items.length, 20)} of {total} results</div>
+      {!loading && !error && (
+        <div className="p-4 border-t border-[#e5e7eb] flex items-center justify-between">
+          <div className="text-sm text-[#6b7280]">
+            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, total)} of {total} results
+          </div>
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">Previous</button>
-          <button className="px-3 py-1 text-sm bg-[#0f766e] text-white rounded">1</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">2</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">3</button>
-          <button className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb]">Next</button>
+          <button 
+            className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb] disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          
+          {/* Generate page numbers */}
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+            if (pageNum > totalPages) return null;
+            
+            return (
+              <button
+                key={pageNum}
+                className={`px-3 py-1 text-sm rounded ${
+                  currentPage === pageNum
+                    ? 'bg-[#0f766e] text-white'
+                    : 'border border-[#e5e7eb] hover:bg-[#f9fafb]'
+                }`}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+          
+          <button 
+            className="px-3 py-1 text-sm border border-[#e5e7eb] rounded hover:bg-[#f9fafb] disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

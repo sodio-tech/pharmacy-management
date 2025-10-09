@@ -2,35 +2,42 @@
 
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { PrescriptionStats as PrescriptionStatsType } from "./types"
+import { prescriptionService } from "@/services/prescriptionService"
+import { RefreshCw } from "lucide-react"
 
 export function PrescriptionStats() {
   const [stats, setStats] = useState<PrescriptionStatsType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const statsData = await prescriptionService.getPrescriptionStats();
+      setStats(statsData);
+    } catch (error: any) {
+      console.error('Failed to fetch prescription stats:', error);
+      setError(error?.message || 'Failed to load prescription statistics');
+      // Set fallback data for development
+      setStats({
+        total_prescriptions: 0,
+        pending_validation: 0,
+        validated: 0,
+        dispensed: 0,
+        rejected: 0,
+        today_uploads: 0,
+        this_week_uploads: 0,
+        this_month_uploads: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // const statsData = await prescriptionService.getPrescriptionStats();
-        // setStats(statsData);
-      } catch (error) {
-        console.error('Failed to fetch prescription stats:', error);
-        // Set mock data for development
-        setStats({
-          total_prescriptions: 342,
-          pending_validation: 23,
-          validated: 18,
-          dispensed: 156,
-          rejected: 5,
-          today_uploads: 8,
-          this_week_uploads: 45,
-          this_month_uploads: 189
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchStats();
   }, []);
 
@@ -52,7 +59,24 @@ export function PrescriptionStats() {
     );
   }
 
-  if (!stats) return null;
+  if (!stats) {
+    if (error) {
+      return (
+        <div className="mb-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="text-red-600 text-sm">
+                <strong>Error loading statistics:</strong> {error}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
+
+  console.log(stats,'stats')
 
   const displayStats = [
     {
@@ -70,7 +94,7 @@ export function PrescriptionStats() {
       bgColor: "bg-[#ffedd5]",
     },
     {
-      title: "Validated Today",
+      title: "Validated",
       value: stats.validated.toString(),
       icon: "✅",
       color: "text-[#16a34a]",
@@ -93,20 +117,36 @@ export function PrescriptionStats() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-      {displayStats.map((stat, index) => (
-        <Card key={index} className="p-6 bg-white border border-[#e5e7eb]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-[#6b7280] mb-1">{stat.title}</p>
-              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-[#111827]">Prescription Statistics</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchStats}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {displayStats.map((stat, index) => (
+          <Card key={index} className="p-6 bg-white border border-[#e5e7eb]">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-[#6b7280] mb-1">{stat.title}</p>
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+              </div>
+              <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center text-xl`}>
+                {stat.icon}
+              </div>
             </div>
-            <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center text-xl`}>
-              {stat.icon}
-            </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }

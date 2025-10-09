@@ -64,8 +64,27 @@ class PrescriptionService {
   }> {
     try {
       const response = await backendApi.get(this.baseUrl, { params: filters });
+      const prescriptions = response.data.data;
+      
+      // Fetch medications for each prescription
+      const prescriptionsWithMedications = await Promise.all(
+        prescriptions.map(async (prescription: Prescription) => {
+          try {
+            const medications = await this.getPrescriptionMedications(prescription.id);
+            return {
+              ...prescription,
+              medications
+            };
+          } catch (error) {
+            // If medications fetch fails, return prescription without medications
+            console.warn(`Failed to fetch medications for prescription ${prescription.id}:`, error);
+            return prescription;
+          }
+        })
+      );
+      
       return {
-        prescriptions: response.data.data,
+        prescriptions: prescriptionsWithMedications,
         pagination: response.data.pagination
       };
     } catch (error: any) {

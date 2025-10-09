@@ -54,7 +54,7 @@ const page = () => {
             
             setError(errorMessage);
         } finally {
-            setCurrentView('list');
+            // setCurrentView('list');
             setLoading(false);
         }
     };

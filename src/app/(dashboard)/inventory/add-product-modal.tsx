@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Save, Package } from "lucide-react"
+import { X, Save, Package, Image as ImageIcon, QrCode, ScanLine } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { toast } from "react-toastify"
-import { getSession, useSession } from "@/lib/auth-client"
+import { useSession } from "@/lib/auth-client"
 import { inventoryService, Product } from "@/services/inventoryService"
 
 interface AddProductModalProps {
@@ -44,6 +44,11 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   const { data: session } = useSession()
   const [error, setError] = useState("")
   const [userRole, setUserRole] = useState<string | null>("ADMIN")
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Populate form when editing
   useEffect(() => {
@@ -64,6 +69,12 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         max_stock_level: product.max_stock_level?.toString() || "1000",
         requires_prescription: product.requires_prescription || false,
       })
+      
+      // Set existing image URL if available
+      if (product.image_url) {
+        setImageUrl(product.image_url)
+        setImagePreview(product.image_url)
+      }
     } 
     // else {
     //   // Reset form for add mode
@@ -102,6 +113,56 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
     setError("")
   }
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file')
+      return
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size must be less than 10MB')
+      return
+    }
+
+    setImageFile(file)
+    setError("")
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setImageUrl(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const generateBarcode = () => {
+    // Generate a random 13-digit barcode
+    const barcode = Math.floor(1000000000000 + Math.random() * 9000000000000).toString()
+    setFormData(prev => ({ ...prev, barcode }))
+    toast.success('Barcode generated successfully!')
+  }
+
+  const generateQRCode = () => {
+    // Generate a random QR code string
+    const qrCode = `QR${Date.now()}${Math.floor(Math.random() * 1000)}`
+    setFormData(prev => ({ ...prev, qr_code: qrCode }))
+    toast.success('QR Code generated successfully!')
+  }
+
   const validateForm = () => {
     if (!formData.name.trim()) {
       setError("Product name is required")
@@ -133,6 +194,23 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
     setError("")
 
     try {
+      let finalImageUrl = imageUrl
+
+      // Upload image if a new file is selected
+      if (imageFile && !imageUrl) {
+        setIsUploadingImage(true)
+        try {
+          const result = await inventoryService.uploadProductImage(imageFile)
+          finalImageUrl = result.url
+        } catch (error: any) {
+          setError(error.message || 'Failed to upload image')
+          toast.error(error.message || 'Failed to upload image')
+          return
+        } finally {
+          setIsUploadingImage(false)
+        }
+      }
+
       const productData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -148,6 +226,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         min_stock_level: Number.parseInt(formData.min_stock_level) || 10,
         max_stock_level: Number.parseInt(formData.max_stock_level) || 1000,
         requires_prescription: formData.requires_prescription,
+        image_url: finalImageUrl || undefined,
       }
 
       let result: Product
@@ -194,6 +273,12 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       requires_prescription: false,
     })
     setError("")
+    setImageFile(null)
+    setImagePreview(null)
+    setImageUrl(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const handleClose = () => {
@@ -343,6 +428,76 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
               </div>
             </div>
 
+            {/* Product Image */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
+                Product Image
+              </h3>
+              <div className="space-y-4">
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="relative inline-block">
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Upload Area */}
+                <div className="space-y-3">
+                  <Label htmlFor="image" className="text-sm font-medium">
+                    Product Image
+                  </Label>
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-teal-400 transition-colors">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      id="image"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={isUploadingImage}
+                    />
+                    <div className="space-y-2">
+                      {isUploadingImage ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Uploading...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <ImageIcon className="w-8 h-8 text-gray-400 mx-auto" />
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="text-teal-600 hover:text-teal-700 font-medium text-sm"
+                            >
+                              Click to upload
+                            </button>
+                            <span className="text-gray-500 text-sm"> or drag and drop</span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, GIF up to 10MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Identification */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -354,26 +509,48 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
                   <Label htmlFor="barcode" className="text-sm font-medium">
                     Barcode
                   </Label>
-                  <Input
-                    id="barcode"
-                    value={formData.barcode}
-                    onChange={(e) => handleInputChange("barcode", e.target.value)}
-                    placeholder="e.g., 1234567890123"
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      id="barcode"
+                      value={formData.barcode}
+                      onChange={(e) => handleInputChange("barcode", e.target.value)}
+                      placeholder="e.g., 1234567890123"
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={generateBarcode}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      <ScanLine className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div>
                   <Label htmlFor="qr_code" className="text-sm font-medium">
                     QR Code
                   </Label>
-                  <Input
-                    id="qr_code"
-                    value={formData.qr_code}
-                    onChange={(e) => handleInputChange("qr_code", e.target.value)}
-                    placeholder="QR code data"
-                    className="mt-1.5"
-                  />
+                  <div className="relative mt-1.5">
+                    <Input
+                      id="qr_code"
+                      value={formData.qr_code}
+                      onChange={(e) => handleInputChange("qr_code", e.target.value)}
+                      placeholder="QR code data"
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={generateQRCode}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      <QrCode className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -532,11 +709,11 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
-              {isLoading ? (
+            <Button onClick={handleSave} disabled={isLoading || isUploadingImage} className="bg-teal-600 hover:bg-teal-700 text-white">
+              {isLoading || isUploadingImage ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Saving...
+                  {isUploadingImage ? 'Uploading image...' : 'Saving...'}
                 </>
               ) : (
                 <>
