@@ -1,6 +1,7 @@
 "use client"
 import { motion } from "motion/react"
 import { Pill, BarChart3, ShieldCheck, Network, Star } from "lucide-react"
+import Image from "next/image"
 
 const BrandingPanel = () => {
   const features = [
@@ -48,10 +49,10 @@ const BrandingPanel = () => {
         >
           {/* Logo */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="w-14 h-14 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-              <Pill className="w-7 h-7" />
+            <div>
+              <Image src="/logo.png" alt="logo" width={60} height={60} />
             </div>
-            <h1 className="text-4xl font-bold mb-2">Pharmy</h1>
+            <h1 className="text-4xl mt-2 font-bold mb-2">Pharmy</h1>
             <p className="text-base text-white/90">AI-Powered Pharmacy Management System</p>
           </div>
         </motion.div>

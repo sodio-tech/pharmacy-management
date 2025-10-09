@@ -1,6 +1,5 @@
 "use client"
 import LoginForm from "../../_components/login-form"
-import SocialProviders from "../../_components/SocialProviders"
 import { motion } from "motion/react"
 import Link from "next/link"
 
@@ -28,7 +27,7 @@ export default function LoginPage() {
                 <LoginForm />
 
                 {/* Divider */}
-                <motion.div
+                {/* <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
@@ -43,11 +42,10 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* Social Providers */}
                     <div className="mt-6">
                         <SocialProviders />
                     </div>
-                </motion.div>
+                </motion.div> */}
 
                 {/* Sign Up Link */}
                 <motion.p
