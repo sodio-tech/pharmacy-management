@@ -124,6 +124,8 @@ export function InventoryTable({
     )
   }
 
+  console.log(products,"products")
+
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
