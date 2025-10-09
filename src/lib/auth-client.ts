@@ -1,8 +1,9 @@
 import { createAuthClient } from "better-auth/react";
 import { twoFactorClient } from "better-auth/client/plugins";
+import { API } from "@/app/utils/constants";
 
 export const authClient = createAuthClient({
-  baseURL: "http://localhost:8080",
+  baseURL: API,
   plugins: [
     twoFactorClient(),
   ],

@@ -1,41 +1,14 @@
-"use client";
-
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 import LayoutSkeleton from "@/components/layout-skeleton";
 import DynamicHeader from "@/components/DynamicHeader";
 import { Button } from "@/components/ui/button";
 import {
     Bell,
     HelpCircle,
-    User,
-    Shield,
-    CreditCard,
-    Building2,
-    BellRing,
 } from "lucide-react";
-import Profile from "./components/Profile";
-import Security from "./components/Security";
-import Organization from "./components/Organization";
-import Subscription from "./components/Subscription";
-
-type TabType =
-    | "profile"
-    | "security"
-    | "subscription"
-    | "organization"
+import ProfileContent from "./components/ProfileContent";
 
 export default function AdminProfilePage() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const activeTab = (searchParams.get("tab") as TabType) || "profile";
-
-    const tabs = [
-        { id: "profile" as TabType, label: "Profile", icon: User },
-        { id: "security" as TabType, label: "Security", icon: Shield },
-        { id: "subscription" as TabType, label: "Subscription", icon: CreditCard },
-        { id: "organization" as TabType, label: "Organization", icon: Building2 },
-    ];
-
     return (
         <LayoutSkeleton
             header={
@@ -58,42 +31,9 @@ export default function AdminProfilePage() {
                 />
             }
         >
-            <div className="max-w-7xl mx-auto">
-                {/* Tabs Navigation */}
-                <div className="border-b border-[#e5e7eb] -mx-6 px-6">
-                    <div className="flex gap-8">
-                        {tabs.map((tab) => {
-                            const Icon = tab.icon;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => router.push(`?tab=${tab.id}`)}
-                                    className={`flex items-center gap-2 py-4 border-b-2 transition-colors ${activeTab === tab.id
-                                            ? "border-[#0f766e] text-[#0f766e]"
-                                            : "border-transparent text-[#6b7280] hover:text-[#374151]"
-                                        }`}
-                                >
-                                    <Icon className="w-4 h-4" />
-                                    <span className="font-medium">{tab.label}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Profile Content */}
-                {activeTab === "profile" && <Profile />}
-
-                {activeTab === "security" && (
-                    <Security />
-                )}
-                {activeTab === "subscription" && (
-                    <Subscription />
-                )}
-                {activeTab === "organization" && (
-                    <Organization />
-                )}
-            </div>
+            <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}>
+                <ProfileContent />
+            </Suspense>
         </LayoutSkeleton>
     );
 }

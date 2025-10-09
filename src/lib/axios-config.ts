@@ -1,7 +1,8 @@
+import { API } from '@/app/utils/constants';
 import axios from 'axios';
 
 // Backend API base URL
-const BACKEND_API_BASE = process.env.NEXT_PUBLIC_API || 'http://localhost:8080/api';
+const BACKEND_API_BASE = `${API}/api`;
 
 // Create axios instance for backend API calls
 export const backendApi = axios.create({
