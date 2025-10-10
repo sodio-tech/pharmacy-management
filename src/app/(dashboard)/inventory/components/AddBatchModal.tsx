@@ -65,6 +65,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
         sellingPrice: product.selling_price || product.unit_price,
       }))
 
+      // Fetch suppliers
       const suppliers = await supplierService.getSuppliers()
       setSuppliers(suppliers)
       
@@ -74,10 +75,28 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
           ...prev,
           supplierId: suppliers[0].id,
         }))
+      } else {
+        toast.warning("No suppliers found. Please add suppliers first before creating batches.")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading data:", error)
-      toast.error("Error loading data")
+      
+      // Show specific error messages based on the error type
+      if (error.message) {
+        toast.error(error.message)
+      } else if (error.response?.status === 401) {
+        toast.error("Authentication required. Please log in again.")
+      } else if (error.response?.status === 403) {
+        toast.error("You do not have permission to access this data.")
+      } else if (error.response?.status === 404) {
+        toast.error("Product or supplier not found. Please check your data.")
+      } else if (error.response?.status >= 500) {
+        toast.error("Server error occurred. Please try again later.")
+      } else if (!error.response) {
+        toast.error("Network error. Please check your connection and try again.")
+      } else {
+        toast.error("Failed to load data. Please try again.")
+      }
     } finally {
       setLoadingData(false)
     }
@@ -145,7 +164,23 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
       onSuccess()
     } catch (error: any) {
       console.error("Error creating batch:", error)
-      toast.error(error.message || "Failed to create batch")
+      
+      // Show specific error messages based on the error type
+      if (error.message) {
+        toast.error(error.message)
+      } else if (error.response?.status === 401) {
+        toast.error("Authentication required. Please log in again.")
+      } else if (error.response?.status === 403) {
+        toast.error("You do not have permission to create batches.")
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.error || "Invalid batch data. Please check your inputs.")
+      } else if (error.response?.status >= 500) {
+        toast.error("Server error occurred while creating batch. Please try again later.")
+      } else if (!error.response) {
+        toast.error("Network error. Please check your connection and try again.")
+      } else {
+        toast.error("Failed to create batch. Please try again.")
+      }
     } finally {
       setLoading(false)
     }

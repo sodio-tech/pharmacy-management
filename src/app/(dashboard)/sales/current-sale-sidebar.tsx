@@ -9,6 +9,7 @@ import { X, Plus, Minus, CreditCard, Wallet, Smartphone, Banknote, User, Camera 
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
+import { Customer } from "@/services/salesService"
 
 interface CustomerData {
   id: string
@@ -33,11 +34,14 @@ export function CurrentSaleSidebar() {
     getCartSubtotal,
     getCartTax,
     getCartDiscount,
-    getItemCount
+    getItemCount,
+    processCheckout,
+    isProcessing
   } = useCart()
 
-  const [customer, setCustomer] = useState<CustomerData | null>(null)
+  const [customer, setCustomer] = useState<Customer | null>(null)
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('CASH')
 
   const subtotal = getCartSubtotal()
   const tax = getCartTax()
@@ -45,7 +49,7 @@ export function CurrentSaleSidebar() {
   const total = getCartTotal()
   const itemCount = getItemCount()
 
-  const handleSaveCustomer = (customerData: CustomerData) => {
+  const handleSaveCustomer = (customerData: Customer) => {
     setCustomer(customerData)
   }
 
@@ -58,10 +62,10 @@ export function CurrentSaleSidebar() {
   }
 
   const paymentMethods = [
-    { name: "Cash", icon: Banknote, active: true },
-    { name: "Card", icon: CreditCard, active: false },
-    { name: "UPI", icon: Smartphone, active: false },
-    { name: "Wallet", icon: Wallet, active: false },
+    { name: "Cash", value: "CASH", icon: Banknote },
+    { name: "Card", value: "CARD", icon: CreditCard },
+    { name: "UPI", value: "UPI", icon: Smartphone },
+    { name: "Wallet", value: "WALLET", icon: Wallet },
   ]
 
   return (
@@ -76,7 +80,7 @@ export function CurrentSaleSidebar() {
                   <p className="text-sm text-muted-foreground">{itemCount} item{itemCount !== 1 ? 's' : ''} in cart</p>
                 )}
                 {customer && (
-                  <p className="text-sm text-teal-600 font-medium">Customer: {customer.patientName}</p>
+                  <p className="text-sm text-teal-600 font-medium">Customer: {customer.patient_name}</p>
                 )}
               </div>
             </div>
@@ -94,16 +98,16 @@ export function CurrentSaleSidebar() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={customer.prescriptionPhoto} />
+                      <AvatarImage src={customer.prescription_photo} />
                       <AvatarFallback>
-                        {customer.patientName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        {customer.patient_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold text-base">{customer.patientName}</p>
-                      <p className="text-sm text-muted-foreground">{customer.patientPhone}</p>
-                      {customer.patientEmail && (
-                        <p className="text-xs text-muted-foreground">{customer.patientEmail}</p>
+                      <p className="font-semibold text-base">{customer.patient_name}</p>
+                      <p className="text-sm text-muted-foreground">{customer.patient_phone}</p>
+                      {customer.patient_email && (
+                        <p className="text-xs text-muted-foreground">{customer.patient_email}</p>
                       )}
                     </div>
                   </div>
@@ -121,18 +125,18 @@ export function CurrentSaleSidebar() {
                 <div className="pl-15 space-y-1">
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">Dr. {customer.doctorName}</p>
+                    <p className="text-sm font-medium">Dr. {customer.doctor_name}</p>
                   </div>
-                  {customer.doctorLicense && (
-                    <p className="text-xs text-muted-foreground pl-6">License: {customer.doctorLicense}</p>
+                  {customer.doctor_license && (
+                    <p className="text-xs text-muted-foreground pl-6">License: {customer.doctor_license}</p>
                   )}
-                  {customer.doctorPhone && (
-                    <p className="text-xs text-muted-foreground pl-6">Phone: {customer.doctorPhone}</p>
+                  {customer.doctor_phone && (
+                    <p className="text-xs text-muted-foreground pl-6">Phone: {customer.doctor_phone}</p>
                   )}
                 </div>
 
                 {/* Prescription Photo Indicator */}
-                {customer.prescriptionPhoto && (
+                {customer.prescription_photo && (
                   <div className="flex items-center space-x-2 pl-15">
                     <Camera className="h-4 w-4 text-green-600" />
                     <p className="text-xs text-green-600">Prescription photo attached</p>
@@ -271,11 +275,13 @@ export function CurrentSaleSidebar() {
             <div className="grid grid-cols-2 gap-3">
               {paymentMethods.map((method, index) => {
                 const Icon = method.icon
+                const isActive = selectedPaymentMethod === method.value
                 return (
                   <Button
                     key={index}
-                    variant={method.active ? "default" : "outline"}
-                    className={`h-20 flex-col space-y-2 ${method.active ? "bg-teal-600 hover:bg-teal-700" : ""}`}
+                    variant={isActive ? "default" : "outline"}
+                    className={`h-20 flex-col space-y-2 ${isActive ? "bg-teal-600 hover:bg-teal-700" : ""}`}
+                    onClick={() => setSelectedPaymentMethod(method.value)}
                   >
                     <Icon className="h-6 w-6" />
                     <span className="text-sm font-medium">{method.name}</span>
@@ -289,22 +295,22 @@ export function CurrentSaleSidebar() {
           <div className="space-y-3 pt-2">
             <Button 
               className="w-full bg-teal-600 hover:bg-teal-700 h-14 text-lg font-bold shadow-lg hover:shadow-xl transition-all"
-              disabled={cartItems.length === 0}
-              onClick={() => {
+              disabled={cartItems.length === 0 || isProcessing}
+              onClick={async () => {
                 if (!customer) {
                   toast.error('Please add customer information before completing the sale')
                   return
                 }
                 
-                // TODO: Implement checkout logic with customer data
-                console.log('Sale completed with customer:', customer)
-                console.log('Cart items:', cartItems)
-                toast.success('Sale completed successfully!')
-                clearCart()
-                setCustomer(null) // Clear customer after sale
+                try {
+                  await processCheckout(customer, selectedPaymentMethod)
+                  setCustomer(null) // Clear customer after sale
+                } catch (error) {
+                  // Error is already handled in the processCheckout function
+                }
               }}
             >
-              Complete Sale - ₹{Number(total).toFixed(2)}
+              {isProcessing ? 'Processing...' : `Complete Sale - ₹${Number(total).toFixed(2)}`}
             </Button>
             <div className="grid grid-cols-2 gap-3">
               <Button variant="outline" className="h-11" disabled={cartItems.length === 0}>

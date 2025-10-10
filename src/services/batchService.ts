@@ -62,7 +62,24 @@ class BatchService {
       const response = await backendApi.post("/batches", batchData)
       return response.data.data
     } catch (error: any) {
-      throw new Error(error.response.data.error || 'Failed to create batch')
+      console.error('Error creating batch:', error)
+      
+      // Provide more specific error messages
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in again.')
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to create batches.')
+      } else if (error.response?.status === 400) {
+        throw new Error(error.response?.data?.error || 'Invalid batch data. Please check your inputs.')
+      } else if (error.response?.status === 404) {
+        throw new Error('Product or supplier not found. Please check your data.')
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error occurred while creating batch. Please try again later.')
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        throw new Error('Network error. Please check your internet connection and try again.')
+      } else {
+        throw new Error(error.response?.data?.error || 'Failed to create batch. Please try again.')
+      }
     }
   }
 

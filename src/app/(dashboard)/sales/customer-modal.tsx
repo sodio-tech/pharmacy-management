@@ -6,41 +6,29 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Upload, Camera, User, Phone, Mail, Stethoscope, FileText } from "lucide-react"
+import { X, Upload, Camera, User, Stethoscope, FileText } from "lucide-react"
 import { toast } from "react-toastify"
-
-interface CustomerData {
-  id: string
-  patientName: string
-  patientPhone: string
-  patientEmail: string
-  doctorName: string
-  doctorLicense?: string
-  doctorPhone?: string
-  prescriptionPhoto?: string
-  prescriptionText?: string
-  createdAt: string
-}
+import { Customer } from "@/services/salesService"
 
 interface CustomerModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (customerData: CustomerData) => void
-  existingCustomer?: CustomerData | null
+  onSave: (customerData: Customer) => void
+  existingCustomer?: Customer | null
 }
 
 export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: CustomerModalProps) {
   const [formData, setFormData] = useState({
-    patientName: existingCustomer?.patientName || "",
-    patientPhone: existingCustomer?.patientPhone || "",
-    patientEmail: existingCustomer?.patientEmail || "",
-    doctorName: existingCustomer?.doctorName || "",
-    doctorLicense: existingCustomer?.doctorLicense || "",
-    doctorPhone: existingCustomer?.doctorPhone || "",
-    prescriptionText: existingCustomer?.prescriptionText || ""
+    patient_name: existingCustomer?.patient_name || "Ayush Dixit",
+    patient_phone: existingCustomer?.patient_phone || "7524048480",
+    patient_email: existingCustomer?.patient_email || "fsayush100@gmail.com",
+    doctor_name: existingCustomer?.doctor_name || "Rajesh Kumar",
+    doctor_license: existingCustomer?.doctor_license || "DL-1234567",
+    doctor_phone: existingCustomer?.doctor_phone || "72723939823",
+    prescription_text: existingCustomer?.prescription_text || "Just take medicine once a day"
   })
 
-  const [prescriptionPhoto, setPrescriptionPhoto] = useState<string | null>(existingCustomer?.prescriptionPhoto || null)
+  const [prescriptionPhoto, setPrescriptionPhoto] = useState<string | null>(existingCustomer?.prescription_photo || null)
   const [isUploading, setIsUploading] = useState(false)
 
   const handleInputChange = (field: string, value: string) => {
@@ -65,11 +53,8 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       toast.error('File size must be less than 5MB')
       return
     }
-
     setIsUploading(true)
     try {
-      // Convert to base64 for demo purposes
-      // In production, you would upload to S3 or your preferred storage
       const reader = new FileReader()
       reader.onload = (e) => {
         setPrescriptionPhoto(e.target?.result as string)
@@ -86,30 +71,30 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
 
   const handleSave = () => {
     // Validate required fields
-    if (!formData.patientName.trim()) {
+    if (!formData.patient_name.trim()) {
       toast.error('Patient name is required')
       return
     }
-    if (!formData.patientPhone.trim()) {
+    if (!formData.patient_phone.trim()) {
       toast.error('Patient phone number is required')
       return
     }
-    if (!formData.doctorName.trim()) {
+    if (!formData.doctor_name.trim()) {
       toast.error('Doctor name is required')
       return
     }
 
-    const customerData: CustomerData = {
-      id: existingCustomer?.id || `customer_${Date.now()}`,
-      patientName: formData.patientName.trim(),
-      patientPhone: formData.patientPhone.trim(),
-      patientEmail: formData.patientEmail.trim(),
-      doctorName: formData.doctorName.trim(),
-      doctorLicense: formData.doctorLicense.trim(),
-      doctorPhone: formData.doctorPhone.trim(),
-      prescriptionPhoto: prescriptionPhoto || undefined,
-      prescriptionText: formData.prescriptionText.trim(),
-      createdAt: existingCustomer?.createdAt || new Date().toISOString()
+    const customerData: Customer = {
+      ...(existingCustomer?.id && { id: existingCustomer.id }), // Only include ID if it's an existing customer
+      patient_name: formData.patient_name.trim(),
+      patient_phone: formData.patient_phone.trim(),
+      patient_email: formData.patient_email.trim(),
+      doctor_name: formData.doctor_name.trim(),
+      doctor_license: formData.doctor_license.trim(),
+      doctor_phone: formData.doctor_phone.trim(),
+      prescription_photo: prescriptionPhoto || undefined,
+      prescription_text: formData.prescription_text.trim(),
+      ...(existingCustomer?.created_at && { created_at: existingCustomer.created_at })
     }
 
     onSave(customerData)
@@ -141,32 +126,32 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="patientName">Patient Name *</Label>
+                <Label htmlFor="patient_name">Patient Name *</Label>
                 <Input
-                  id="patientName"
-                  value={formData.patientName}
-                  onChange={(e) => handleInputChange('patientName', e.target.value)}
+                  id="patient_name"
+                  value={formData.patient_name}
+                  onChange={(e) => handleInputChange('patient_name', e.target.value)}
                   placeholder="Enter patient name"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="patientPhone">Phone Number *</Label>
+                <Label htmlFor="patient_phone">Phone Number *</Label>
                 <Input
-                  id="patientPhone"
-                  value={formData.patientPhone}
-                  onChange={(e) => handleInputChange('patientPhone', e.target.value)}
+                  id="patient_phone"
+                  value={formData.patient_phone}
+                  onChange={(e) => handleInputChange('patient_phone', e.target.value)}
                   placeholder="+91 98765 43210"
                 />
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="patientEmail">Email Address</Label>
+                <Label htmlFor="patient_email">Email Address</Label>
                 <Input
-                  id="patientEmail"
+                  id="patient_email"
                   type="email"
-                  value={formData.patientEmail}
-                  onChange={(e) => handleInputChange('patientEmail', e.target.value)}
+                  value={formData.patient_email}
+                  onChange={(e) => handleInputChange('patient_email', e.target.value)}
                   placeholder="patient@example.com"
                 />
               </div>
@@ -182,31 +167,31 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="doctorName">Doctor Name *</Label>
+                <Label htmlFor="doctor_name">Doctor Name *</Label>
                 <Input
-                  id="doctorName"
-                  value={formData.doctorName}
-                  onChange={(e) => handleInputChange('doctorName', e.target.value)}
+                  id="doctor_name"
+                  value={formData.doctor_name}
+                  onChange={(e) => handleInputChange('doctor_name', e.target.value)}
                   placeholder="Dr. John Smith"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="doctorLicense">License Number</Label>
+                <Label htmlFor="doctor_license">License Number</Label>
                 <Input
-                  id="doctorLicense"
-                  value={formData.doctorLicense}
-                  onChange={(e) => handleInputChange('doctorLicense', e.target.value)}
+                  id="doctor_license"
+                  value={formData.doctor_license}
+                  onChange={(e) => handleInputChange('doctor_license', e.target.value)}
                   placeholder="MD12345"
                 />
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="doctorPhone">Doctor Phone</Label>
+                <Label htmlFor="doctor_phone">Doctor Phone</Label>
                 <Input
-                  id="doctorPhone"
-                  value={formData.doctorPhone}
-                  onChange={(e) => handleInputChange('doctorPhone', e.target.value)}
+                  id="doctor_phone"
+                  value={formData.doctor_phone}
+                  onChange={(e) => handleInputChange('doctor_phone', e.target.value)}
                   placeholder="+91 98765 43210"
                 />
               </div>
@@ -276,11 +261,11 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="prescriptionText">Additional Notes</Label>
+              <Label htmlFor="prescription_text">Additional Notes</Label>
               <Textarea
-                id="prescriptionText"
-                value={formData.prescriptionText}
-                onChange={(e) => handleInputChange('prescriptionText', e.target.value)}
+                id="prescription_text"
+                value={formData.prescription_text}
+                onChange={(e) => handleInputChange('prescription_text', e.target.value)}
                 placeholder="Enter any additional prescription notes or instructions..."
                 rows={3}
               />

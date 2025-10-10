@@ -169,9 +169,23 @@ class InventoryService {
     try {
       const response = await backendApi.get(`/products/${productId}`);
       return response.data.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching product:', error);
-      throw new Error('Failed to fetch product');
+      
+      // Provide more specific error messages
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in again.')
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to view products.')
+      } else if (error.response?.status === 404) {
+        throw new Error('Product not found. Please check the product ID.')
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error occurred while fetching product. Please try again later.')
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        throw new Error('Network error. Please check your internet connection and try again.')
+      } else {
+        throw new Error(error.response?.data?.error || 'Failed to fetch product. Please try again.')
+      }
     }
   }
 

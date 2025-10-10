@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { Product } from '@/services/inventoryService'
+import { salesService, Customer } from '@/services/salesService'
 import { toast } from 'react-toastify'
 
 export interface CartItem {
@@ -23,6 +24,8 @@ interface CartContextType {
   getCartTax: () => number
   getCartDiscount: () => number
   getItemCount: () => number
+  processCheckout: (customer: Customer, paymentMethod: string, notes?: string) => Promise<void>
+  isProcessing: boolean
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -41,6 +44,7 @@ interface CartProviderProps {
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prevItems => {
@@ -124,6 +128,25 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     return cartItems.reduce((total, item) => total + item.quantity, 0)
   }
 
+  const processCheckout = async (customer: Customer, paymentMethod: string, notes?: string) => {
+    if (cartItems.length === 0) {
+      toast.error('Cart is empty')
+      return
+    }
+
+    setIsProcessing(true)
+    try {
+      const sale = await salesService.processCheckout(cartItems, customer, paymentMethod, notes)
+      toast.success(`Sale completed successfully! Sale #${sale.sale_number}`)
+      clearCart()
+    } catch (error: any) {
+      console.error('Checkout error:', error)
+      toast.error(error.response?.data?.message || 'Failed to process checkout')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const value: CartContextType = {
     cartItems,
     addToCart,
@@ -134,7 +157,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     getCartSubtotal,
     getCartTax,
     getCartDiscount,
-    getItemCount
+    getItemCount,
+    processCheckout,
+    isProcessing
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

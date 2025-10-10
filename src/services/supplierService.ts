@@ -8,10 +8,8 @@ export interface Supplier {
   phone?: string
   email?: string
   address?: string
-  city?: string
-  state?: string
-  pincode?: string
   gst_number?: string
+  license_number?: string
   is_active?: boolean
   created_at?: string
   updated_at?: string
@@ -23,10 +21,8 @@ export interface CreateSupplierRequest {
   phone?: string
   email?: string
   address?: string
-  city?: string
-  state?: string
-  pincode?: string
   gst_number?: string
+  license_number?: string
 }
 
 export interface UpdateSupplierRequest {
@@ -35,10 +31,8 @@ export interface UpdateSupplierRequest {
   phone?: string
   email?: string
   address?: string
-  city?: string
-  state?: string
-  pincode?: string
   gst_number?: string
+  license_number?: string
 }
 
 class SupplierService {
@@ -51,9 +45,23 @@ class SupplierService {
     try {
       const response = await backendApi.get(this.baseUrl)
       return response.data.data || []
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching suppliers:', error)
-      throw error
+      
+      // Provide more specific error messages
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please log in again.')
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to view suppliers.')
+      } else if (error.response?.status === 404) {
+        throw new Error('Suppliers endpoint not found. Please check your connection.')
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error occurred while fetching suppliers. Please try again later.')
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        throw new Error('Network error. Please check your internet connection and try again.')
+      } else {
+        throw new Error(error.response?.data?.error || 'Failed to fetch suppliers. Please try again.')
+      }
     }
   }
 

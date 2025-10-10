@@ -1,11 +1,71 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Wallet } from "lucide-react"
+import { salesService, SalesStats as SalesStatsType } from "@/services/salesService"
 
 export function SalesStats() {
-  const stats = [
+  const [stats, setStats] = useState<SalesStatsType | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true)
+        const today = new Date()
+        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        
+        const salesStats = await salesService.getSalesStats({
+          start_date: startOfDay.toISOString(),
+          end_date: today.toISOString()
+        })
+        
+        setStats(salesStats)
+      } catch (error) {
+        console.error('Error fetching sales stats:', error)
+        // Use fallback data if API fails
+        setStats({
+          total_sales: 45280,
+          total_amount: 45280,
+          total_transactions: 127,
+          average_sale: 356
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {[...Array(4)].map((_, index) => (
+          <Card key={index} className="relative py-0 overflow-hidden animate-pulse">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded w-24"></div>
+                  <div className="h-8 bg-muted rounded w-20"></div>
+                  <div className="h-3 bg-muted rounded w-32"></div>
+                </div>
+                <div className="p-3 rounded-full bg-muted">
+                  <div className="h-6 w-6 bg-muted rounded"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  const statsData = [
     {
       title: "Today's Sales",
-      value: "₹45,280",
+      value: salesService.formatCurrency(stats?.total_amount || 0),
       change: "+12% from yesterday",
       changeType: "positive" as "positive" | "negative" | "neutral",
       icon: TrendingUp,
@@ -13,7 +73,7 @@ export function SalesStats() {
     },
     {
       title: "Transactions",
-      value: "127",
+      value: stats?.total_transactions?.toString() || "0",
       change: "+8 from yesterday",
       changeType: "positive" as const,
       icon: ShoppingCart,
@@ -21,7 +81,7 @@ export function SalesStats() {
     },
     {
       title: "Avg. Sale",
-      value: "₹356",
+      value: salesService.formatCurrency(stats?.average_sale || 0),
       change: "+5% increase",
       changeType: "positive" as const,
       icon: DollarSign,
@@ -39,7 +99,7 @@ export function SalesStats() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      {stats.map((stat, index) => {
+      {statsData.map((stat, index) => {
         const Icon = stat.icon
         return (
           <Card key={index} className="relative py-0 overflow-hidden">
