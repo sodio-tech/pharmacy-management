@@ -1,0 +1,88 @@
+# Sample workflow for building and deploying a Next.js site to GitHub Pages
+#
+# To get started with Next.js see: https://nextjs.org/docs/getting-started
+#
+name: Deploy Next.js site to Pages
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm i --legacy-peer-deps && npm install apexcharts --legacy-peer-deps
+      - name: Build with Next.js
+        run:  npm run build
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          BETTER_AUTH_CLIENT_ID: ${{ secrets.BETTER_AUTH_CLIENT_ID }}
+          BETTER_AUTH_CLIENT_SECRET: ${{ secrets.BETTER_AUTH_CLIENT_SECRET }}
+          BETTER_AUTH_REDIRECT_URI: ${{ secrets.BETTER_AUTH_REDIRECT_URI }}
+          BETTER_AUTH_POST_LOGIN_REDIRECT_URI: ${{ secrets.BETTER_AUTH_POST_LOGIN_REDIRECT_URI }}
+          BETTER_AUTH_POST_LOGOUT_REDIRECT_URI: ${{ secrets.BETTER_AUTH_POST_LOGOUT_REDIRECT_URI }}
+          NEXT_PUBLIC_API: ${{ secrets.NEXT_PUBLIC_API }}
+
+      - name: Restore build cache
+        uses: actions/cache@v3
+        id: build-cache
+        with:
+          path: .next/cache
+          key: nextjs-build-${{ github.sha }}
+          restore-keys: |
+            nextjs-build-
+
+      - name: Save build cache
+        uses: actions/cache@v3
+        with:
+          path: .next/cache
+          key: nextjs-build-${{ github.sha }}
+
+
+
+      - name: Archive production build
+        run: |
+          zip -r nextjs-build.zip .next package.json package-lock.json
+  
+
+      - name: Copy ZIP to server
+        uses: appleboy/scp-action@v0.1.5
+        with:
+          host: ${{ secrets.DEV_SERVER_IP }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
+          source: "nextjs-build.zip"
+          target: "/home/deploy/pharmacy-management/"
+
+
+      - name: Restart Application
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.DEV_SERVER_IP }}
+          username: ${{ secrets.DEV_SERVER_USER }}
+          key: ${{ secrets.DEV_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/deploy/pharmacy-management
+            unzip -o nextjs-build.zip
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            npm i --legacy-peer-deps
+            pm2 restart pharmacy || pm2 start npm --name "pharmacy" -- start
+            rm nextjs-build.zip
