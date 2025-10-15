@@ -37,7 +37,8 @@ export function Header() {
           {/* Actions */}
           <div className="flex items-center gap-4">
             <Button variant="ghost" className="text-sm text-[#4b5563] hover:text-[#111827]">
-              Sign In
+              <Link href="/login">  Sign In</Link>
+
             </Button>
             <Button className="bg-[#0f766e] text-white hover:bg-[#0f766e]/90">Book Demo</Button>
           </div>
