@@ -4,6 +4,11 @@ export const DEFAULT_RESTRICTED_REDIRECT_PATH = "/login";
 
 export const RESTRICTED_PATHS = [
     "/",
+    "/about",
+    "/pricing",
+    "/features",
+    "/reviews",
+    "/contact",
     "/login",
     "/signup",
     "/reset-password",
