@@ -26,8 +26,8 @@ export function Header() {
             <Link href="/reviews" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
               Reviews
             </Link>
-            <Link href="/faq" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              FAQ
+            <Link href="/about" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
+              About
             </Link>
             <Link href="/contact" className="text-sm font-medium text-[#111827]">
               Contact
