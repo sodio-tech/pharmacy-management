@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import dashboardimage from "../../../../public/assets/pharmacy-dashboard-interface-with-metrics-and-char.jpg"
 
 export function LandingHero() {
   return (
@@ -27,15 +28,15 @@ export function LandingHero() {
             </div>
           </div>
           <div className="relative">
-            <div className="bg-white rounded-lg shadow-2xl p-4">
+          
               <Image
-                src="/pharmacy-dashboard-interface-with-metrics-and-char.jpg"
+                src={dashboardimage}
                 alt="Pharmacy Dashboard"
                 width={700}
                 height={500}
-                className="rounded-lg w-full"
+                className=" w-full"
               />
-            </div>
+           
           </div>
         </div>
       </div>

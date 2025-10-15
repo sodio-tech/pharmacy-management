@@ -1,8 +1,21 @@
+"use client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Pill } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 export function Header() {
+  const pathname = usePathname()
+
+  const navItems = [
+    { href: "/features", label: "Features" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/privacy", label: "Privacy" },
+    { href: "/about", label: "About" },
+    { href: "/contact", label: "Contact" },
+  ]
+
   return (
     <header className="border-b border-[#e5e7eb] bg-[#ffffff]">
       <div className="container mx-auto px-4 py-4">
@@ -17,21 +30,23 @@ export function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/features" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              Features
-            </Link>
-            <Link href="/pricing" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              Pricing
-            </Link>
-            <Link href="/privacy" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              Privacy
-            </Link>
-            <Link href="/about" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              About
-            </Link>
-            <Link href="/contact" className="text-sm font-medium text-[#111827]">
-              Contact
-            </Link>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "text-sm transition-colors",
+                    isActive
+                      ? "text-[#0f766e] font-medium"
+                      : "text-[#4b5563] hover:text-[#111827]"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Actions */}

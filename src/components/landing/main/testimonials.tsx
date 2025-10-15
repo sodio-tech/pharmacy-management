@@ -1,4 +1,7 @@
 import Image from "next/image"
+import client1 from "../../../../public/assets/client1.png"
+import client2 from "../../../../public/assets/client2.png"
+import client3 from "../../../../public/assets/client3.png"
 
 const testimonials = [
   {
@@ -6,20 +9,20 @@ const testimonials = [
     title: "MediCare Pharmacy",
     quote:
       "Pharmy reduced our stockouts by 40% and simplified billing across all our branches. The AI features are game-changing.",
-    image: "/professional-woman-pharmacist.png",
+    image: client3,
   },
   {
     name: "Mike Chen",
     title: "HealthPlus Pharmacy",
     quote:
       "The prescription scanning feature saves us hours daily. Our customers love the faster service and accuracy.",
-    image: "/professional-man-pharmacist.jpg",
+    image: client2,
   },
   {
     name: "Dr. Priya Patel",
     title: "Wellness Pharmacy Chain",
     quote: "Managing 12 branches was a nightmare before. Now everything is centralized and automated.",
-    image: "/professional-woman-doctor.png",
+    image: client1,
   },
 ]
 
@@ -38,7 +41,7 @@ export function Testimonials() {
             >
               <div className="flex items-center gap-3 mb-4">
                 <Image
-                  src={testimonial.image || "/placeholder.svg"}
+                  src={testimonial.image}
                   alt={testimonial.name}
                   width={60}
                   height={60}
