@@ -23,8 +23,8 @@ export function Header() {
             <Link href="/pricing" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
               Pricing
             </Link>
-            <Link href="/reviews" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
-              Reviews
+            <Link href="/privacy" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
+              Privacy
             </Link>
             <Link href="/about" className="text-sm text-[#4b5563] hover:text-[#111827] transition-colors">
               About

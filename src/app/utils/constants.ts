@@ -6,6 +6,7 @@ export const RESTRICTED_PATHS = [
     "/",
     "/about",
     "/pricing",
+    "/privacy",
     "/features",
     "/reviews",
     "/contact",
