@@ -7,6 +7,9 @@ export const authClient = createAuthClient({
   plugins: [
     twoFactorClient(),
   ],
+  fetchOptions: {
+    credentials: 'include',
+  },
 });
 
 // Export all available methods from Better Auth client
