@@ -20,4 +20,4 @@ export const RESTRICTED_PATHS = [
     "/2fa-verification"
 ];
 
-export const API = process.env.NEXT_PUBLIC_API || 'http://localhost:8080/api';
+export const API = process.env.NEXT_PUBLIC_API as string;
