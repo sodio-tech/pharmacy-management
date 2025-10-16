@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import pharmacy from "../../../../public/assets/about-landing.png"
 
 export function AboutHero() {
   return (
@@ -28,9 +29,9 @@ export function AboutHero() {
 
           {/* Right Image */}
           <div className="relative">
-            <div className="rounded-2xl overflow-hidden shadow-xl">
+            <div className="rounded-2xl overflow-hidden">
               <Image
-                src="/modern-pharmacy-interior-with-digital-displays.jpg"
+                src={pharmacy}
                 alt="Modern pharmacy with digital management displays"
                 width={600}
                 height={400}

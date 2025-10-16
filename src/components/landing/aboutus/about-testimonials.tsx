@@ -1,18 +1,20 @@
 import Image from "next/image"
+import client1 from "../../../../public/assets/client1.png"
+import client2 from "../../../../public/assets/client2.png"
 
 export function AboutTestimonials() {
   const testimonials = [
     {
       name: "Dr. Priya Patel",
       title: "Wellness Pharmacy Chain",
-      image: "/professional-woman-doctor.png",
+      image: client1,
       quote:
         "Pharmy has transformed the way we manage stock and prescriptions across our branches. It's a lifesaver for our daily operations and has significantly reduced our administrative burden.",
     },
     {
       name: "Mark Thompson",
       title: "Community Pharmacy Owner",
-      image: "/professional-man-pharmacist.jpg",
+      image: client2,
       quote:
         "The AI-powered features are incredible. OCR prescription scanning alone saves us hours every day, and our customers appreciate the faster, more accurate service.",
     },

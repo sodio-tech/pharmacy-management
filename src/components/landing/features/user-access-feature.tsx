@@ -1,5 +1,6 @@
 import { Users, Check } from "lucide-react"
 import Image from "next/image"
+import feature from "../../../../public/assets/feature1.png"
 
 export function UserAccessFeature() {
   const features = [
@@ -35,9 +36,9 @@ export function UserAccessFeature() {
 
           {/* Right Image */}
           <div className="relative">
-            <div className="relative rounded-xl overflow-hidden shadow-xl border border-[#e5e7eb]">
+            <div className="relative rounded-xl overflow-hidden ">
               <Image
-                src="/user-management-dashboard-interface.jpg"
+                src={feature}
                 alt="User management dashboard interface"
                 width={700}
                 height={500}

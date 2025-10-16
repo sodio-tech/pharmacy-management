@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { Quote } from "lucide-react"
+import pharmacist from "../../../../public/assets/client3.png"
 
 export function PricingTestimonial() {
   return (
@@ -21,7 +22,7 @@ export function PricingTestimonial() {
 
           <div className="flex items-center justify-center gap-4">
             <Image
-              src="/professional-woman-pharmacist.png"
+              src={pharmacist}
               alt="Sarah Johnson"
               width={56}
               height={56}

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react"
 import Image from "next/image"
+import feature from "../../../../public/assets/feature4.png"
 
 export function SalesBillingFeature() {
   const features = [
@@ -18,7 +19,7 @@ export function SalesBillingFeature() {
           <div className="order-2 lg:order-1">
             <div className="relative rounded-lg overflow-hidden shadow-lg">
               <Image
-                src="/sales-billing-dashboard-interface.jpg"
+                src={feature}
                 alt="Sales & Billing Dashboard Interface"
                 width={600}
                 height={400}

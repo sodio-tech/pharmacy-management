@@ -7,7 +7,6 @@ import {
     Users,
     BarChart3,
     Shield,
-    Settings,
     LogOut,
     CreditCard,
     UserCheck,
@@ -18,6 +17,7 @@ import { Button } from "./ui/button";
 import { signOut, useSession } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
+import logo from "../../public/logo.png";
 
 const sidebarItems = [
     { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
@@ -44,10 +44,10 @@ const Sidebar = () => {
             <div className="p-[22px] border-b border-[#e5e7eb]">
                 <div className="flex items-center gap-3">
                     <div>
-                        <Image src="/logo.png" alt="logo" width={45} height={45} />
+                        <Image src={logo} alt="logo" width={45} height={45} />
                     </div>
                     <div>
-                        <h1 className="font-semibold text-[#111827] text-lg">PharmaCare</h1>
+                        <h1 className="font-semibold text-[#111827] text-lg">Pharmy</h1>
                         <p className="text-sm text-[#6b7280]">Management System</p>
                     </div>
                 </div>

@@ -6,19 +6,19 @@ const contactOptions = [
     icon: Briefcase,
     title: "Sales Inquiries",
     description: "Interested in Pharmy? Our sales team can help you find the right plan for your pharmacy.",
-    email: "contact@eodie.tech",
+    email: "contact@sodio.tech",
   },
   {
     icon: Wrench,
     title: "Support",
     description: "Need help with setup or features? Our support team is available 24/7 to assist you.",
-    email: "contact@eodie.tech",
+    email: "contact@sodio.tech",
   },
   {
     icon: Mail,
     title: "General Questions",
     description: "Have a general question or feedback? We'd love to hear from you and help however we can.",
-    email: "contact@eodie.tech",
+    email: "contact@sodio.tech",
   },
 ]
 

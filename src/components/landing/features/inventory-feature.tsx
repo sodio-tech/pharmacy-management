@@ -1,5 +1,6 @@
 import { Package, Check } from "lucide-react"
 import Image from "next/image"
+import feature from "../../../../public/assets/feature2.png"
 
 export function InventoryFeature() {
   const features = [
@@ -18,7 +19,7 @@ export function InventoryFeature() {
           <div className="relative order-2 md:order-1">
             <div className="relative rounded-xl overflow-hidden shadow-xl border border-[#e5e7eb]">
               <Image
-                src="/inventory-management-dashboard-interface.jpg"
+                src={feature}
                 alt="Inventory management dashboard interface"
                 width={700}
                 height={500}

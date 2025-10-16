@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import doctor from "../../../../public/assets/doctor.png"
 
 export function FeaturesHero() {
   return (
@@ -28,9 +29,9 @@ export function FeaturesHero() {
 
           {/* Right Image */}
           <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+            <div className="relative rounded-2xl overflow-hidden">
               <Image
-                src="/pharmacist-with-clipboard-teal-background.jpg"
+                src={doctor}
                 alt="Professional pharmacist with clipboard"
                 width={600}
                 height={700}

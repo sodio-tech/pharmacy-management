@@ -1,5 +1,6 @@
 import { FileText, Check } from "lucide-react"
 import Image from "next/image"
+import feature from "../../../../public/assets/feature3.png"
 
 export function PrescriptionFeature() {
   const features = [
@@ -37,7 +38,7 @@ export function PrescriptionFeature() {
           <div className="relative">
             <div className="relative rounded-xl overflow-hidden shadow-xl border border-[#e5e7eb]">
               <Image
-                src="/prescription-management-dashboard-interface.jpg"
+                src={feature}
                 alt="Prescription management dashboard interface"
                 width={700}
                 height={500}

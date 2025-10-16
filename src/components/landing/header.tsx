@@ -1,9 +1,10 @@
 "use client"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Pill } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import logo from "../../../public/logo.png"
+import Image from "next/image"
 
 export function Header() {
   const pathname = usePathname()
@@ -11,7 +12,6 @@ export function Header() {
   const navItems = [
     { href: "/features", label: "Features" },
     { href: "/pricing", label: "Pricing" },
-    { href: "/privacy", label: "Privacy" },
     { href: "/about", label: "About" },
     { href: "/contact", label: "Contact" },
   ]
@@ -22,8 +22,8 @@ export function Header() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0f766e]">
-              <Pill className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0f766e]">
+              <Image src={logo} alt="logo" width={40} height={40} />
             </div>
             <span className="text-lg font-semibold text-[#111827]">Pharmy</span>
           </Link>
