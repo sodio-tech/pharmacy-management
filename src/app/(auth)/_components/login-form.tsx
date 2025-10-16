@@ -61,6 +61,7 @@ const LoginForm = () => {
 
                         if (!user.emailVerified) {
                             toast.error("Please verify your email before logging in.")
+                            router.push(`/email-verification?email=${encodeURIComponent(userData.email)}`)
                             return
                         }
 
