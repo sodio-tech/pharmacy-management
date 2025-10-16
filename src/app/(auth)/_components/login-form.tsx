@@ -72,6 +72,7 @@ const LoginForm = () => {
                         } else if (ctx.error.status === 401) {
                             toast.error("Incorrect email or password.")
                         } else {
+                            console.log(ctx.error,"error")
                             toast.error(ctx.error.message || "Login failed due to server error.")
                         }
                     },
