@@ -20,4 +20,5 @@ export const RESTRICTED_PATHS = [
     "/2fa-verification"
 ];
 
-export const API = process.env.NEXT_PUBLIC_API as string;
+export const API = "https://pharmacy-backend.sodio.tech" as string;
+// export const API = "http://localhost:8080" as string;
