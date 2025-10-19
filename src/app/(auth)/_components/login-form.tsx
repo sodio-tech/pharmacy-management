@@ -32,8 +32,6 @@ const LoginForm = () => {
         },
     })
 
-    console.log(process.env.NEXT_PUBLIC_API,"process.env.NEXT_PUBLIC_API")
-
     const onSubmit = async (userData: LoginFormValues) => {
         try {
             setIsLoading(true)
