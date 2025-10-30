@@ -1,5 +1,8 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Download, Printer, ChevronDown } from "lucide-react"
+import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 import { ReportsStats } from "./reports-stats"
 import { SalesTrendChart } from "./sales-trend-chart"
 import { TopSellingProducts } from "./top-selling-products"
@@ -23,28 +26,34 @@ function ReportsContent() {
 }
 
 export default function ReportsAnalytics() {
+  const reportActions: HeaderAction[] = [
+    {
+      label: "Last 30 Days",
+      icon: ChevronDown,
+      onClick: () => {},
+      variant: 'outline'
+    },
+    {
+      label: "Export Report",
+      icon: Download,
+      onClick: () => {},
+      variant: 'primary'
+    },
+    {
+      label: "Print",
+      icon: Printer,
+      onClick: () => {},
+      variant: 'secondary'
+    }
+  ]
+
   return (
     <LayoutSkeleton
       header={
         <DynamicHeader
           maintext="Reports & Analytics"
           para="Comprehensive insights and analytics for your pharmacy"
-          children={
-            <div className="flex items-center gap-3">
-              <Button variant="outline" className="gap-2 bg-transparent">
-                Last 30 Days
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-              <Button className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2">
-                <Download className="w-4 h-4" />
-                Export Report
-              </Button>
-              <Button className="bg-[#14b8a6] hover:bg-[#0f766e] text-white gap-2">
-                <Printer className="w-4 h-4" />
-                Print
-              </Button>
-            </div>
-          }
+          children={<HeaderActions actions={reportActions} />}
         />
       }
     >

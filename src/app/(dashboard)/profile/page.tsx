@@ -16,7 +16,7 @@ export default function AdminProfilePage() {
                     maintext="Admin Profile"
                     para="Manage your account, organization, and subscription"
                     children={
-                        <div className="flex items-center gap-3">
+                        <div className="hidden lg:flex items-center gap-3">
                             <Button variant="ghost" size="icon" className="relative">
                                 <Bell className="w-5 h-5 text-[#6b7280]" />
                                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#dc2626] text-white text-xs rounded-full flex items-center justify-center font-medium">

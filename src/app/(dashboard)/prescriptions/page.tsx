@@ -6,6 +6,7 @@ import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
 import { Button } from '@/components/ui/button'
 import { Download, Scan, Upload } from 'lucide-react'
+import { HeaderActions, HeaderAction } from '@/components/HeaderActions'
 import PrescriptionContent from './prescription-content'
 import { PrescriptionUpload } from './prescription-upload'
 import { PrescriptionValidation } from './prescription-validation'
@@ -329,37 +330,34 @@ const page = () => {
         );
     }
 
+    const prescriptionActions: HeaderAction[] = [
+        {
+            label: "Upload Prescription",
+            icon: Upload,
+            onClick: handleUploadClick,
+            variant: 'primary'
+        },
+        {
+            label: "Scan Prescription",
+            icon: Scan,
+            onClick: handleScanClick,
+            variant: 'secondary'
+        },
+        {
+            label: "Export",
+            icon: Download,
+            onClick: handleExportClick,
+            variant: 'tertiary'
+        }
+    ]
+
     return (
         <LayoutSkeleton
             header={
                 <DynamicHeader
                     maintext="Prescription Management"
                     para="Manage patient prescriptions and medication orders"
-                    children={
-                        <div className="flex items-center gap-3">
-                            <Button 
-                                className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2"
-                                onClick={handleUploadClick}
-                            >
-                                <Upload className="w-4 h-4" />
-                                Upload Prescription
-                            </Button>
-                            <Button 
-                                className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2"
-                                onClick={handleScanClick}
-                            >
-                                <Scan className="w-4 h-4" />
-                                Scan Prescription
-                            </Button>
-                            <Button 
-                                className="bg-[#06b6d4] hover:bg-[#0891b2] text-white gap-2"
-                                onClick={handleExportClick}
-                            >
-                                <Download className="w-4 h-4" />
-                                Export
-                            </Button>
-                        </div>
-                    }
+                    children={<HeaderActions actions={prescriptionActions} />}
                 />
             }
         >

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button";
 import { Plus, Scan, BarChart3 } from "lucide-react";
+import { HeaderActions, HeaderAction } from "@/components/HeaderActions";
 import { SalesStats } from "./sales-stats";
 import { ProductCategories } from "./product-categories";
 import { RecentTransactions } from "./recent-transactions";
@@ -46,6 +47,27 @@ function SalesContent() {
 }
 
 export default function SalesAndPOS() {
+  const salesActions: HeaderAction[] = [
+    {
+      label: "New Sale",
+      icon: Plus,
+      onClick: () => {},
+      variant: 'primary'
+    },
+    {
+      label: "Scan Barcode",
+      icon: Scan,
+      onClick: () => {},
+      variant: 'secondary'
+    },
+    {
+      label: "View Sales",
+      icon: BarChart3,
+      onClick: () => {},
+      variant: 'tertiary'
+    }
+  ]
+
   return (
     <CartProvider>
       <LayoutSkeleton
@@ -53,22 +75,7 @@ export default function SalesAndPOS() {
           <DynamicHeader
             maintext="Sales & Point of Sale"
             para="Process sales transactions and manage customer orders"
-            children={
-              <div className="flex items-center gap-3">
-                <Button className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2">
-                  <Plus className="w-4 h-4" />
-                  New Sale
-                </Button>
-                <Button className="bg-[#14b8a6] hover:bg-[#0f766e] text-white gap-2">
-                  <Scan className="w-4 h-4" />
-                  Scan Barcode
-                </Button>
-                <Button className="bg-[#06b6d4] hover:bg-[#0891b2] text-white gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  View Sales
-                </Button>
-              </div>
-            }
+            children={<HeaderActions actions={salesActions} />}
           />
         }
       >

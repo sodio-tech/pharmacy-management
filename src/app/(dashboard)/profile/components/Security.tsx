@@ -164,10 +164,8 @@ export default function Security() {
         try {
             const { data, error } = await listSessions()
             if (error) {
-                console.error("Error loading sessions:", error)
                 toast.error("Failed to load sessions")
             } else {
-                console.log(data, "sessions data")
                 setSessions(data || [])
             }
         } catch (error) {

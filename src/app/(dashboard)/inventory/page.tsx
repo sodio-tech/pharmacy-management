@@ -1,7 +1,8 @@
 
 "use client"
 import { Button } from "@/components/ui/button"
-import { Plus, Scan, Download,TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
+import { Plus, Scan, Download, TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
+import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 import { InventoryStats } from "./inventory-stats"
 import { InventoryTable } from "./inventory-table"
 import { AddProductModal } from "./add-product-modal"
@@ -76,24 +77,27 @@ function InventoryContent({
     <>
       <div className="bg-[#f9fafb]">
         {/* Tab Navigation */}
+
         <div className="mb-6 border-b border-gray-200 bg-white rounded-lg">
-          <div className="flex space-x-8 px-6">
+          <div className="flex gap-2 md:gap-4 lg:gap-8 px-4 md:px-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory">
             {tabs.map((tab) => {
               const Icon = tab.icon
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                    ? "border-teal-600 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  className={`flex items-center gap-1.5 md:gap-2 py-3 md:py-4 px-2 md:px-3 border-b-2 font-medium text-sm transition-colors whitespace-nowrap snap-start flex-shrink-0 ${activeTab === tab.id
+                      ? "border-teal-600 text-teal-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-bold rounded-full ${activeTab === tab.id ? "bg-teal-100 text-teal-800" : "bg-gray-100 text-gray-800"
-                      }`}>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <span
+                      className={`inline-flex items-center justify-center px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-bold rounded-full ${activeTab === tab.id ? "bg-teal-100 text-teal-800" : "bg-gray-100 text-gray-800"
+                        }`}
+                    >
                       {tab.count}
                     </span>
                   )}
@@ -104,21 +108,23 @@ function InventoryContent({
         </div>
 
         {/* Tab Content */}
-        {activeTab === "inventory" && (
-          <>
-            <InventoryStats />
-            <InventoryTable
-              onAddProduct={() => setIsAddProductModalOpen(true)}
-              onEditProduct={handleEditProduct}
-              onViewBatch={handleViewBatch}
-              onAddBatch={handleAddBatch}
-              canAddProducts={canAddProducts}
-            />
-          </>
-        )}
+        <div className="bg-white rounded-lg p-6">
+          {activeTab === "inventory" && (
+            <>
+              <InventoryStats />
+              <InventoryTable
+                onAddProduct={() => setIsAddProductModalOpen(true)}
+                onEditProduct={handleEditProduct}
+                onViewBatch={handleViewBatch}
+                onAddBatch={handleAddBatch}
+                canAddProducts={canAddProducts}
+              />
+            </>
+          )}
 
-        {activeTab === "alerts" && <StockAlerts />}
-        {activeTab === "batch-tracking" && <BatchTracking />}
+          {activeTab === "alerts" && <StockAlerts />}
+          {activeTab === "batch-tracking" && <BatchTracking />}
+        </div>
       </div>
 
       {/* Batch Modal */}
@@ -162,6 +168,34 @@ export default function InventoryManagement() {
   // @ts-ignore
   const canAddProducts = user?.role === 'ADMIN'
 
+  const inventoryActions: HeaderAction[] = canAddProducts ? [
+    {
+      label: "Add Product",
+      icon: Plus,
+      onClick: () => setIsAddProductModalOpen(true),
+      variant: 'primary'
+    },
+    {
+      label: "Scan Barcode",
+      icon: Scan,
+      onClick: () => setIsBarcodeScannerOpen(true),
+      variant: 'secondary'
+    },
+    {
+      label: "Export",
+      icon: Download,
+      onClick: () => { },
+      variant: 'tertiary'
+    }
+  ] : [
+    {
+      label: "Export",
+      icon: Download,
+      onClick: () => { },
+      variant: 'tertiary'
+    }
+  ]
+
   return (
     <LayoutSkeleton
       header={
@@ -169,35 +203,14 @@ export default function InventoryManagement() {
           maintext="Inventory Management"
           para="Manage your pharmacy stock and medicine inventory"
           children={
-            <div className="flex items-center gap-3">
-              {canAddProducts ? (
-                <>
-                  <Button
-                    className="bg-[#0f766e] hover:bg-[#0d6660] text-white gap-2"
-                    onClick={() => setIsAddProductModalOpen(true)}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Product
-                  </Button>
-                  <Button
-                    className="bg-[#14b8a6] hover:bg-[#0f9488] text-white gap-2"
-                    onClick={() => setIsBarcodeScannerOpen(true)}
-                  >
-                    <Scan className="w-4 h-4" />
-                    Scan Barcode
-                  </Button>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm">Read-only access</span>
+            <HeaderActions actions={inventoryActions}>
+              {!canAddProducts && (
+                <div className="flex items-center justify-center gap-2 text-gray-500 h-10 sm:h-11 text-sm">
+                  <Shield className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">Read-only access</span>
                 </div>
               )}
-              <Button className="bg-[#06b6d4] hover:bg-[#0891b2] text-white gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </Button>
-            </div>
+            </HeaderActions>
           }
         />
       }
