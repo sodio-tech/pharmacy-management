@@ -80,9 +80,9 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
   return (
     <div className="bg-white rounded-lg border border-[#e5e7eb]">
       <div className="p-6 border-b border-[#e5e7eb]">
-        <div className="flex items-center justify-between">
+        <div className="flex sm:flex-row flex-col sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-[#111827]">Recent Prescriptions</h2>
-          <div className="flex items-center gap-4 text-sm text-[#6b7280]">
+          <div className="flex mt-2 sm:mt-0 items-center sm:gap-4 gap-2 text-sm text-[#6b7280]">
             <span>Showing {items.length} of {total} prescriptions</span>
             <select 
               className="border border-[#e5e7eb] rounded px-2 py-1"

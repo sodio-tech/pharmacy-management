@@ -108,7 +108,7 @@ function InventoryContent({
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-lg p-6">
+        <div className="bg-white rounded-lg p-3 sm:p-6">
           {activeTab === "inventory" && (
             <>
               <InventoryStats />

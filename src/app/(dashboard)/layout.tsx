@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-[#f9fafb] overflow-hidden">
+    <div className="flex bg-[#f9fafb] overflow-hidden">
       <Sidebar isMobileMenuOpen={isMobileMenuOpen} onCloseMobileMenu={() => setIsMobileMenuOpen(false)} />
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <div className="lg:hidden fixed top-4 left-4 z-30">
