@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PrescriptionStats as PrescriptionStatsType } from "./types"
 import { RefreshCw } from "lucide-react"
+import { backendApi } from "@/lib/axios-config"
 
 export function PrescriptionStats() {
   const [stats, setStats] = useState<PrescriptionStatsType | null>(null);
@@ -15,11 +16,13 @@ export function PrescriptionStats() {
     try {
       setLoading(true);
       setError(null);
-      const statsData = await prescriptionService.getPrescriptionStats();
+      const response = await backendApi.get('/prescriptions/stats')
+      const statsData = response.data?.data || response.data
       setStats(statsData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch prescription stats:', error);
-      setError(error?.message || 'Failed to load prescription statistics');
+      const err = error as { message?: string; response?: { data?: { message?: string } } }
+      setError(err?.message || err?.response?.data?.message || 'Failed to load prescription statistics');
       // Set fallback data for development
       setStats({
         total_prescriptions: 0,

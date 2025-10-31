@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Package, AlertTriangle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "react-toastify"
+import { Product } from "@/types/sales"
+import { backendApi } from "@/lib/axios-config"
 
 interface AddBatchModalProps {
   productId: string
@@ -27,7 +29,21 @@ interface BatchFormData {
   sellingPrice: number
 }
 
-// Using Product from inventoryService
+interface Supplier {
+  id: string
+  name: string
+}
+
+interface CreateBatchRequest {
+  product_id: string
+  batch_number: string
+  manufacturing_date: string
+  expiry_date: string
+  initial_quantity: number
+  cost_price: number
+  supplier_id: string
+  notes?: string
+}
 
 export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalProps) {
   const [formData, setFormData] = useState<BatchFormData>({
@@ -54,8 +70,9 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
   const fetchProductAndSuppliers = async () => {
     setLoadingData(true)
     try {
-      // Fetch product data using inventory service
-      const product = await inventoryService.getProductById(productId)
+      // Fetch product data
+      const productResponse = await backendApi.get(`/products/${productId}`)
+      const product = productResponse.data?.data || productResponse.data
       setProduct(product)
       setFormData((prev) => ({
         ...prev,
@@ -63,7 +80,8 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
       }))
 
       // Fetch suppliers
-      const suppliers = await supplierService.getSuppliers()
+      const suppliersResponse = await backendApi.get('/suppliers')
+      const suppliers = suppliersResponse.data?.data || suppliersResponse.data || []
       setSuppliers(suppliers)
       
 
@@ -75,24 +93,24 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
       } else {
         toast.warning("No suppliers found. Please add suppliers first before creating batches.")
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error loading data:", error)
+      const err = error as { message?: string; response?: { status?: number; data?: { message?: string } } }
       
       // Show specific error messages based on the error type
-      if (error.message) {
-        toast.error(error.message)
-      } else if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         toast.error("Authentication required. Please log in again.")
-      } else if (error.response?.status === 403) {
+      } else if (err.response?.status === 403) {
         toast.error("You do not have permission to access this data.")
-      } else if (error.response?.status === 404) {
+      } else if (err.response?.status === 404) {
         toast.error("Product or supplier not found. Please check your data.")
-      } else if (error.response?.status >= 500) {
+      } else if (err.response?.status && err.response.status >= 500) {
         toast.error("Server error occurred. Please try again later.")
-      } else if (!error.response) {
+      } else if (!err.response) {
         toast.error("Network error. Please check your connection and try again.")
       } else {
-        toast.error("Failed to load data. Please try again.")
+        const errorMessage = err.response?.data?.message || err.message || "Failed to load data. Please try again."
+        toast.error(errorMessage)
       }
     } finally {
       setLoadingData(false)
@@ -156,27 +174,27 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
         notes: `Selling price: ₹${formData.sellingPrice}`,
       }
 
-      await batchService.createBatch(batchData)
+      await backendApi.post('/batches', batchData)
       toast.success("Batch created successfully")
       onSuccess()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating batch:", error)
+      const err = error as { message?: string; response?: { status?: number; data?: { message?: string; error?: string } } }
       
       // Show specific error messages based on the error type
-      if (error.message) {
-        toast.error(error.message)
-      } else if (error.response?.status === 401) {
+      if (err.response?.status === 401) {
         toast.error("Authentication required. Please log in again.")
-      } else if (error.response?.status === 403) {
+      } else if (err.response?.status === 403) {
         toast.error("You do not have permission to create batches.")
-      } else if (error.response?.status === 400) {
-        toast.error(error.response?.data?.error || "Invalid batch data. Please check your inputs.")
-      } else if (error.response?.status >= 500) {
+      } else if (err.response?.status === 400) {
+        toast.error(err.response?.data?.error || err.response?.data?.message || "Invalid batch data. Please check your inputs.")
+      } else if (err.response?.status && err.response.status >= 500) {
         toast.error("Server error occurred while creating batch. Please try again later.")
-      } else if (!error.response) {
+      } else if (!err.response) {
         toast.error("Network error. Please check your connection and try again.")
       } else {
-        toast.error("Failed to create batch. Please try again.")
+        const errorMessage = err.response?.data?.message || err.message || "Failed to create batch. Please try again."
+        toast.error(errorMessage)
       }
     } finally {
       setLoading(false)
@@ -268,7 +286,7 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
                 </h2>
                  {product && (
                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                     for {product.name} (ID: {product.id.slice(0, 8)})
+                      for {product.name} (ID: {String(product.id).slice(0, 8)})
                    </p>
                  )}
               </div>

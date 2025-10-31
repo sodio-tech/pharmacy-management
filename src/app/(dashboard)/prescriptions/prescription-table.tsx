@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Eye, CheckCircle, Package } from "lucide-react"
 import { PrescriptionTableProps, Prescription } from "./types"
+import { backendApi } from "@/lib/axios-config"
 
 export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter, dateFilter }: PrescriptionTableProps) {
   const [items, setItems] = useState<Prescription[]>([])
@@ -39,14 +40,24 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
       try {
         setLoading(true)
         setError(null)
-        const res = await prescriptionService.getPrescriptions(filters)
+        const params = new URLSearchParams()
+        if (filters.patient_name) params.append('patient_name', filters.patient_name)
+        if (filters.doctor_name) params.append('doctor_name', filters.doctor_name)
+        if (filters.status) params.append('status', filters.status)
+        if (filters.date_range) params.append('date_range', filters.date_range)
+        if (filters.page) params.append('page', filters.page.toString())
+        if (filters.limit) params.append('limit', filters.limit.toString())
+        
+        const response = await backendApi.get(`/prescriptions?${params.toString()}`)
+        const res = response.data?.data || response.data
         if (cancelled) return
-        setItems(res.prescriptions)
-        setTotal(res.pagination?.total ?? res.prescriptions.length)
+        setItems(res.prescriptions || res || [])
+        setTotal(res.pagination?.total ?? res.prescriptions?.length ?? res.length ?? 0)
         setTotalPages(res.pagination?.total_pages ?? 1)
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (cancelled) return
-        setError(e?.response?.data?.error || 'Failed to load prescriptions')
+        const err = e as { response?: { data?: { error?: string; message?: string } } }
+        setError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load prescriptions')
         setItems([])
         setTotal(0)
       } finally {

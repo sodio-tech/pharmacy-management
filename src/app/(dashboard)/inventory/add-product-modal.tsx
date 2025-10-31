@@ -10,6 +10,8 @@ import { X, Save, Package, Image as ImageIcon, QrCode, ScanLine } from "lucide-r
 import { motion, AnimatePresence } from "motion/react"
 import { toast } from "react-toastify"
 import { useUser } from "@/contexts/UserContext"
+import { Product } from "@/types/sales"
+import { backendApi } from "@/lib/axios-config"
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -199,11 +201,19 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       if (imageFile && !imageUrl) {
         setIsUploadingImage(true)
         try {
-          const result = await inventoryService.uploadProductImage(imageFile)
-          finalImageUrl = result.url
-        } catch (error: any) {
-          setError(error.message || 'Failed to upload image')
-          toast.error(error.message || 'Failed to upload image')
+          const formData = new FormData()
+          formData.append('image', imageFile)
+          const response = await backendApi.post('/products/upload-image', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+          finalImageUrl = response.data?.data?.url || response.data?.url
+        } catch (error: unknown) {
+          const err = error as { message?: string; response?: { data?: { message?: string } } }
+          const errorMessage = err.response?.data?.message || err.message || 'Failed to upload image'
+          setError(errorMessage)
+          toast.error(errorMessage)
           return
         } finally {
           setIsUploadingImage(false)
@@ -231,11 +241,13 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       let result: Product
 
       if (isEditMode && product) {  
-        result = await inventoryService.updateProduct(product.id, productData)
+        const response = await backendApi.put(`/products/${product.id}`, productData)
+        result = response.data?.data || response.data
         toast.success("Product updated successfully!")
       } else {
         // Create new product
-        result = await inventoryService.createProduct(productData)
+        const response = await backendApi.post('/products', productData)
+        result = response.data?.data || response.data
         toast.success("Product created successfully!")
       }
 
@@ -245,8 +257,9 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       }
 
       onClose()
-    } catch (err: any) {
-      const errorMessage = err.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
+    } catch (err: unknown) {
+      const error = err as { message?: string; response?: { data?: { message?: string } } }
+      const errorMessage = error.response?.data?.message || error.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {

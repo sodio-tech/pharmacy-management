@@ -10,6 +10,7 @@ import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 import TwoFactorAuth from "./TwoFactorAuth"
 import { useUser } from "@/contexts/UserContext"
+import { getAccessToken } from "@/lib/cookies"
 
 export default function Security() {
     const { user } = useUser()
@@ -328,7 +329,8 @@ export default function Security() {
                                     const deviceInfo = getDeviceInfo(sessionItem.userAgent || '')
                                     const Icon = deviceInfo.icon
                                     // Check if this session is the current one by comparing with the current session token
-                                    const isCurrentSession = sessionItem.token === session?.session?.token
+                                    const currentToken = getAccessToken()
+                                    const isCurrentSession = sessionItem.token === currentToken
 
                                     return (
                                         <div

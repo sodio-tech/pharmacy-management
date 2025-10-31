@@ -6,6 +6,30 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Clock, Package, TrendingDown, RefreshCw, X } from "lucide-react"
 import { toast } from "react-toastify"
+import { backendApi } from "@/lib/axios-config"
+
+interface LowStockProduct {
+  id: string
+  name: string
+  category: string
+  barcode?: string
+  currentStock: number
+  minStockLevel: number
+}
+
+interface BatchInfo {
+  id: string
+  batchNumber: string
+  quantity: number
+  expiryDate: string
+  daysUntilExpiry: number
+}
+
+interface ExpiringProduct {
+  id: string
+  name: string
+  batches: BatchInfo[]
+}
 
 export function StockAlerts() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
@@ -19,10 +43,11 @@ export function StockAlerts() {
   const fetchAlerts = async () => {
     try {
       setLoading(true)
-      const data = await inventoryService.getInventoryStock()
-      setLowStockProducts(data.alerts.lowStockProducts)
-      setExpiringProducts(data.alerts.expiringProducts)
-    } catch (error: any) {
+      const response = await backendApi.get('/inventory/stock')
+      const data = response.data?.data || response.data
+      setLowStockProducts(data.alerts?.lowStockProducts || data.lowStockProducts || [])
+      setExpiringProducts(data.alerts?.expiringProducts || data.expiringProducts || [])
+    } catch (error: unknown) {
       toast.error("Failed to load stock alerts")
     } finally {
       setLoading(false)

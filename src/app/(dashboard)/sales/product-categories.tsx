@@ -66,11 +66,11 @@ export function ProductCategories({
         ]
         setCategories(fallbackCategories)
       } else {
-        const uniqueCategories = [...new Set(products.map((product: any) => product.category))]
+        const uniqueCategories = [...new Set(products.map((product: any) => product.category).filter(Boolean))] as string[]
         
         const categoryList: Category[] = [
           { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
-          ...uniqueCategories.map(category => ({
+          ...uniqueCategories.map((category: string) => ({
             name: category.charAt(0) + category.slice(1).toLowerCase(),
             icon: categoryIcons[category] || "📦",
             color: categoryColors[category] || "bg-gray-100 text-gray-700",

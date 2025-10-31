@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, Package, Calendar, TrendingUp, AlertTriangle, Clock } from "lucide-react"
 import { toast } from "react-toastify"
+import { Product } from "@/types/sales"
+import { backendApi } from "@/lib/axios-config"
 
 interface BatchInfo {
   id: string
@@ -33,20 +35,23 @@ export function BatchTracking() {
   const fetchProductsWithBatches = async () => {
     try {
       setLoading(true)
-      const response = await inventoryService.getProducts({
-        search: searchTerm,
-        limit: 50,
-      })
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      params.append('limit', '50')
+      
+      const response = await backendApi.get(`/products?${params.toString()}`)
+      const products = response.data?.data || response.data || []
 
       const productsWithBatches = await Promise.all(
-        response.data.map(async (product) => {
+        products.map(async (product: Product) => {
           try {
-            const stockData = await inventoryService.getProductStock(product.id)
+            const stockResponse = await backendApi.get(`/products/${product.id}/stock`)
+            const stockData = stockResponse.data?.data || stockResponse.data
             return {
               ...product,
-              batches: stockData.stock.batches,
+              batches: stockData?.stock?.batches || stockData?.batches || [],
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             return {
               ...product,
               batches: [],
@@ -56,7 +61,7 @@ export function BatchTracking() {
       )
 
       setProducts(productsWithBatches)
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to load batch information")
     } finally {
       setLoading(false)

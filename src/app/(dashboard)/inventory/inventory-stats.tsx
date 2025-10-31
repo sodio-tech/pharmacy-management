@@ -1,6 +1,17 @@
 import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { toast } from "react-toastify"
+import { backendApi } from "@/lib/axios-config"
+
+interface InventorySummary {
+  totalProducts: number
+  lowStockCount: number
+  outOfStockCount: number
+  expiringSoonCount: number
+  totalStockValue: number
+  totalStockUnits: number
+  turnoverRate: number
+}
 
 export function InventoryStats() {
   const [stats, setStats] = useState<InventorySummary>({
@@ -29,10 +40,11 @@ export function InventoryStats() {
   const fetchStats = async () => {
     try {
       setLoading(true)
-      const data = await inventoryService.getInventoryStock()
-      setStats(data.summary)
+      const response = await backendApi.get('/inventory/stock')
+      const data = response.data?.data || response.data
+      setStats(data.summary || data)
       setRealTimeUpdates(true)
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to load inventory statistics")
       setRealTimeUpdates(false)
     } finally {

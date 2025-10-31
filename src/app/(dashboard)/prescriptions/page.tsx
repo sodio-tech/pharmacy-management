@@ -17,6 +17,7 @@ import {
   ValidatePrescriptionRequest, 
   DispensePrescriptionRequest 
 } from './types'
+import { backendApi } from "@/lib/axios-config"
 
 const page = () => {
     const [currentView, setCurrentView] = useState<'list' | 'upload' | 'validate' | 'dispense'>('list');
@@ -28,7 +29,7 @@ const page = () => {
         try {
             setLoading(true);
             setError(null);
-             await prescriptionService.uploadPrescription(prescriptionData);  
+            await backendApi.post('/prescriptions', prescriptionData);  
             // Show success toast
             toast.success('Prescription uploaded successfully!', {
                 position: "top-right",
@@ -40,9 +41,10 @@ const page = () => {
             });
             
             setCurrentView('list');
-        } catch (err: any) {
+        } catch (err: unknown) {
             // Show error toast
-            const errorMessage = err?.response?.data?.error || 'Failed to upload prescription. Please try again.';
+            const error = err as { response?: { data?: { error?: string; message?: string } } }
+            const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to upload prescription. Please try again.';
             toast.error(errorMessage, {
                 position: "top-right",
                 autoClose: 5000,
@@ -65,10 +67,8 @@ const page = () => {
         try {
             setLoading(true);
             setError(null);
-            const prescription = await prescriptionService.validatePrescription(
-                selectedPrescription.id, 
-                validationData
-            );
+            const response = await backendApi.post(`/prescriptions/${selectedPrescription.id}/validate`, validationData);
+            const prescription = response.data?.data || response.data;
             console.log('Prescription validated successfully:', prescription);
             
             // Show success toast
@@ -82,11 +82,12 @@ const page = () => {
             });
             
             setCurrentView('list');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to validate prescription:', err);
+            const error = err as { response?: { data?: { error?: string; message?: string } } }
             
             // Show error toast
-            const errorMessage = err?.response?.data?.error || 'Failed to validate prescription. Please try again.';
+            const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to validate prescription. Please try again.';
             toast.error(errorMessage, {
                 position: "top-right",
                 autoClose: 5000,
@@ -108,10 +109,10 @@ const page = () => {
         try {
             setLoading(true);
             setError(null);
-            const prescription = await prescriptionService.rejectPrescription(
-                selectedPrescription.id, 
-                rejectionData.rejection_reason
-            );
+            const response = await backendApi.post(`/prescriptions/${selectedPrescription.id}/reject`, {
+                rejection_reason: rejectionData.rejection_reason
+            });
+            const prescription = response.data?.data || response.data;
             console.log('Prescription rejected successfully:', prescription);
             
             // Show success toast
@@ -125,11 +126,12 @@ const page = () => {
             });
             
             setCurrentView('list');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to reject prescription:', err);
+            const error = err as { response?: { data?: { error?: string; message?: string } } }
             
             // Show error toast
-            const errorMessage = err?.response?.data?.error || 'Failed to reject prescription. Please try again.';
+            const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to reject prescription. Please try again.';
             toast.error(errorMessage, {
                 position: "top-right",
                 autoClose: 5000,
@@ -151,10 +153,8 @@ const page = () => {
         try {
             setLoading(true);
             setError(null);
-            const prescription = await prescriptionService.dispensePrescription(
-                selectedPrescription.id, 
-                dispenseData
-            );
+            const response = await backendApi.post(`/prescriptions/${selectedPrescription.id}/dispense`, dispenseData);
+            const prescription = response.data?.data || response.data;
             console.log('Prescription dispensed successfully:', prescription);
             
             // Show success toast
@@ -168,11 +168,12 @@ const page = () => {
             });
             
             setCurrentView('list');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to dispense prescription:', err);
+            const error = err as { response?: { data?: { error?: string; message?: string } } }
             
             // Show error toast
-            const errorMessage = err?.response?.data?.error || 'Failed to dispense prescription. Please try again.';
+            const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to dispense prescription. Please try again.';
             toast.error(errorMessage, {
                 position: "top-right",
                 autoClose: 5000,

@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, Edit, Eye, Package2, BarChart3, Filter, List, Grid, Trash2 } from "lucide-react"
 import { toast } from "react-toastify"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Product } from "@/types/sales"
+import { backendApi } from "@/lib/axios-config"
 
 interface InventoryTableProps {
   onAddProduct: () => void
@@ -44,19 +46,19 @@ export function InventoryTable({
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      const filters = {
-        search: searchTerm,
-        category: selectedCategory === "all" ? "" : selectedCategory,
-        page,
-        limit: 20,
-        lowStock: activeFilter === "lowStock",
-        expiringSoon: activeFilter === "expiringSoon",
-      }
+      const params = new URLSearchParams()
+      if (searchTerm) params.append('search', searchTerm)
+      if (selectedCategory !== "all") params.append('category', selectedCategory)
+      if (activeFilter === "lowStock") params.append('lowStock', 'true')
+      if (activeFilter === "expiringSoon") params.append('expiringSoon', 'true')
+      params.append('page', page.toString())
+      params.append('limit', '20')
 
-      const response = await inventoryService.getProducts(filters)
-      setProducts(response.data)
-      setTotalPages(response.pagination.total_pages)
-    } catch (error: any) {
+      const response = await backendApi.get(`/products?${params.toString()}`)
+      const products = response.data?.data || response.data || []
+      setProducts(products)
+      setTotalPages(response.data?.pagination?.total_pages || response.data?.total_pages || 1)
+    } catch (error: unknown) {
       toast.error("Failed to load products")
     } finally {
       setLoading(false)
@@ -73,12 +75,12 @@ export function InventoryTable({
 
     try {
       setIsDeleting(true)
-      await inventoryService.deleteProduct(productToDelete.id)
+      await backendApi.delete(`/products/${productToDelete.id}`)
       toast.success("Product deleted successfully")
       fetchProducts()
       setDeleteModalOpen(false)
       setProductToDelete(null)
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error("Failed to delete product")
     } finally {
       setIsDeleting(false)
@@ -90,7 +92,7 @@ export function InventoryTable({
     setProductToDelete(null)
   }
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category?: string) => {
     const colors: Record<string, string> = {
       OTC: "bg-blue-100 text-blue-800",
       PRESCRIPTION: "bg-red-100 text-red-800",
@@ -99,7 +101,7 @@ export function InventoryTable({
       COSMETICS: "bg-pink-100 text-pink-800",
       OTHER: "bg-gray-100 text-gray-800",
     }
-    return colors[category] || colors.OTHER
+    return (category && colors[category]) || colors.OTHER
   }
 
   if (loading) {
@@ -232,7 +234,7 @@ export function InventoryTable({
                               {product.name}
                             </div>
                             <div className="text-xs md:text-sm text-[#6b7280] truncate">
-                              {product.generic_name || `SKU: ${product.id.slice(0, 8)}`}
+                              {product.generic_name || `SKU: ${String(product.id).slice(0, 8)}`}
                             </div>
                           </div>
                         </div>
@@ -277,7 +279,7 @@ export function InventoryTable({
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <div className="text-xs text-[#6b7280]">
-                          {new Date(product.updated_at).toLocaleDateString()}
+                          {product.updated_at ? new Date(product.updated_at).toLocaleDateString() : '-'}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -307,7 +309,7 @@ export function InventoryTable({
                               variant="ghost"
                               size="sm"
                               className="p-1 h-7 w-7 md:h-8 md:w-8 hidden sm:flex"
-                              onClick={() => onAddBatch(product.id)}
+                              onClick={() => onAddBatch(String(product.id))}
                               title="Add Batch"
                             >
                               <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
