@@ -3,14 +3,16 @@ import { FaEnvelope, FaLock } from "react-icons/fa"
 import { FiEye, FiEyeOff } from "react-icons/fi"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { signIn, twoFactor } from "@/lib/auth-client"
 import { toast } from "react-toastify"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import axios from "axios"
+import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
+import { setAuthCookies } from "@/lib/cookies"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -21,9 +23,12 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 const LoginForm = () => {
     const [isLoading, setIsLoading] = useState(false)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [rememberMe, setRememberMe] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
+    
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -32,55 +37,52 @@ const LoginForm = () => {
         },
     })
 
+    // Email verification useEffect
+    useEffect(() => {
+        const token = searchParams.get('token')
+        
+        if (token) {
+            verifyEmail(token)
+        }
+    }, [searchParams])
+
+    const verifyEmail = async (token: string) => {
+        try {
+            setIsVerifying(true)
+            const response = await axios.post(`${API}/api/v1/auth/verify-email`, { token })
+            
+            if (response.status === 200) {
+                toast.success("Email verified successfully! You can now login.")
+                // Remove token from URL
+                router.replace('/login')
+            } else {
+                toast.error(response.data.message || "Email verification failed.")
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || err.message || "Email verification error occurred.")
+        } finally {
+            setIsVerifying(false)
+        }
+    }
+
     const onSubmit = async (userData: LoginFormValues) => {
         try {
             setIsLoading(true)
 
-            await signIn.email(
-                {
-                    email: userData.email,
-                    password: userData.password,
-                    rememberMe: rememberMe,
-                    callbackURL: "/dashboard",
-                },
-                {
-                    onSuccess: async (ctx) => {
-                        const { user, twoFactorRedirect } = ctx.data || {}
-
-                        if (twoFactorRedirect) {
-                            toast.success("Otp sent to " + userData.email + " Please check your email")
-                            await twoFactor.sendOtp()
-                            router.push(`/2fa-verification?email=${encodeURIComponent(userData.email)}`)
-                            return
-                        }
-
-                        if (!user) {
-                            toast.error("Login failed. Please try again.")
-                            return
-                        }
-
-                        if (!user.emailVerified) {
-                            toast.error("Please verify your email before logging in.")
-                            router.push(`/email-verification?email=${encodeURIComponent(userData.email)}`)
-                            return
-                        }
-
-                        toast.success(`Welcome back, ${user.name || user.email}!`)
-                    },
-                    onError: (ctx) => {
-                        if (ctx.error.status === 403) {
-                            toast.error("Please verify your email address before logging in.")
-                        } else if (ctx.error.status === 401) {
-                            toast.error("Incorrect email or password.")
-                        } else {
-                            console.log(ctx.error,"error")
-                            toast.error(ctx.error.message || "Login failed due to server error.")
-                        }
-                    },
-                },
-            )
+           const response = await axios.post(`${API}/api/v1/auth/sign-in`, userData)
+           if (response.status === 200 && response.data.success) {
+            const { access_token, id, email } = response.data.data
+            
+            // Set authentication cookies
+            setAuthCookies({ access_token }, rememberMe)
+            
+            toast.success("Login successful!")
+            router.push(DEFAULT_REDIRECT_PATH)
+           } else {
+            toast.error(response.data.message || "An unexpected error occurred.")
+           }
         } catch (err: any) {
-            toast.error(err.message || "An unexpected error occurred.")
+            toast.error(err.response?.data?.message || err.message || "An unexpected error occurred.")
         } finally {
             setIsLoading(false)
         }
@@ -88,6 +90,17 @@ const LoginForm = () => {
 
     return (
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Email Verification Loading */}
+            {isVerifying && (
+                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4 flex items-center space-x-3">
+                    <svg className="animate-spin h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+                        <path fill="currentColor" className="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-sm text-teal-800 font-medium">Verifying your email...</span>
+                </div>
+            )}
+
             <div className="space-y-5">
                 {/* Email Field */}
                 <div>
@@ -156,8 +169,8 @@ const LoginForm = () => {
             <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
                 <Button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3 px-4 rounded-lg shadow-md bg-teal-600 hover:bg-teal-700 text-white font-semibold transition-colors"
+                    disabled={isLoading || isVerifying}
+                    className="w-full py-3 px-4 rounded-lg shadow-md bg-teal-600 hover:bg-teal-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? (
                         <svg className="animate-spin h-5 w-5 text-white mx-auto" viewBox="0 0 24 24" fill="none">

@@ -21,6 +21,8 @@ import { Check, X, ShieldAlert, ArrowRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants";
 
 const signupSchema = z
     .object({
@@ -94,57 +96,25 @@ const SignUpForm = () => {
         try {
             setIsLoading(true);
 
-            const { email, password, firstName, lastName } = signupData;
-            const name = `${firstName} ${lastName}`;
+            const { email, password, firstName, lastName, pharmacyName, phoneNumber, drugLicenseNumber } = signupData;
 
-            await signUp.email(
-                {
-                    email,
-                    password,
-                    name,
-                },
-                {
-                    body: {
-                        phoneNumber: signupData.phoneNumber,
-                        pharmacyName: signupData.pharmacyName,
-                        drugLicenseNumber: signupData.drugLicenseNumber,
-                        role: 'ADMIN', // All signups are admins initially
-                    },
-                    onSuccess: () => {
-                        toast.success(
-                            "Registration successful! Please check your email to verify your account.",
-                        );
-                        setTimeout(() => {
-                            router.push(`/verify-email?email=${encodeURIComponent(signupData.email)}`)
-                        }, 1000)
-                    },
-                    onError: (ctx) => {
-                        switch (ctx.error.status) {
-                            case 400:
-                                toast.error("Invalid request. Please check your inputs.")
-                                break
-                            case 401:
-                                toast.error("Unauthorized request.")
-                                break
-                            case 409:
-                                toast.error("This email is already registered.")
-                                break
-                            case 429:
-                                toast.error("Too many attempts. Please wait before retrying.")
-                                break
-                            case 500:
-                                toast.error("Server error. Please try again later.")
-                                break
-                            default:
-                                toast.error(
-                                    ctx.error.message ||
-                                    "Something went wrong. Please try again.",
-                                )
-                        }
-                    },
-                }
-            );
-        } catch (error) {
+        const response = await axios.post(`${API}/api/v1/auth/sign-up`, {
+            "first_name": firstName,
+            "last_name": lastName,
+            "pharmacy_name": pharmacyName,
+            "email": email,
+            "password": password,
+            "phone_number": phoneNumber,
+            "drug_license_number": drugLicenseNumber
+        })
+        if (response.status === 200) {
+            toast.success("Registration successful!")
+            // router.push(DEFAULT_REDIRECT_PATH)
+        } else {
+            toast.error(response.data.message || "An unexpected error occurred.")
+        }
+        } catch (err: any) {
+            toast.error(err.response.data.message || err.message || "An unexpected error occurred.")
             toast.error("Registration failed");
         } finally {
             setIsLoading(false);
