@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants";
+import { API } from "@/app/utils/constants";
 
 const signupSchema = z
     .object({
@@ -38,7 +38,10 @@ const signupSchema = z
         pharmacyName: z.string().min(2, { message: "Pharmacy name is required" }),
         drugLicenseNumber: z
             .string()
-            .min(5, { message: "Drug license number is required" }),
+            .optional()
+            .refine((val) => !val || val.length >= 5, {
+                message: "Drug license number must be at least 5 characters if provided",
+            }),
         password: z
             .string()
             .min(8, { message: "Password must be at least 8 characters" })
@@ -97,21 +100,23 @@ const SignUpForm = () => {
 
             const { email, password, firstName, lastName, pharmacyName, phoneNumber, drugLicenseNumber } = signupData;
 
-        const response = await axios.post(`${API}/api/v1/auth/sign-up`, {
-            "first_name": firstName,
-            "last_name": lastName,
-            "pharmacy_name": pharmacyName,
-            "email": email,
-            "password": password,
-            "phone_number": phoneNumber,
-            "drug_license_number": drugLicenseNumber
-        })
-        if (response.status === 200) {
-            toast.success("Registration successful!")
-            // router.push(DEFAULT_REDIRECT_PATH)
-        } else {
-            toast.error(response.data.message || "An unexpected error occurred.")
-        }
+            const response = await axios.post(`${API}/api/v1/auth/sign-up`, {
+                "first_name": firstName,
+                "last_name": lastName,
+                "pharmacy_name": pharmacyName,
+                "email": email,
+                "password": password,
+                "phone_number": phoneNumber,
+                ...(drugLicenseNumber && { "drug_license_number": drugLicenseNumber })
+            })
+            if (response.status === 200) {
+                toast.success("Registration successful!")
+                setTimeout(() => {
+                    router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+                }, 1500);
+            } else {
+                toast.error(response.data.message || "An unexpected error occurred.")
+            }
         } catch (err: any) {
             toast.error(err.response.data.message || err.message || "An unexpected error occurred.")
             toast.error("Registration failed");
@@ -287,7 +292,7 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Drug License Number
+                                    Drug License Number <span className="text-gray-400 font-normal">(Optional)</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Input

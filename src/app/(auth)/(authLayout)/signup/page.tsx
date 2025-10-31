@@ -24,24 +24,6 @@ const SignupPage = () => {
 
             <SignUpForm />
 
-            {/* <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-                className="mt-8"
-            >
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200" />
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-4 bg-white text-gray-500">Or continue with</span>
-                    </div>
-                </div>
-
-                <SocialProviders />
-            </motion.div> */}
-
             <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
