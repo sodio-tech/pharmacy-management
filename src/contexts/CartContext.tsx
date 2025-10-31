@@ -1,9 +1,9 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { Product } from '@/services/inventoryService'
-import { salesService, Customer } from '@/services/salesService'
 import { toast } from 'react-toastify'
+import { Product, Customer } from '@/types/sales'
+import { backendApi } from '@/lib/axios-config'
 
 export interface CartItem {
   id: string
@@ -66,7 +66,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         // Add new item to cart
         const sellingPrice = Number(product.selling_price || product.unit_price || 0)
         const newItem: CartItem = {
-          id: product.id,
+          id: String(product.id),
           product,
           quantity,
           unitPrice: sellingPrice,
@@ -136,12 +136,30 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     setIsProcessing(true)
     try {
-      const sale = await salesService.processCheckout(cartItems, customer, paymentMethod, notes)
-      toast.success(`Sale completed successfully! Sale #${sale.sale_number}`)
+      const saleData = {
+        customer,
+        items: cartItems.map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total_price: item.totalPrice
+        })),
+        payment_method: paymentMethod,
+        notes: notes || undefined,
+        subtotal: getCartSubtotal(),
+        tax: getCartTax(),
+        discount: getCartDiscount(),
+        total: getCartTotal()
+      }
+
+      const response = await backendApi.post('/sales', saleData)
+      const sale = response.data?.data || response.data
+      
+      toast.success(`Sale completed successfully! Sale #${sale?.sale_number || sale?.id}`)
       clearCart()
-    } catch (error: any) {
-      console.error('Checkout error:', error)
-      toast.error(error.response?.data?.message || 'Failed to process checkout')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      toast.error(err.response?.data?.message || 'Failed to process checkout')
     } finally {
       setIsProcessing(false)
     }

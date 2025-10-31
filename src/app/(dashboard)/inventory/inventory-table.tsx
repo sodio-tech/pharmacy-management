@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Plus, Edit, Eye, Package2, BarChart3, Filter, List, Grid, Trash2 } from "lucide-react"
-import { inventoryService, type Product } from "@/services/inventoryService"
 import { toast } from "react-toastify"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 

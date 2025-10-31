@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Wallet } from "lucide-react"
-import { salesService, SalesStats as SalesStatsType } from "@/services/salesService"
+import { backendApi } from "@/lib/axios-config"
+import { SalesStats as SalesStatsType } from "@/types/sales"
 
 export function SalesStats() {
   const [stats, setStats] = useState<SalesStatsType | null>(null)
@@ -16,10 +17,13 @@ export function SalesStats() {
         const today = new Date()
         const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
         
-        const salesStats = await salesService.getSalesStats({
+        const params = new URLSearchParams({
           start_date: startOfDay.toISOString(),
           end_date: today.toISOString()
         })
+        
+        const response = await backendApi.get(`/sales/stats/overview?${params.toString()}`)
+        const salesStats = response.data?.data || response.data
         
         setStats(salesStats)
       } catch (error) {
@@ -65,7 +69,7 @@ export function SalesStats() {
   const statsData = [
     {
       title: "Today's Sales",
-      value: salesService.formatCurrency(stats?.total_amount || 0),
+      value: `₹${(stats?.total_amount || 0).toLocaleString('en-IN')}`,
       change: "+12% from yesterday",
       changeType: "positive" as "positive" | "negative" | "neutral",
       icon: TrendingUp,
@@ -81,7 +85,7 @@ export function SalesStats() {
     },
     {
       title: "Avg. Sale",
-      value: salesService.formatCurrency(stats?.average_sale || 0),
+      value: `₹${(stats?.average_sale || 0).toLocaleString('en-IN')}`,
       change: "+5% increase",
       changeType: "positive" as const,
       icon: DollarSign,

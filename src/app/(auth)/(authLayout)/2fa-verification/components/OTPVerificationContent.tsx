@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, type KeyboardEvent, type ClipboardEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { authClient, twoFactor } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Shield, CheckCircle2, Clock, Mail, AlertTriangle } from "lucide-react";
 import { toast } from "react-toastify";
@@ -100,22 +99,9 @@ export default function OTPVerificationContent() {
     setIsVerifying(true);
     setError("");
     try {
-      const { data, error } = await twoFactor.verifyOtp({
-        code: otpCode,
-        trustDevice: true,
-      });
-
-      if (error) {
-        setError(error.message || "Invalid verification code");
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      } else if (data) {
-        setIsVerified(true);
-        toast.success("Login Successfully!");
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
-      }
+      // const { data, error } = await twoFactor.verifyOtp({ code: otpCode, trustDevice: true });
+      // 2FA verification removed - better-auth dependency removed
+      setError("2FA verification is currently unavailable");
     } catch (err) {
       setError("An error occurred during verification");
       setOtp(["", "", "", "", "", ""]);
@@ -131,15 +117,9 @@ export default function OTPVerificationContent() {
     setError("");
 
     try {
-      const { error } = await authClient.twoFactor.sendOtp();
-
-      if (error) {
-        toast.error(error.message || "Failed to resend code");
-      } else {
-        toast.success("New verification code sent to your email");
-        setOtp(["", "", "", "", "", ""]);
-        inputRefs.current[0]?.focus();
-      }
+      // const { error } = await authClient.twoFactor.sendOtp();
+      // 2FA OTP resend removed - better-auth dependency removed
+      toast.error("2FA OTP resend is currently unavailable");
     } catch (err) {
       toast.error("Failed to resend code");
     } finally {

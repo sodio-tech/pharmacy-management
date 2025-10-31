@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Receipt } from "lucide-react"
-import { salesService, Transaction } from "@/services/salesService"
+import { backendApi } from "@/lib/axios-config"
+import { Transaction } from "@/types/sales"
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -14,7 +15,8 @@ export function RecentTransactions() {
     const fetchTransactions = async () => {
       try {
         setLoading(true)
-        const recentTransactions = await salesService.getRecentTransactions(5)
+        const response = await backendApi.get('/sales/transactions/recent?limit=5')
+        const recentTransactions = response.data?.data || response.data || []
         setTransactions(recentTransactions)
       } catch (error) {
         console.error('Error fetching recent transactions:', error)
@@ -114,9 +116,9 @@ export function RecentTransactions() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-semibold">{salesService.formatCurrency(transaction.amount)}</p>
+                <p className="font-semibold">₹{transaction.amount.toLocaleString('en-IN')}</p>
                 <p className="text-sm text-muted-foreground">
-                  {salesService.getRelativeTime(transaction.time)}
+                  {transaction.time}
                 </p>
               </div>
             </div>

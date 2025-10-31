@@ -4,64 +4,53 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Camera, Trash2, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
-import { useSession, updateUser } from '@/lib/auth-client'
 import { toast } from 'react-toastify'
+import { useUser } from '@/contexts/UserContext'
+import { backendApi } from '@/lib/axios-config'
 
 interface UserProfile {
-  id: string
-  name: string
+  id: number
+  fullname: string
   email: string
-  phoneNumber: string
-  pharmacyName: string
-  drugLicenseNumber: string
+  phone_number: string
+  pharmacy_name: string
+  drug_license_number: string
   image?: string
   role: string
-  subscriptionTier: string
-}
-
-// Extended user type to match better-auth configuration
-interface ExtendedUser {
-  id: string
-  name: string
-  email: string
-  image?: string | null
-  role?: string
-  phoneNumber?: string
-  pharmacyName?: string
-  drugLicenseNumber?: string
-  subscriptionTier?: string
+  subscription_status: string
 }
 
 const Profile = () => {
-  const { data: session, isPending } = useSession()
+  const { user: sessionUser, isLoading: isPending, refetch } = useUser()
+  const session = sessionUser ? { user: sessionUser } : null
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [formData, setFormData] = useState<UserProfile>({
-    id: '',
-    name: '',
+    id: 0,
+    fullname: '',
     email: '',
-    phoneNumber: '',
-    pharmacyName: '',
-    drugLicenseNumber: '',
+    phone_number: '',
+    pharmacy_name: '',
+    drug_license_number: '',
     image: '',
     role: '',
-    subscriptionTier: ''
+    subscription_status: ''
   })
 
   // Initialize form data when session loads
   useEffect(() => {
     if (session?.user) {
-      const user = session.user as ExtendedUser
+      const user = session.user
       setFormData({
         id: user.id,
-        name: user.name || '',
+        fullname: user.fullname || '',
         email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
-        pharmacyName: user.pharmacyName || '',
-        drugLicenseNumber: user.drugLicenseNumber || '',
+        phone_number: user.phone_number || '',
+        pharmacy_name: user.pharmacy_name || '',
+        drug_license_number: user.drug_license_number || '',
         image: user.image || '',
         role: user.role || '',
-        subscriptionTier: user.subscriptionTier || ''
+        subscription_status: user.subscription_status || ''
       })
     }
   }, [session])
@@ -79,13 +68,14 @@ const Profile = () => {
     setIsUpdating(true)
     try {
       const updateData = {
-        name: formData.name,
-        phoneNumber: formData.phoneNumber,
-        pharmacyName: formData.pharmacyName,
-        drugLicenseNumber: formData.drugLicenseNumber,
+        fullname: formData.fullname,
+        phone_number: formData.phone_number,
+        pharmacy_name: formData.pharmacy_name,
+        drug_license_number: formData.drug_license_number,
       }
 
-      await updateUser(updateData)
+      await backendApi.put('/v1/profile', updateData)
+      await refetch()
       toast.success('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -97,17 +87,17 @@ const Profile = () => {
 
   const handleCancel = () => {
     if (session?.user) {
-      const user = session.user as ExtendedUser
+      const user = session.user
       setFormData({
         id: user.id,
-        name: user.name || '',
+        fullname: user.fullname || '',
         email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
-        pharmacyName: user.pharmacyName || '',
-        drugLicenseNumber: user.drugLicenseNumber || '',
+        phone_number: user.phone_number || '',
+        pharmacy_name: user.pharmacy_name || '',
+        drug_license_number: user.drug_license_number || '',
         image: user.image || '',
         role: user.role || '',
-        subscriptionTier: user.subscriptionTier || ''
+        subscription_status: user.subscription_status || ''
       })
     }
   }
@@ -129,7 +119,8 @@ const Profile = () => {
 
       if (response.ok) {
         const { imageUrl } = await response.json()
-        await updateUser({ image: imageUrl })
+        await backendApi.put('/v1/profile', { image: imageUrl })
+        await refetch()
         toast.success('Profile image updated successfully!')
       } else {
         throw new Error('Failed to upload image')
@@ -145,7 +136,8 @@ const Profile = () => {
   const handleRemoveImage = async () => {
     setIsLoading(true)
     try {
-      await updateUser({ image: null })
+      await backendApi.put('/v1/profile', { image: null })
+      await refetch()
       toast.success('Profile image removed successfully!')
     } catch (error) {
       console.error('Error removing image:', error)
@@ -184,8 +176,8 @@ const Profile = () => {
             </Label>
             <Input 
               id="fullName" 
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
+              value={formData.fullname}
+              onChange={(e) => handleInputChange('fullname', e.target.value)}
               className="bg-white border-[#e5e7eb]" 
             />
           </div>
@@ -211,8 +203,8 @@ const Profile = () => {
             </Label>
             <Input 
               id="phone" 
-              value={formData.phoneNumber}
-              onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+              value={formData.phone_number}
+              onChange={(e) => handleInputChange('phone_number', e.target.value)}
               className="bg-white border-[#e5e7eb]" 
             />
           </div>
@@ -222,8 +214,8 @@ const Profile = () => {
             </Label>
             <Input 
               id="license" 
-              value={formData.drugLicenseNumber}
-              onChange={(e) => handleInputChange('drugLicenseNumber', e.target.value)}
+              value={formData.drug_license_number}
+              onChange={(e) => handleInputChange('drug_license_number', e.target.value)}
               className="bg-white border-[#e5e7eb]" 
             />
           </div>
@@ -235,8 +227,8 @@ const Profile = () => {
           </Label>
           <Input
             id="pharmacyName"
-            value={formData.pharmacyName}
-            onChange={(e) => handleInputChange('pharmacyName', e.target.value)}
+            value={formData.pharmacy_name}
+            onChange={(e) => handleInputChange('pharmacy_name', e.target.value)}
             className="bg-white border-[#e5e7eb]"
           />
         </div>
@@ -294,7 +286,7 @@ const Profile = () => {
           ) : (
             <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-100">
               <span className="text-4xl font-semibold text-gray-500">
-                {formData.name?.charAt(0)?.toUpperCase() || 'U'}
+                {formData.fullname?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
           )}

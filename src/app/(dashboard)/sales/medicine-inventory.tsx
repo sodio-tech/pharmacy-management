@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Image from "next/image"
-import { inventoryService, Product } from "@/services/inventoryService"
 import { toast } from "react-toastify"
+import { backendApi } from "@/lib/axios-config"
+import { Product } from "@/types/sales"
 
 interface MedicineInventoryProps {
   selectedCategory?: string
@@ -32,19 +33,16 @@ export function MedicineInventory({
         limit: 50 // Get more products for sales
       }
       
-      const response = await inventoryService.getProducts(filters)
-      console.log('Products API Response:', response.data)
-      if (response.data && response.data.length > 0) {
-        console.log('First product price types:', {
-          selling_price: typeof response.data[0].selling_price,
-          unit_price: typeof response.data[0].unit_price,
-          selling_price_value: response.data[0].selling_price,
-          unit_price_value: response.data[0].unit_price
-        })
-      }
+      const params = new URLSearchParams()
+      if (filters.category) params.append('category', filters.category)
+      if (filters.search) params.append('search', filters.search)
+      if (filters.limit) params.append('limit', filters.limit.toString())
+      
+      const response = await backendApi.get(`/products?${params.toString()}`)
+      const products = response.data?.data || response.data || []
       
       // If no products returned, use fallback data for testing
-      if (!response.data || response.data.length === 0) {
+      if (!products || products.length === 0) {
         const fallbackProducts = [
           {
             id: "1",
@@ -89,7 +87,7 @@ export function MedicineInventory({
         ]
         setProducts(fallbackProducts)
       } else {
-        setProducts(response.data)
+        setProducts(products)
       }
     } catch (error) {
       console.error('Error fetching products:', error)

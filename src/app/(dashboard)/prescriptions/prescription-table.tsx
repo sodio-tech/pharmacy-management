@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Eye, CheckCircle, Package } from "lucide-react"
 import { PrescriptionTableProps, Prescription } from "./types"
-import { prescriptionService } from "@/services/prescriptionService"
 
 export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter, dateFilter }: PrescriptionTableProps) {
   const [items, setItems] = useState<Prescription[]>([])

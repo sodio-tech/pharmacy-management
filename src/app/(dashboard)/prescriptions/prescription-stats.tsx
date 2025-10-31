@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PrescriptionStats as PrescriptionStatsType } from "./types"
-import { prescriptionService } from "@/services/prescriptionService"
 import { RefreshCw } from "lucide-react"
 
 export function PrescriptionStats() {

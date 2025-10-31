@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Scan } from "lucide-react"
-import { inventoryService } from "@/services/inventoryService"
 import { toast } from "react-toastify"
+import { backendApi } from "@/lib/axios-config"
 
 interface ProductCategoriesProps {
   onCategorySelect: (category: string) => void
@@ -53,10 +53,11 @@ export function ProductCategories({
     try {
       setLoading(true)
       // Get all products to extract unique categories
-      const response = await inventoryService.getProducts({ limit: 1000 })
+      const response = await backendApi.get('/products?limit=1000')
+      const products = response.data?.data || response.data || []
       
       // If no products returned, use fallback categories
-      if (!response.data || response.data.length === 0) {
+      if (!products || products.length === 0) {
         const fallbackCategories: Category[] = [
           { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
           { name: "OTC", icon: "💊", color: "bg-blue-100 text-blue-700", value: "OTC" },
@@ -65,7 +66,7 @@ export function ProductCategories({
         ]
         setCategories(fallbackCategories)
       } else {
-        const uniqueCategories = [...new Set(response.data.map(product => product.category))]
+        const uniqueCategories = [...new Set(products.map((product: any) => product.category))]
         
         const categoryList: Category[] = [
           { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },

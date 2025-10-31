@@ -11,7 +11,6 @@ import PrescriptionContent from './prescription-content'
 import { PrescriptionUpload } from './prescription-upload'
 import { PrescriptionValidation } from './prescription-validation'
 import { PrescriptionDispense } from './prescription-dispense'
-import { prescriptionService } from '@/services/prescriptionService'
 import { 
   Prescription, 
   CreatePrescriptionRequest, 

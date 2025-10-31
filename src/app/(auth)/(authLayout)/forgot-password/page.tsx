@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { motion } from "motion/react";
 import { FaEnvelope } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
-import { forgetPassword } from '@/lib/auth-client';
+import { backendApi } from "@/lib/axios-config";
+import { toast } from 'react-toastify';
 
 export default function ForgotPassword() {
     const [email, setEmail] = useState<string>('');
@@ -19,18 +20,18 @@ export default function ForgotPassword() {
         setMessage(null);
 
         try {
-            const { error } = await forgetPassword({
-                email: email,
-                redirectTo: "/reset-password",
+            await backendApi.post('/v1/auth/forgot-password', {
+                email: email
             });
-            if (error) {
-                setError(error?.message || 'Failed to send reset link. Please try again.');
-            } else {
-                setMessage('Reset link sent! Please check your email inbox.');
-            }
+            
+            setMessage('Password reset link has been sent to your email. Please check your inbox.');
             setEmail('');
-        } catch (err: any) {
-            setError('Failed to send reset link. Please try again.');
+            toast.success('Password reset link sent successfully!');
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            const errorMessage = error.response?.data?.message || 'Failed to send reset link. Please try again.';
+            setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Package, Image as ImageIcon, QrCode, ScanLine } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { toast } from "react-toastify"
-import { useSession } from "@/lib/auth-client"
-import { inventoryService, Product } from "@/services/inventoryService"
+import { useUser } from "@/contexts/UserContext"
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -41,7 +40,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const { data: session } = useSession()
+  const { user } = useUser()
   const [error, setError] = useState("")
   const [userRole, setUserRole] = useState<string | null>("ADMIN")
   const [imageFile, setImageFile] = useState<File | null>(null)

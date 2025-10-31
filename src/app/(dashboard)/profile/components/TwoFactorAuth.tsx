@@ -14,7 +14,6 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
 
@@ -33,7 +32,7 @@ export default function TwoFactorAuth({ user }: TwoFactorAuthProps) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user?.twoFactorEnabled) {
+    if (user?.two_fa_enabled) {
       setStep('enabled');
     }
   }, [user]);
@@ -48,18 +47,9 @@ export default function TwoFactorAuth({ user }: TwoFactorAuthProps) {
     setError("");
 
     try {
-      const { data, error } = await authClient.twoFactor.enable({
-        password,
-        issuer: "Pharmacy Management System",
-      });
-
-      if (error) {
-        setError(error.message || "Failed to enable 2FA");
-      } else if (data) {
-        setTotpUri(data.totpURI);
-        setStep('verify');
-        toast.success("2FA setup initiated! Please scan the QR code and verify.");
-      }
+      // const { data, error } = await authClient.twoFactor.enable({ password, issuer: "Pharmacy Management System" });
+      // 2FA enable removed - better-auth dependency removed
+      setError("2FA is currently unavailable");
     } catch (err) {
       setError("An error occurred while enabling 2FA");
     } finally {
@@ -77,16 +67,9 @@ export default function TwoFactorAuth({ user }: TwoFactorAuthProps) {
     setError("");
 
     try {
-      const { data, error } = await authClient.twoFactor.verifyTotp({
-        code: verificationCode,
-      });
-
-      if (error) {
-        setError(error.message || "Invalid verification code");
-      } else if (data) {
-        setStep('enabled');
-        toast.success("Two-factor authentication enabled successfully!");
-      }
+      // const { data, error } = await authClient.twoFactor.verifyTotp({ code: verificationCode });
+      // 2FA verify removed - better-auth dependency removed
+      setError("2FA verification is currently unavailable");
     } catch (err) {
       setError("An error occurred during verification");
     } finally {
@@ -104,18 +87,9 @@ export default function TwoFactorAuth({ user }: TwoFactorAuthProps) {
     setError("");
 
     try {
-      const { data, error } = await authClient.twoFactor.disable({
-        password,
-      });
-
-      if (error) {
-        setError(error.message || "Failed to disable 2FA");
-      } else if (data) {
-        setStep('setup');
-        toast.success("Two-factor authentication disabled successfully!");
-        // Refresh the page to update the user state
-        window.location.reload();
-      }
+      // const { data, error } = await authClient.twoFactor.disable({ password });
+      // 2FA disable removed - better-auth dependency removed
+      setError("2FA disable is currently unavailable");
     } catch (err) {
       setError("An error occurred while disabling 2FA");
     } finally {

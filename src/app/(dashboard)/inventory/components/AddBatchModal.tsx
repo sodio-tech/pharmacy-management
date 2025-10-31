@@ -9,9 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Package, AlertTriangle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "react-toastify"
-import { batchService, type CreateBatchRequest } from "@/services/batchService"
-import { supplierService, type Supplier } from "@/services/supplierService"
-import { inventoryService, type Product } from "@/services/inventoryService"
 
 interface AddBatchModalProps {
   productId: string

@@ -13,7 +13,7 @@ import { AddBatchModal } from "./components/AddBatchModal"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
-import { useSession } from "@/lib/auth-client"
+import { useUser } from "@/contexts/UserContext"
 
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
@@ -163,10 +163,8 @@ function InventoryContent({
 export default function InventoryManagement() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
-  const { data: session } = useSession()
-  const user = session?.user
-  // @ts-ignore
-  const canAddProducts = user?.role === 'ADMIN'
+  const { user } = useUser()
+  const canAddProducts = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
 
   const inventoryActions: HeaderAction[] = canAddProducts ? [
     {

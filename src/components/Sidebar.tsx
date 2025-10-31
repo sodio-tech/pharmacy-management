@@ -14,10 +14,11 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
-import { signOut, useSession } from "@/lib/auth-client"
 import { usePathname, useRouter } from "next/navigation"
 import Image from "next/image"
 import logo from "../../public/logo.png"
+import { useUser } from "@/contexts/UserContext"
+import { logout } from "@/lib/auth"
 
 const sidebarItems = [
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
@@ -38,8 +39,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) => {
-  const { data: session, isPending } = useSession()
-  const user = session?.user
+  const { user, isLoading: isPending } = useUser()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -110,8 +110,8 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">
-                    {user.name
-                      ? user.name
+                    {user.fullname
+                      ? user.fullname
                           .split(" ")
                           .map((n) => n[0])
                           .join("")
@@ -120,7 +120,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[#111827] text-sm truncate">{user.name || "Unknown User"}</p>
+                  <p className="font-medium text-[#111827] text-sm truncate">{user.fullname || "Unknown User"}</p>
                   <p className="text-xs text-[#6b7280] truncate">{user.email || "No email"}</p>
                 </div>
               </div>
@@ -128,15 +128,9 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start gap-2 text-[#6b7280] hover:text-[#111827] hover:bg-white"
-                onClick={() =>
-                  signOut({
-                    fetchOptions: {
-                      onSuccess: () => {
-                        router.push("/login")
-                      },
-                    },
-                  })
-                }
+                onClick={() => {
+                  logout()
+                }}
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out

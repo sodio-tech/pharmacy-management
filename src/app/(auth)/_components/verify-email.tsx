@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { Mail, CheckCircle2, ExternalLink, RefreshCw, Shield, Clock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "react-toastify"
-import { authClient, sendVerificationEmail } from "@/lib/auth-client"
 
 export default function VerifyEmail() {
   const [isResending, setIsResending] = useState(false)
@@ -14,7 +13,6 @@ export default function VerifyEmail() {
   const [resendCount, setResendCount] = useState(0)
   const [lastResendTime, setLastResendTime] = useState<Date | null>(null)
   const [emailSent, setEmailSent] = useState(false)
-  const [emailError, setEmailError] = useState(false)
   const searchParams = useSearchParams()
 
   // Proper conditions for different states
@@ -29,14 +27,7 @@ export default function VerifyEmail() {
     const emailParam = searchParams.get('email')
     if (emailParam) {
       setEmail(emailParam)
-    } else {
-      // Try to get email from session
-      authClient.getSession().then((session) => {
-        if (session?.data?.user?.email) {
-          setEmail(session.data.user.email)
-        }
-      })
-    }
+    } 
   }, [searchParams])
 
   const handleResendEmail = async () => {
@@ -54,25 +45,9 @@ export default function VerifyEmail() {
     setResendSuccess(false)
 
     try {
-      const result = await sendVerificationEmail({
-        email: email,
-        callbackURL: "/email-verification"
-      })
-      if (result.error) {
-        setEmailError(true)
-        toast.error(result.error.message || "Failed to resend verification email")
-      } else {
-        setResendSuccess(true)
-        setEmailSent(true)
-        setResendCount(prev => prev + 1)
-        setLastResendTime(now)
-        toast.success("Verification email sent successfully!")
-        
-        setTimeout(() => setResendSuccess(false), 5000)
-      }
+      toast.error("Email verification is currently unavailable")
     } catch (error) {
       console.error('Resend error:', error)
-      setEmailError(true)
       toast.error("Failed to resend verification email")
     } finally {
       setIsResending(false)

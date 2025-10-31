@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { FcGoogle } from "react-icons/fc"
-import { signIn } from "@/lib/auth-client"
 import { DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
 import { toast } from "react-toastify"
 import { Loader2 } from "lucide-react"
@@ -18,14 +17,8 @@ const SocialProviders = () => {
             } else {
                 setMicrosoftLoading(true)
             }
-            const { error } = await signIn.social(
-                { provider, callbackURL: DEFAULT_REDIRECT_PATH },
-            )
-            if (error) {
-                toast.error(error.message || "Something went wrong")
-            } else {
-                toast.success("Login successful!")
-            }
+            // Social login removed - better-auth dependency removed
+            toast.error("Social login is currently unavailable")
         } catch (error: any) {
             toast.error(error.message || "Something went wrong")
         } finally {

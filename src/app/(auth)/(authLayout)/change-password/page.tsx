@@ -8,7 +8,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from 'react-toastify';
-import { resetPassword } from '@/lib/auth-client';
+import { backendApi } from "@/lib/axios-config";
 
 interface PasswordState {
     password: string;
@@ -80,24 +80,30 @@ function ResetPassword() {
             return;
         }
 
+        if (!token) {
+            toast.error('Token is missing. Please use the link from your email.');
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-            const { error: resetError } = await resetPassword({
-                newPassword: passwords.password,
-                token: token as string,
+            await backendApi.post(`/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
+                new_password: passwords.password
             });
-            if (resetError) {
-                toast.error(resetError.message);
-            } else {
-                toast.success('Password reset successful');
-                setTimeout(() => {
-                    router.push('/login');
-                }, 2500);
-            }
+            
+            toast.success('Password has been reset successfully!');
             setPasswords({ password: '', confirmPassword: '' });
-        } catch (err) {
-            toast.error('Failed to reset password');
+            
+            // Redirect to login after successful password reset
+            setTimeout(() => {
+                router.push('/login');
+            }, 2000);
+        } catch (err: unknown) {
+            const error = err as { response?: { data?: { message?: string } } };
+            const errorMessage = error.response?.data?.message || 'Failed to reset password. Please try again.';
+            toast.error(errorMessage);
+            setPasswordError(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

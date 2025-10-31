@@ -9,20 +9,7 @@ import { X, Plus, Minus, CreditCard, Wallet, Smartphone, Banknote, User, Camera 
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
-import { Customer } from "@/services/salesService"
-
-interface CustomerData {
-  id: string
-  patientName: string
-  patientPhone: string
-  patientEmail: string
-  doctorName: string
-  doctorLicense?: string
-  doctorPhone?: string
-  prescriptionPhoto?: string
-  prescriptionText?: string
-  createdAt: string
-}
+import { Customer } from "@/types/sales"
 
 export function CurrentSaleSidebar() {
   const { 

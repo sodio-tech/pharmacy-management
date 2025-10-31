@@ -21,6 +21,3 @@ export const logout = () => {
 export const checkAuth = (): boolean => {
   return isAuthenticated();
 };
-
-
-

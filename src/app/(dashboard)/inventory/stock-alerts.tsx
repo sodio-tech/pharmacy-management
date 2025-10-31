@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Clock, Package, TrendingDown, RefreshCw, X } from "lucide-react"
-import { inventoryService, type LowStockProduct, type ExpiringProduct } from "@/services/inventoryService"
 import { toast } from "react-toastify"
 
 export function StockAlerts() {

@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, Package, Calendar, TrendingUp, AlertTriangle, Clock } from "lucide-react"
-import { inventoryService, type Product } from "@/services/inventoryService"
 import { toast } from "react-toastify"
 
 interface BatchInfo {

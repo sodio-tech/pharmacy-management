@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card"
 import { useState, useEffect } from "react"
-import { inventoryService, InventorySummary } from "@/services/inventoryService"
 import { toast } from "react-toastify"
 
 export function InventoryStats() {

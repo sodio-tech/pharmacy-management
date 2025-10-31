@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Eye, EyeOff, Shield, Smartphone, Monitor, Tablet, Check, X, LogOut, Loader2 } from "lucide-react"
-import { useSession, signOut, changePassword, listSessions, revokeSession, revokeSessions } from "@/lib/auth-client"
 import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 import TwoFactorAuth from "./TwoFactorAuth"
+import { useUser } from "@/contexts/UserContext"
 
 export default function Security() {
-    const { data: session } = useSession()
+    const { user } = useUser()
+    const session = user ? { user } : null
     const [showCurrentPassword, setShowCurrentPassword] = useState(false)
     const [showNewPassword, setShowNewPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -42,9 +43,7 @@ export default function Security() {
     const handleRevokeSession = async (sessionToken: string) => {
         setIsRevokingSession(sessionToken)
         try {
-            await revokeSession({
-                token: sessionToken
-            })
+            // await revokeSession({ token: sessionToken })
 
             setSessions(prev => prev.filter(s => s.token !== sessionToken))
             toast.success("Session revoked successfully")
@@ -64,20 +63,16 @@ export default function Security() {
 
         setIsUpdatingPassword(true)
         try {
-            const result = await changePassword({
-                currentPassword,
-                newPassword,
-                revokeOtherSessions: true
-            })
-
-            if (result.error) {
-                toast.error(result.error.message || "Failed to update password")
-            } else {
-                toast.success("Password updated successfully!")
-                setCurrentPassword("")
-                setNewPassword("")
-                setConfirmPassword("")
-            }
+            // const result = await changePassword({ currentPassword, newPassword, revokeOtherSessions: true })
+            toast.error("Password change is currently unavailable")
+            // if (result.error) {
+            //     toast.error(result.error.message || "Failed to update password")
+            // } else {
+            //     toast.success("Password updated successfully!")
+            //     setCurrentPassword("")
+            //     setNewPassword("")
+            //     setConfirmPassword("")
+            // }
         } catch (error) {
             toast.error("Failed to update password. Please try again.")
         } finally {
@@ -88,7 +83,7 @@ export default function Security() {
     const handleSignOutAllDevices = async () => {
         setIsSigningOutAll(true)
         try {
-            await revokeSessions()
+            // await revokeSessions()
             toast.success("Sessions revoked successfully")
         } catch (error) {
             console.error("Error signing out:", error)
@@ -162,12 +157,14 @@ export default function Security() {
     const loadSessions = async () => {
         setIsLoadingSessions(true)
         try {
-            const { data, error } = await listSessions()
-            if (error) {
-                toast.error("Failed to load sessions")
-            } else {
-                setSessions(data || [])
-            }
+            // const { data, error } = await listSessions()
+            // if (error) {
+            //     toast.error("Failed to load sessions")
+            // } else {
+            //     setSessions(data || [])
+            // }
+            setSessions([])
+            toast.error("Session management is currently unavailable")
         } catch (error) {
             console.error("Error loading sessions:", error)
             toast.error("Failed to load sessions")

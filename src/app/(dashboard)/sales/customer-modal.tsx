@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { X, Upload, Camera, User, Stethoscope, FileText } from "lucide-react"
 import { toast } from "react-toastify"
-import { Customer } from "@/services/salesService"
+import { Customer } from "@/types/sales"
 
 interface CustomerModalProps {
   isOpen: boolean

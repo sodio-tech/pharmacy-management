@@ -14,7 +14,7 @@ export const RESTRICTED_PATHS = [
     "/contact",
     "/login",
     "/signup",
-    "/reset-password",
+    "/change-password",
     "/forgot-password",
     "/verify-email",
     "/2fa-verification"
