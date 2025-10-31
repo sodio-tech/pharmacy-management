@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import axios from "axios"
 import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
 import { setAuthCookies } from "@/lib/cookies"
+import { resendVerificationEmail } from "@/lib/auth"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -28,7 +29,7 @@ const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
-    
+
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
@@ -40,7 +41,7 @@ const LoginForm = () => {
     // Email verification useEffect
     useEffect(() => {
         const token = searchParams.get('token')
-        
+
         if (token) {
             verifyEmail(token)
         }
@@ -50,10 +51,9 @@ const LoginForm = () => {
         try {
             setIsVerifying(true)
             const response = await axios.post(`${API}/api/v1/auth/verify-email`, { token })
-            
+
             if (response.status === 200) {
                 toast.success("Email verified successfully! You can now login.")
-                // Remove token from URL
                 router.replace('/login')
             } else {
                 toast.error(response.data.message || "Email verification failed.")
@@ -69,20 +69,33 @@ const LoginForm = () => {
         try {
             setIsLoading(true)
 
-           const response = await axios.post(`${API}/api/v1/auth/sign-in`, userData)
-           if (response.status === 200 && response.data.success) {
-            const { access_token, id, email } = response.data.data
-            
-            // Set authentication cookies
-            setAuthCookies({ access_token }, rememberMe)
-            
-            toast.success("Login successful!")
-            router.push(DEFAULT_REDIRECT_PATH)
-           } else {
-            toast.error(response.data.message || "An unexpected error occurred.")
-           }
+            const response = await axios.post(`${API}/api/v1/auth/sign-in`, userData)
+            if (response.status === 200 && response.data.success) {
+                const { access_token } = response.data.data
+
+                // Set authentication cookies
+                setAuthCookies({ access_token }, rememberMe)
+
+                toast.success("Login successful!")
+                window.location.href = DEFAULT_REDIRECT_PATH
+            } else {
+                toast.error(response.data.message || "An unexpected error occurred.")
+            }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || err.message || "An unexpected error occurred.")
+            if (err.response?.data?.message === "email_not_verified") {
+                toast.warn("Email not verified. Please verify your email to login.")
+                // Automatically resend verification email
+                try {
+                    await resendVerificationEmail(userData.email)
+                    toast.success("Verification email sent! Please check your inbox.")
+                } catch (resendErr: unknown) {
+                    const resendError = resendErr as { message?: string }
+                    toast.error(resendError.message || "Failed to resend verification email. Please try again later.")
+                }
+                router.push(`/verify-email?email=${userData.email}`)
+            } else {
+                toast.error(err.response?.data?.message || err.message || "An unexpected error occurred.")
+            }
         } finally {
             setIsLoading(false)
         }

@@ -9,6 +9,8 @@ import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from 'react-toastify';
 import { backendApi } from "@/lib/axios-config";
+import axios from 'axios';
+import { API } from '@/app/utils/constants';
 
 interface PasswordState {
     password: string;
@@ -88,17 +90,22 @@ function ResetPassword() {
         setIsSubmitting(true);
 
         try {
-            await backendApi.post(`/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
+            const response = await axios.post(`${API}/api/v1/auth/reset-password`, {
                 new_password: passwords.password
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
-            
-            toast.success('Password has been reset successfully!');
-            setPasswords({ password: '', confirmPassword: '' });
-            
-            // Redirect to login after successful password reset
-            setTimeout(() => {
-                router.push('/login');
-            }, 2000);
+            if (response.data.success) {
+                toast.success('Password has been reset successfully!');
+                setPasswords({ password: '', confirmPassword: '' });
+                setTimeout(() => {
+                    router.push('/login');
+                }, 2000);
+            } else {
+                toast.error('Failed to reset password. Please try again.');
+            }
         } catch (err: unknown) {
             const error = err as { response?: { data?: { message?: string } } };
             const errorMessage = error.response?.data?.message || 'Failed to reset password. Please try again.';

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Mail, CheckCircle2, ExternalLink, RefreshCw, Shield, Clock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "react-toastify"
+import { resendVerificationEmail } from "@/lib/auth"
 
 export default function VerifyEmail() {
   const [isResending, setIsResending] = useState(false)
@@ -45,10 +46,17 @@ export default function VerifyEmail() {
     setResendSuccess(false)
 
     try {
-      toast.error("Email verification is currently unavailable")
-    } catch (error) {
+      await resendVerificationEmail(email)
+      setResendSuccess(true)
+      setEmailSent(true)
+      setResendCount(prev => prev + 1)
+      setLastResendTime(now)
+      toast.success("Verification email sent successfully! Please check your inbox.")
+    } catch (error: unknown) {
       console.error('Resend error:', error)
-      toast.error("Failed to resend verification email")
+      const err = error as { message?: string }
+      toast.error(err.message || "Failed to resend verification email")
+      setResendSuccess(false)
     } finally {
       setIsResending(false)
     }

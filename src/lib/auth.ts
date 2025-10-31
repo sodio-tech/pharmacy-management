@@ -3,6 +3,7 @@
  */
 
 import { clearAuthCookies, isAuthenticated } from "./cookies";
+import { backendApi } from "./axios-config";
 
 /**
  * Logout user - clear cookies and redirect to login
@@ -20,4 +21,21 @@ export const logout = () => {
  */
 export const checkAuth = (): boolean => {
   return isAuthenticated();
+};
+
+/**
+ * Resend verification email
+ * @param email - Email address to send verification email to
+ * @returns Promise that resolves when email is sent successfully
+ */
+export const resendVerificationEmail = async (email: string): Promise<void> => {
+  try {
+    await backendApi.post('/v1/auth/resend-verification-email', {
+      email: email
+    });
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } };
+    const errorMessage = err.response?.data?.message || 'Failed to resend verification email';
+    throw new Error(errorMessage);
+  }
 };
