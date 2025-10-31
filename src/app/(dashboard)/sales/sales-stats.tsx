@@ -8,40 +8,40 @@ import { SalesStats as SalesStatsType } from "@/types/sales"
 
 export function SalesStats() {
   const [stats, setStats] = useState<SalesStatsType | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true)
-        const today = new Date()
-        const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  // useEffect(() => {
+  //   const fetchStats = async () => {
+  //     try {
+  //       setLoading(true)
+  //       const today = new Date()
+  //       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
         
-        const params = new URLSearchParams({
-          start_date: startOfDay.toISOString(),
-          end_date: today.toISOString()
-        })
+  //       const params = new URLSearchParams({
+  //         start_date: startOfDay.toISOString(),
+  //         end_date: today.toISOString()
+  //       })
         
-        const response = await backendApi.get(`/sales/stats/overview?${params.toString()}`)
-        const salesStats = response.data?.data || response.data
+  //       const response = await backendApi.get(`/sales/stats/overview?${params.toString()}`)
+  //       const salesStats = response.data?.data || response.data
         
-        setStats(salesStats)
-      } catch (error) {
-        console.error('Error fetching sales stats:', error)
-        // Use fallback data if API fails
-        setStats({
-          total_sales: 45280,
-          total_amount: 45280,
-          total_transactions: 127,
-          average_sale: 356
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
+  //       setStats(salesStats)
+  //     } catch (error) {
+  //       console.error('Error fetching sales stats:', error)
+  //       // Use fallback data if API fails
+  //       setStats({
+  //         total_sales: 45280,
+  //         total_amount: 45280,
+  //         total_transactions: 127,
+  //         average_sale: 356
+  //       })
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   }
 
-    fetchStats()
-  }, [])
+  //   fetchStats()
+  // }, [])
 
   if (loading) {
     return (

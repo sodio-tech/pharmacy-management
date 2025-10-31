@@ -21,85 +21,85 @@ export function MedicineInventory({
   onAddToCart 
 }: MedicineInventoryProps) {
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [lastTap, setLastTap] = useState<number>(0)
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true)
-      const filters = {
-        category: selectedCategory === "all" ? undefined : selectedCategory,
-        search: searchTerm || undefined,
-        limit: 50 // Get more products for sales
-      }
+  // const fetchProducts = async () => {
+  //   try {
+  //     setLoading(true)
+  //     const filters = {
+  //       category: selectedCategory === "all" ? undefined : selectedCategory,
+  //       search: searchTerm || undefined,
+  //       limit: 50 // Get more products for sales
+  //     }
       
-      const params = new URLSearchParams()
-      if (filters.category) params.append('category', filters.category)
-      if (filters.search) params.append('search', filters.search)
-      if (filters.limit) params.append('limit', filters.limit.toString())
+  //     const params = new URLSearchParams()
+  //     if (filters.category) params.append('category', filters.category)
+  //     if (filters.search) params.append('search', filters.search)
+  //     if (filters.limit) params.append('limit', filters.limit.toString())
       
-      const response = await backendApi.get(`/products?${params.toString()}`)
-      const products = response.data?.data || response.data || []
+  //     const response = await backendApi.get(`/products?${params.toString()}`)
+  //     const products = response.data?.data || response.data || []
       
-      // If no products returned, use fallback data for testing
-      if (!products || products.length === 0) {
-        const fallbackProducts = [
-          {
-            id: "1",
-            name: "Paracetamol 500mg",
-            generic_name: "Paracetamol",
-            description: "Pain reliever and fever reducer",
-            category: "OTC",
-            manufacturer: "GSK",
-            barcode: "1234567890123",
-            qr_code: "1234567890123",
-            unit_price: 3.25,
-            selling_price: 5.50,
-            unit_of_measure: "tablets",
-            pack_size: 1,
-            min_stock_level: 20,
-            max_stock_level: 1000,
-            requires_prescription: false,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: "2",
-            name: "Ibuprofen 400mg",
-            generic_name: "Ibuprofen",
-            description: "Anti-inflammatory pain reliever",
-            category: "OTC",
-            manufacturer: "Johnson & Johnson",
-            barcode: "9876543210987",
-            qr_code: "9876543210987",
-            unit_price: 8.50,
-            selling_price: 12.75,
-            unit_of_measure: "tablets",
-            pack_size: 1,
-            min_stock_level: 15,
-            max_stock_level: 800,
-            requires_prescription: false,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ]
-        setProducts(fallbackProducts)
-      } else {
-        setProducts(products)
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error)
-      toast.error('Failed to fetch products')
-    } finally {
-      setLoading(false)
-    }
-  }
+  //     // If no products returned, use fallback data for testing
+  //     if (!products || products.length === 0) {
+  //       const fallbackProducts = [
+  //         {
+  //           id: "1",
+  //           name: "Paracetamol 500mg",
+  //           generic_name: "Paracetamol",
+  //           description: "Pain reliever and fever reducer",
+  //           category: "OTC",
+  //           manufacturer: "GSK",
+  //           barcode: "1234567890123",
+  //           qr_code: "1234567890123",
+  //           unit_price: 3.25,
+  //           selling_price: 5.50,
+  //           unit_of_measure: "tablets",
+  //           pack_size: 1,
+  //           min_stock_level: 20,
+  //           max_stock_level: 1000,
+  //           requires_prescription: false,
+  //           is_active: true,
+  //           created_at: new Date().toISOString(),
+  //           updated_at: new Date().toISOString()
+  //         },
+  //         {
+  //           id: "2",
+  //           name: "Ibuprofen 400mg",
+  //           generic_name: "Ibuprofen",
+  //           description: "Anti-inflammatory pain reliever",
+  //           category: "OTC",
+  //           manufacturer: "Johnson & Johnson",
+  //           barcode: "9876543210987",
+  //           qr_code: "9876543210987",
+  //           unit_price: 8.50,
+  //           selling_price: 12.75,
+  //           unit_of_measure: "tablets",
+  //           pack_size: 1,
+  //           min_stock_level: 15,
+  //           max_stock_level: 800,
+  //           requires_prescription: false,
+  //           is_active: true,
+  //           created_at: new Date().toISOString(),
+  //           updated_at: new Date().toISOString()
+  //         }
+  //       ]
+  //       setProducts(fallbackProducts)
+  //     } else {
+  //       setProducts(products)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching products:', error)
+  //     toast.error('Failed to fetch products')
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
-  useEffect(() => {
-    fetchProducts()
-  }, [selectedCategory, searchTerm])
+  // useEffect(() => {
+  //   fetchProducts()
+  // }, [selectedCategory, searchTerm])
 
   const handleDoubleTap = (product: Product) => {
     const now = Date.now()

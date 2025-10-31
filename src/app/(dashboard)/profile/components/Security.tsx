@@ -37,9 +37,9 @@ export default function Security() {
     const isPasswordValid = hasMinLength && hasUppercase && hasNumber && passwordsMatch
 
     // Load sessions on component mount
-    useEffect(() => {
-        loadSessions()
-    }, [])
+    // useEffect(() => {
+    //     loadSessions()
+    // }, [])
 
     const handleRevokeSession = async (sessionToken: string) => {
         setIsRevokingSession(sessionToken)

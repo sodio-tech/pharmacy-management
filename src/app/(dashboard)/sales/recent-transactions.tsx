@@ -9,51 +9,51 @@ import { Transaction } from "@/types/sales"
 
 export function RecentTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      try {
-        setLoading(true)
-        const response = await backendApi.get('/sales/transactions/recent?limit=5')
-        const recentTransactions = response.data?.data || response.data || []
-        setTransactions(recentTransactions)
-      } catch (error) {
-        console.error('Error fetching recent transactions:', error)
-        // Use fallback data if API fails
-        setTransactions([
-          {
-            id: "#INV-2024-001234",
-            customer: "Walk-in Customer",
-            items: 2,
-            amount: 485.00,
-            time: "2 mins ago",
-            status: "COMPLETED"
-          },
-          {
-            id: "#INV-2024-001233",
-            customer: "John Smith",
-            items: 5,
-            amount: 1250.00,
-            time: "15 mins ago",
-            status: "COMPLETED"
-          },
-          {
-            id: "#INV-2024-001232",
-            customer: "Sarah Johnson",
-            items: 3,
-            amount: 750.00,
-            time: "32 mins ago",
-            status: "COMPLETED"
-          }
-        ])
-      } finally {
-        setLoading(false)
-      }
-    }
+  // useEffect(() => {
+  //   const fetchTransactions = async () => {
+  //     try {
+  //       setLoading(true)
+  //       const response = await backendApi.get('/sales/transactions/recent?limit=5')
+  //       const recentTransactions = response.data?.data || response.data || []
+  //       setTransactions(recentTransactions)
+  //     } catch (error) {
+  //       console.error('Error fetching recent transactions:', error)
+  //       // Use fallback data if API fails
+  //       setTransactions([
+  //         {
+  //           id: "#INV-2024-001234",
+  //           customer: "Walk-in Customer",
+  //           items: 2,
+  //           amount: 485.00,
+  //           time: "2 mins ago",
+  //           status: "COMPLETED"
+  //         },
+  //         {
+  //           id: "#INV-2024-001233",
+  //           customer: "John Smith",
+  //           items: 5,
+  //           amount: 1250.00,
+  //           time: "15 mins ago",
+  //           status: "COMPLETED"
+  //         },
+  //         {
+  //           id: "#INV-2024-001232",
+  //           customer: "Sarah Johnson",
+  //           items: 3,
+  //           amount: 750.00,
+  //           time: "32 mins ago",
+  //           status: "COMPLETED"
+  //         }
+  //       ])
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   }
 
-    fetchTransactions()
-  }, [])
+  //   fetchTransactions()
+  // }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {

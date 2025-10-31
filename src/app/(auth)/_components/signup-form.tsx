@@ -70,16 +70,16 @@ const SignUpForm = () => {
     const form = useForm<SignUpFormValues>({
         resolver: zodResolver(signupSchema),
         defaultValues: {
-            firstName: "Ayush",
-            lastName: "Dixit",
-            email: "fsayush100@gmail.com",
-            phoneNumber: "7521847004",
-            pharmacyName: "Ayush Pharmacy",
-            drugLicenseNumber: "DL-1234567890",
-            password: "Ayushdixit@123",
-            confirmPassword: "Ayushdixit@123",
-            agreeToTerms: true,
-            receiveUpdates: true,
+            firstName: "",
+            lastName: "",
+            email: "",
+            phoneNumber: "",
+            pharmacyName: "",
+            drugLicenseNumber: "",
+            password: "",
+            confirmPassword: "",
+            agreeToTerms: false,
+            receiveUpdates: false,
         },
     });
 

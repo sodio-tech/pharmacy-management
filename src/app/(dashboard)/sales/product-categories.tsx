@@ -29,7 +29,7 @@ export function ProductCategories({
     { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" }
   ])
   const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   const categoryIcons: { [key: string]: string } = {
     "OTC": "💊",
@@ -49,48 +49,48 @@ export function ProductCategories({
     "OTHER": "bg-gray-100 text-gray-700"
   }
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true)
-      // Get all products to extract unique categories
-      const response = await backendApi.get('/products?limit=1000')
-      const products = response.data?.data || response.data || []
+  // const fetchCategories = async () => {
+  //   try {
+  //     setLoading(true)
+  //     // Get all products to extract unique categories
+  //     const response = await backendApi.get('/products?limit=1000')
+  //     const products = response.data?.data || response.data || []
       
-      // If no products returned, use fallback categories
-      if (!products || products.length === 0) {
-        const fallbackCategories: Category[] = [
-          { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
-          { name: "OTC", icon: "💊", color: "bg-blue-100 text-blue-700", value: "OTC" },
-          { name: "Prescription", icon: "🩺", color: "bg-red-100 text-red-700", value: "PRESCRIPTION" },
-          { name: "Supplements", icon: "💊", color: "bg-green-100 text-green-700", value: "SUPPLEMENTS" }
-        ]
-        setCategories(fallbackCategories)
-      } else {
-        const uniqueCategories = [...new Set(products.map((product: any) => product.category).filter(Boolean))] as string[]
+  //     // If no products returned, use fallback categories
+  //     if (!products || products.length === 0) {
+  //       const fallbackCategories: Category[] = [
+  //         { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
+  //         { name: "OTC", icon: "💊", color: "bg-blue-100 text-blue-700", value: "OTC" },
+  //         { name: "Prescription", icon: "🩺", color: "bg-red-100 text-red-700", value: "PRESCRIPTION" },
+  //         { name: "Supplements", icon: "💊", color: "bg-green-100 text-green-700", value: "SUPPLEMENTS" }
+  //       ]
+  //       setCategories(fallbackCategories)
+  //     } else {
+  //       const uniqueCategories = [...new Set(products.map((product: any) => product.category).filter(Boolean))] as string[]
         
-        const categoryList: Category[] = [
-          { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
-          ...uniqueCategories.map((category: string) => ({
-            name: category.charAt(0) + category.slice(1).toLowerCase(),
-            icon: categoryIcons[category] || "📦",
-            color: categoryColors[category] || "bg-gray-100 text-gray-700",
-            value: category
-          }))
-        ]
+  //       const categoryList: Category[] = [
+  //         { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
+  //         ...uniqueCategories.map((category: string) => ({
+  //           name: category.charAt(0) + category.slice(1).toLowerCase(),
+  //           icon: categoryIcons[category] || "📦",
+  //           color: categoryColors[category] || "bg-gray-100 text-gray-700",
+  //           value: category
+  //         }))
+  //       ]
         
-        setCategories(categoryList)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-      toast.error('Failed to fetch categories')
-    } finally {
-      setLoading(false)
-    }
-  }
+  //       setCategories(categoryList)
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching categories:', error)
+  //     toast.error('Failed to fetch categories')
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
+  // useEffect(() => {
+  //   fetchCategories()
+  // }, [])
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)

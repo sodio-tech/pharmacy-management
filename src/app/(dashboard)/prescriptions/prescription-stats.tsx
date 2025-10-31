@@ -9,39 +9,39 @@ import { backendApi } from "@/lib/axios-config"
 
 export function PrescriptionStats() {
   const [stats, setStats] = useState<PrescriptionStatsType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await backendApi.get('/prescriptions/stats')
-      const statsData = response.data?.data || response.data
-      setStats(statsData);
-    } catch (error: unknown) {
-      console.error('Failed to fetch prescription stats:', error);
-      const err = error as { message?: string; response?: { data?: { message?: string } } }
-      setError(err?.message || err?.response?.data?.message || 'Failed to load prescription statistics');
-      // Set fallback data for development
-      setStats({
-        total_prescriptions: 0,
-        pending_validation: 0,
-        validated: 0,
-        dispensed: 0,
-        rejected: 0,
-        today_uploads: 0,
-        this_week_uploads: 0,
-        this_month_uploads: 0
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchStats = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+  //     const response = await backendApi.get('/prescriptions/stats')
+  //     const statsData = response.data?.data || response.data
+  //     setStats(statsData);
+  //   } catch (error: unknown) {
+  //     console.error('Failed to fetch prescription stats:', error);
+  //     const err = error as { message?: string; response?: { data?: { message?: string } } }
+  //     setError(err?.message || err?.response?.data?.message || 'Failed to load prescription statistics');
+  //     // Set fallback data for development
+  //     setStats({
+  //       total_prescriptions: 0,
+  //       pending_validation: 0,
+  //       validated: 0,
+  //       dispensed: 0,
+  //       rejected: 0,
+  //       today_uploads: 0,
+  //       this_week_uploads: 0,
+  //       this_month_uploads: 0
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  // useEffect(() => {
+  //   fetchStats();
+  // }, []);
 
   if (loading) {
     return (
@@ -125,7 +125,7 @@ export function PrescriptionStats() {
         <Button
           variant="outline"
           size="sm"
-          onClick={fetchStats}
+          // onClick={fetchStats}
           disabled={loading}
           className="flex items-center gap-2"
         >

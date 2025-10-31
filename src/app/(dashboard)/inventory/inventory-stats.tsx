@@ -26,31 +26,31 @@ export function InventoryStats() {
   const [loading, setLoading] = useState(true)
   const [realTimeUpdates, setRealTimeUpdates] = useState(false)
 
-  useEffect(() => {
-    fetchStats()
+  // useEffect(() => {
+  //   fetchStats()
 
-    // Set up real-time updates
-    const interval = setInterval(() => {
-      fetchStats()
-    }, 30000) // Update every 30 seconds
+  //   // Set up real-time updates
+  //   const interval = setInterval(() => {
+  //     fetchStats()
+  //   }, 30000) // Update every 30 seconds
 
-    return () => clearInterval(interval)
-  }, [])
+  //   return () => clearInterval(interval)
+  // }, [])
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true)
-      const response = await backendApi.get('/inventory/stock')
-      const data = response.data?.data || response.data
-      setStats(data.summary || data)
-      setRealTimeUpdates(true)
-    } catch (error: unknown) {
-      toast.error("Failed to load inventory statistics")
-      setRealTimeUpdates(false)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // const fetchStats = async () => {
+  //   try {
+  //     setLoading(true)
+  //     const response = await backendApi.get('/inventory/stock')
+  //     const data = response.data?.data || response.data
+  //     setStats(data.summary || data)
+  //     setRealTimeUpdates(true)
+  //   } catch (error: unknown) {
+  //     toast.error("Failed to load inventory statistics")
+  //     setRealTimeUpdates(false)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const statsCards = [
     {

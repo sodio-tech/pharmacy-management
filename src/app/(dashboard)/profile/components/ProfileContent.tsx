@@ -33,7 +33,7 @@ export default function ProfileContent() {
                 <button
                   key={tab.id}
                   onClick={() => router.push(`?tab=${tab.id}`)}
-                  className={`flex items-center gap-2 py-4 px-5 sm:px-3 md:px-0 border-b-2 transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-2 py-4 px-5 cursor-pointer sm:px-3 md:px-0 border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? "border-[#0f766e] text-[#0f766e]"
                       : "border-transparent text-[#6b7280] hover:text-[#374151]"
@@ -50,7 +50,6 @@ export default function ProfileContent() {
 
       {/* Profile Content */}
       {activeTab === "profile" && <Profile />}
-
       {activeTab === "security" && <Security />}
       {activeTab === "subscription" && <Subscription />}
       {activeTab === "organization" && <Organization />}

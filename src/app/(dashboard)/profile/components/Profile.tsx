@@ -22,7 +22,6 @@ interface UserProfile {
 
 const Profile = () => {
   const { user: sessionUser, isLoading: isPending, refetch } = useUser()
-  const session = sessionUser ? { user: sessionUser } : null
   const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [formData, setFormData] = useState<UserProfile>({
@@ -37,23 +36,22 @@ const Profile = () => {
     subscription_status: ''
   })
 
-  // Initialize form data when session loads
+  // Initialize form data when user loads
   useEffect(() => {
-    if (session?.user) {
-      const user = session.user
+    if (sessionUser) {
       setFormData({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email || '',
-        phone_number: user.phone_number || '',
-        pharmacy_name: user.pharmacy_name || '',
-        drug_license_number: user.drug_license_number || '',
-        image: user.image || '',
-        role: user.role || '',
-        subscription_status: user.subscription_status || ''
+        id: sessionUser.id,
+        fullname: sessionUser.fullname || '',
+        email: sessionUser.email || '',
+        phone_number: sessionUser.phone_number || '',
+        pharmacy_name: sessionUser.pharmacy_name || '',
+        drug_license_number: sessionUser.drug_license_number || '',
+        image: sessionUser.image || '',
+        role: sessionUser.role || '',
+        subscription_status: sessionUser.subscription_status || ''
       })
     }
-  }, [session])
+  }, [sessionUser?.id]) // Only depend on user ID to avoid infinite loops
 
   const handleInputChange = (field: keyof UserProfile, value: string) => {
     setFormData(prev => ({
@@ -63,7 +61,7 @@ const Profile = () => {
   }
 
   const handleSaveChanges = async () => {
-    if (!session?.user) return
+    if (!sessionUser) return
 
     setIsUpdating(true)
     try {
@@ -86,18 +84,17 @@ const Profile = () => {
   }
 
   const handleCancel = () => {
-    if (session?.user) {
-      const user = session.user
+    if (sessionUser) {
       setFormData({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email || '',
-        phone_number: user.phone_number || '',
-        pharmacy_name: user.pharmacy_name || '',
-        drug_license_number: user.drug_license_number || '',
-        image: user.image || '',
-        role: user.role || '',
-        subscription_status: user.subscription_status || ''
+        id: sessionUser.id,
+        fullname: sessionUser.fullname || '',
+        email: sessionUser.email || '',
+        phone_number: sessionUser.phone_number || '',
+        pharmacy_name: sessionUser.pharmacy_name || '',
+        drug_license_number: sessionUser.drug_license_number || '',
+        image: sessionUser.image || '',
+        role: sessionUser.role || '',
+        subscription_status: sessionUser.subscription_status || ''
       })
     }
   }
@@ -155,7 +152,7 @@ const Profile = () => {
     )
   }
 
-  if (!session?.user) {
+  if (!sessionUser) {
     return (
       <div className="text-center py-8">
         <p className="text-[#6b7280]">Please log in to view your profile.</p>

@@ -29,7 +29,7 @@ export function InventoryTable({
   canAddProducts = true,
 }: InventoryTableProps) {
   const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [activeFilter, setActiveFilter] = useState("all")
@@ -39,9 +39,9 @@ export function InventoryTable({
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
-    fetchProducts()
-  }, [searchTerm, selectedCategory, activeFilter, page])
+  // useEffect(() => {
+  //   fetchProducts()
+  // }, [searchTerm, selectedCategory, activeFilter, page])
 
   const fetchProducts = async () => {
     try {
