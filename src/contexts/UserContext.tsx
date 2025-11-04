@@ -16,6 +16,7 @@ export interface User {
   phone_number: string
   drug_license_number: string
   two_fa_enabled: boolean
+  pharmacy_id: number
   image?: string | null // Optional field for UI
 }
 

@@ -36,12 +36,6 @@ const signupSchema = z
             .string()
             .min(10, { message: "Please enter a valid phone number" }),
         pharmacyName: z.string().min(2, { message: "Pharmacy name is required" }),
-        drugLicenseNumber: z
-            .string()
-            .optional()
-            .refine((val) => !val || val.length >= 5, {
-                message: "Drug license number must be at least 5 characters if provided",
-            }),
         password: z
             .string()
             .min(8, { message: "Password must be at least 8 characters" })
@@ -78,7 +72,6 @@ const SignUpForm = () => {
             email: "",
             phoneNumber: "",
             pharmacyName: "",
-            drugLicenseNumber: "",
             password: "",
             confirmPassword: "",
             agreeToTerms: false,
@@ -98,7 +91,7 @@ const SignUpForm = () => {
         try {
             setIsLoading(true);
 
-            const { email, password, firstName, lastName, pharmacyName, phoneNumber, drugLicenseNumber } = signupData;
+            const { email, password, firstName, lastName, pharmacyName, phoneNumber } = signupData;
 
             const response = await axios.post(`${API}/api/v1/auth/sign-up`, {
                 "first_name": firstName,
@@ -107,7 +100,6 @@ const SignUpForm = () => {
                 "email": email,
                 "password": password,
                 "phone_number": phoneNumber,
-                ...(drugLicenseNumber && { "drug_license_number": drugLicenseNumber })
             })
             if (response.status === 200) {
                 toast.success("Registration successful!")
@@ -275,28 +267,6 @@ const SignUpForm = () => {
                                 <FormControl>
                                     <Input
                                         placeholder="Your Pharmacy Name"
-                                        {...field}
-                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
-                                    />
-                                </FormControl>
-                                <FormMessage className="text-xs" />
-                            </FormItem>
-                        )}
-                    />
-                </motion.div>
-
-                <motion.div variants={itemVariants}>
-                    <FormField
-                        control={form.control}
-                        name="drugLicenseNumber"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-sm font-medium text-gray-700">
-                                    Drug License Number <span className="text-gray-400 font-normal">(Optional)</span>
-                                </FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder="DL-XXXXXXXX"
                                         {...field}
                                         className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
                                     />
