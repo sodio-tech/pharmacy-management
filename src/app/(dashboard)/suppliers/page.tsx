@@ -9,6 +9,7 @@ import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { AddSupplierDialog } from "./add-supplier-dialog"
 import { NewPODialog } from "./new-po-dialog"
+import { useUser } from "@/contexts/UserContext"
 
 function SupplierContent() {
   return (
@@ -23,21 +24,26 @@ function SupplierContent() {
 export default function SupplierManagement() {
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
   const [isNewPOOpen, setIsNewPOOpen] = useState(false)
+  const { user } = useUser()
 
-  const supplierActions: HeaderAction[] = [
-    {
-      label: "Add Supplier",
-      icon: Plus,
-      onClick: () => setIsAddSupplierOpen(true),
-      variant: "primary",
-    },
-    {
-      label: "New PO",
-      icon: FileText,
-      onClick: () => setIsNewPOOpen(true),
-      variant: "secondary",
-    }
-  ]
+  const isPharmacist = user?.role === "PHARMACIST"
+
+  const supplierActions: HeaderAction[] = isPharmacist
+    ? []
+    : [
+        {
+          label: "Add Supplier",
+          icon: Plus,
+          onClick: () => setIsAddSupplierOpen(true),
+          variant: "primary",
+        },
+        {
+          label: "New PO",
+          icon: FileText,
+          onClick: () => setIsNewPOOpen(true),
+          variant: "secondary",
+        },
+      ]
 
   return (
     <>
@@ -46,7 +52,7 @@ export default function SupplierManagement() {
           <DynamicHeader
             maintext="Supplier Management"
             para="Manage suppliers, purchase orders, and vendor relationships"
-            children={<HeaderActions actions={supplierActions} />}
+            children={supplierActions.length > 0 ? <HeaderActions actions={supplierActions} /> : null}
           />
         }
       >

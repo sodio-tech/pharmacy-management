@@ -43,6 +43,13 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
   const pathname = usePathname()
   const router = useRouter()
 
+  const isPharmacist = user?.role === "PHARMACIST"
+
+  // Filter sidebar items based on user role
+  const filteredSidebarItems = isPharmacist
+    ? sidebarItems.filter((item) => item.label !== "Subscription")
+    : sidebarItems
+
   const handleNavigation = (href: string) => {
     router.push(href)
     onCloseMobileMenu?.()
@@ -80,7 +87,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
         {/* Navigation */}
         <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
-            {sidebarItems.map((item, index) => {
+            {filteredSidebarItems.map((item, index) => {
               const isDashboard = item.href === "/dashboard"
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href + "/") || (pathname === "/" && isDashboard)
