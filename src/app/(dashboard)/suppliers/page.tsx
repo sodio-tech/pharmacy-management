@@ -1,17 +1,18 @@
 "use client"
-
-import { Button } from "@/components/ui/button"
-import { Plus, FileText, BarChart3 } from "lucide-react"
-import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
+import { useState } from "react"
+import { Plus, FileText } from "lucide-react"
+import { HeaderActions, type HeaderAction } from "@/components/HeaderActions"
 import { SupplierStats } from "./supplier-stats"
 import { SupplierTable } from "./supplier-table"
 import { SupplierBottomSections } from "./supplier-bottom-sections"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
+import { AddSupplierDialog } from "./add-supplier-dialog"
+import { NewPODialog } from "./new-po-dialog"
 
 function SupplierContent() {
   return (
-    <div className="bg-[#f9fafb] min-h-screen">
+    <div className="bg-[#f9fafb]">
       <SupplierStats />
       <SupplierTable />
       <SupplierBottomSections />
@@ -20,38 +21,40 @@ function SupplierContent() {
 }
 
 export default function SupplierManagement() {
+  const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
+  const [isNewPOOpen, setIsNewPOOpen] = useState(false)
+
   const supplierActions: HeaderAction[] = [
     {
       label: "Add Supplier",
       icon: Plus,
-      onClick: () => {},
-      variant: 'primary'
+      onClick: () => setIsAddSupplierOpen(true),
+      variant: "primary",
     },
     {
       label: "New PO",
       icon: FileText,
-      onClick: () => {},
-      variant: 'secondary'
-    },
-    {
-      label: "Analytics",
-      icon: BarChart3,
-      onClick: () => {},
-      variant: 'tertiary'
+      onClick: () => setIsNewPOOpen(true),
+      variant: "secondary",
     }
   ]
 
   return (
-    <LayoutSkeleton
-      header={
-        <DynamicHeader
-          maintext="Supplier Management"
-          para="Manage suppliers, purchase orders, and vendor relationships"
-          children={<HeaderActions actions={supplierActions} />}
-        />
-      }
-    >
-      <SupplierContent />
-    </LayoutSkeleton>
+    <>
+      <LayoutSkeleton
+        header={
+          <DynamicHeader
+            maintext="Supplier Management"
+            para="Manage suppliers, purchase orders, and vendor relationships"
+            children={<HeaderActions actions={supplierActions} />}
+          />
+        }
+      >
+        <SupplierContent />
+      </LayoutSkeleton>
+
+      <AddSupplierDialog open={isAddSupplierOpen} onOpenChange={setIsAddSupplierOpen} />
+      <NewPODialog open={isNewPOOpen} onOpenChange={setIsNewPOOpen} />
+    </>
   )
 }

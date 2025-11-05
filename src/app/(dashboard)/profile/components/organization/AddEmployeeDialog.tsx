@@ -30,7 +30,6 @@ interface AddEmployeeDialogProps {
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Admin" },
   { value: "PHARMACIST", label: "Pharmacist" },
-  { value: "SUPER_ADMIN", label: "Super Admin" },
 ] as const
 
 export default function AddEmployeeDialog({

@@ -1,97 +1,180 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Trophy } from "lucide-react"
+import { backendApi } from "@/lib/axios-config"
+import { toast } from "react-toastify"
+
+interface PurchaseOrder {
+  id: number
+  purchase_date: string
+  pharmacy_id: number
+  purchase_amount: number
+  expected_delivery_date: string
+  delivered_on: string | null
+  is_delivered: boolean
+  supplier_name: string
+  phone_number: string
+  product_category_name: string
+  gstin: string
+}
+
+interface PerformanceReport {
+  supplier_name: string
+  supplier_id: number
+  on_time_deliveries: number
+  total_deliveries: number
+  percentage: number | null
+}
 
 export function SupplierBottomSections() {
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
+  const [performanceReport, setPerformanceReport] = useState<PerformanceReport[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
+  const [loadingPerformance, setLoadingPerformance] = useState(true)
+
+  useEffect(() => {
+   
+    fetchPurchaseOrders()
+    fetchPerformanceReport()
+  }, [])
+
+  const fetchPurchaseOrders = async () => {
+    try {
+      setLoadingOrders(true)
+      const response = await backendApi.get("/v1/supplier/orders?page=1&limit=2")
+      const data = response.data?.data || response.data
+      const orders = data.orders || []
+      setPurchaseOrders(orders)
+    } catch (error: unknown) {
+      console.error("Failed to fetch purchase orders:", error)
+      toast.error("Failed to load purchase orders")
+      setPurchaseOrders([])
+    } finally {
+      setLoadingOrders(false)
+    }
+  }
+
+  const fetchPerformanceReport = async () => {
+    try {
+      setLoadingPerformance(true)
+      const response = await backendApi.get("/v1/supplier/performance-report")
+      const data = response.data?.data || response.data
+      const report = data.report || []
+      setPerformanceReport(report)
+    } catch (error: unknown) {
+      console.error("Failed to fetch performance report:", error)
+      toast.error("Failed to load performance report")
+      setPerformanceReport([])
+    } finally {
+      setLoadingPerformance(false)
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return `₹${amount.toLocaleString("en-IN")}`
+  }
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
       {/* Recent Purchase Orders */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg font-semibold">Recent Purchase Orders</CardTitle>
-          <Button variant="link" className="text-teal-600 p-0">
-            View All
-          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">PO-2024-001</p>
-              <p className="text-sm text-muted-foreground">MediCore Pharmaceuticals</p>
+          {loadingOrders ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, index) => (
+                <div key={index} className="flex items-center justify-between animate-pulse">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-24"></div>
+                    <div className="h-3 bg-muted rounded w-32"></div>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <div className="h-4 bg-muted rounded w-20"></div>
+                    <div className="h-5 bg-muted rounded w-16"></div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="text-right">
-              <p className="font-medium">₹45,000</p>
-              <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-                Pending
-              </Badge>
+          ) : purchaseOrders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No purchase orders found</p>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">PO-2024-002</p>
-              <p className="text-sm text-muted-foreground">HealthPlus Distributors</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium">₹28,500</p>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Delivered
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Due */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg font-semibold">Payment Due</CardTitle>
-          <Button variant="link" className="text-teal-600 p-0">
-            Pay Now
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">MediCore Pharmaceuticals</p>
-              <p className="text-sm text-red-600">Overdue by 5 days</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium text-red-600">₹1,25,000</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Wellness Supplements</p>
-              <p className="text-sm text-orange-600">Due in 2 days</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium text-orange-600">₹85,000</p>
-            </div>
-          </div>
+          ) : (
+            purchaseOrders.map((order) => (
+              <div key={order.id} className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">Order id: {order.id}</p>
+                  <p className="text-sm text-muted-foreground">{order.supplier_name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">{formatCurrency(order.purchase_amount)}</p>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      order.is_delivered
+                        ? "bg-green-100 text-green-800"
+                        : "bg-orange-100 text-orange-800"
+                    }
+                  >
+                    {order.is_delivered ? "Delivered" : "Pending"}
+                  </Badge>
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
       {/* Top Performers */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-lg font-semibold">Top Performers</CardTitle>
-          <Button variant="link" className="text-teal-600 p-0">
-            View Report
-          </Button>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-3">
-            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <Trophy className="h-6 w-6 text-green-600" />
+        <CardContent className="space-y-4">
+          {loadingPerformance ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, index) => (
+                <div key={index} className="flex items-center space-x-3 animate-pulse">
+                  <div className="h-12 w-12 bg-muted rounded-lg"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-40"></div>
+                    <div className="h-3 bg-muted rounded w-32"></div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="font-medium">Wellness Supplements Ltd</p>
-              <p className="text-sm text-muted-foreground">98.5% delivery rate</p>
+          ) : performanceReport.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No performance data available</p>
             </div>
-          </div>
+          ) : (
+            performanceReport.map((supplier) => (
+              <div key={supplier.supplier_id} className="flex items-center space-x-3">
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <Trophy className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium">{supplier.supplier_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {supplier.percentage !== null
+                      ? `${supplier.percentage.toFixed(1)}% delivery rate`
+                      : "N/A - No data available"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">
+                    {supplier.on_time_deliveries} / {supplier.total_deliveries}
+                  </p>
+                  <p className="text-xs text-muted-foreground">On-time deliveries</p>
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>
