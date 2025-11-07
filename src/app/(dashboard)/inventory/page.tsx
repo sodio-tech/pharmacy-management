@@ -174,12 +174,6 @@ export default function InventoryManagement() {
       variant: 'primary'
     },
     {
-      label: "Scan Barcode",
-      icon: Scan,
-      onClick: () => setIsBarcodeScannerOpen(true),
-      variant: 'secondary'
-    },
-    {
       label: "Export",
       icon: Download,
       onClick: () => { },

@@ -9,23 +9,20 @@ import { Search, Filter } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
 import { Supplier, PurchaseOrder, TabType } from "./components/types"
+import { useProductCategories } from "@/hooks/useProductCategories"
 import { TabNavigation } from "./components/TabNavigation"
 import { SuppliersTable } from "./components/SuppliersTable"
 import { OrdersTable } from "./components/OrdersTable"
 import { TableShimmer } from "./components/TableShimmer"
 import { Pagination } from "./components/Pagination"
 
-interface Category {
-  id: number
-  category_name: string
-}
 
 export function SupplierTable() {
   const [activeTab, setActiveTab] = useState<TabType>("suppliers")
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
+  const { categories } = useProductCategories()
   const [searchTerm, setSearchTerm] = useState("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all-categories")
@@ -35,22 +32,6 @@ export function SupplierTable() {
   const [completingOrderId, setCompletingOrderId] = useState<number | null>(null)
   const limit = 5
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const fetchCategories = async () => {
-    try {
-      const response = await backendApi.get("/v1/products/categories")
-      const data = response.data?.data || response.data
-      setCategories(data.categories || [])
-    } catch (error: unknown) {
-      console.error("Failed to fetch categories:", error)
-      // Don't show toast for categories as it's not critical
-      setCategories([])
-    }
-  }
-
-  useEffect(() => {
-    fetchCategories()
-  }, [])
 
   // Debounce search term
   useEffect(() => {
@@ -126,7 +107,7 @@ export function SupplierTable() {
         }
       }
 
-      const response = await backendApi.get(`/v1/supplier/orders?${params.toString()}`)
+      const response = await backendApi.get(`/v1/orders/list?${params.toString()}`)
       const data = response.data?.data || response.data
       setOrders(data.orders || [])
       setTotal(data.total || 0)
@@ -163,7 +144,7 @@ export function SupplierTable() {
   const handleCompleteOrder = async (orderId: number) => {
     try {
       setCompletingOrderId(orderId)
-      await backendApi.patch(`/v1/supplier/order-completed/${orderId}`)
+      await backendApi.patch(`/v1/orders/order-completed/${orderId}`)
       toast.success("Order marked as completed successfully")
       // Refresh orders list
       if (activeTab === "orders") {

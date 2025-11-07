@@ -2,8 +2,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { PurchaseOrder } from "./types"
-import { formatDate, formatCurrency, getInitials, getColorForInitials } from "./utils"
+import { PurchaseOrder, OrderStatus } from "./types"
+import { formatDate, formatCurrency, getInitials, getColorForInitials, getOrderStatusDisplay, getOrderStatusColor } from "./utils"
 import { CheckCircle2 } from "lucide-react"
 
 interface OrdersTableProps {
@@ -59,22 +59,26 @@ export function OrdersTable({ orders, loading, onComplete, completingOrderId }: 
                     </div>
                   </td>
                   <td className="py-4 px-4">
-                    <Badge variant="secondary">{order.product_category_name}</Badge>
+                    <div className="flex flex-wrap gap-1">
+                      {order.product_categories.map((category, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
                   </td>
                   <td className="py-4 px-4 text-sm">{formatDate(order.purchase_date)}</td>
                   <td className="py-4 px-4 font-medium">{formatCurrency(order.purchase_amount)}</td>
                   <td className="py-4 px-4">
                     <Badge
-                      variant={order.is_delivered ? "default" : "secondary"}
-                      className={
-                        order.is_delivered ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
-                      }
+                      variant={order.status === OrderStatus.FULFILLED ? "default" : "secondary"}
+                      className={getOrderStatusColor(order.status)}
                     >
-                      {order.is_delivered ? "Delivered" : "Pending"}
+                      {getOrderStatusDisplay(order.status)}
                     </Badge>
                   </td>
                   <td className="py-4 px-4">
-                    {!order.is_delivered && onComplete && (
+                    {order.status === OrderStatus.PENDING && onComplete && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -113,19 +117,23 @@ export function OrdersTable({ orders, loading, onComplete, completingOrderId }: 
                     <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                   </div>
                   <Badge
-                    variant={order.is_delivered ? "default" : "secondary"}
-                    className={
-                      order.is_delivered ? "bg-green-100 text-green-800" : "bg-orange-100 text-orange-800"
-                    }
+                    variant={order.status === OrderStatus.FULFILLED ? "default" : "secondary"}
+                    className={getOrderStatusColor(order.status)}
                   >
-                    {order.is_delivered ? "Delivered" : "Pending"}
+                    {getOrderStatusDisplay(order.status)}
                   </Badge>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Category</span>
-                    <Badge variant="secondary">{order.product_category_name}</Badge>
+                    <span className="text-sm text-muted-foreground">Categories</span>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {order.product_categories.map((category, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -143,7 +151,7 @@ export function OrdersTable({ orders, loading, onComplete, completingOrderId }: 
                     <span className="text-sm font-medium">{formatCurrency(order.purchase_amount)}</span>
                   </div>
 
-                  {!order.is_delivered && onComplete && (
+                  {order.status === OrderStatus.PENDING && onComplete && (
                     <div className="pt-3 border-t">
                       <Button
                         variant="outline"

@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Trophy } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
+import { OrderStatus } from "./components/types"
+import { getOrderStatusDisplay, getOrderStatusColor } from "./components/utils"
 
 interface PurchaseOrder {
   id: number
@@ -13,11 +15,11 @@ interface PurchaseOrder {
   pharmacy_id: number
   purchase_amount: number
   expected_delivery_date: string
-  delivered_on: string | null
-  is_delivered: boolean
+  fulfilled_on: string | null
+  status: OrderStatus | string
   supplier_name: string
   phone_number: string
-  product_category_name: string
+  product_categories: string[]
   gstin: string
 }
 
@@ -44,7 +46,7 @@ export function SupplierBottomSections() {
   const fetchPurchaseOrders = async () => {
     try {
       setLoadingOrders(true)
-      const response = await backendApi.get("/v1/supplier/orders?page=1&limit=2")
+      const response = await backendApi.get("/v1/orders/list?page=1&limit=2")
       const data = response.data?.data || response.data
       const orders = data.orders || []
       setPurchaseOrders(orders)
@@ -115,13 +117,9 @@ export function SupplierBottomSections() {
                   <p className="font-medium">{formatCurrency(order.purchase_amount)}</p>
                   <Badge
                     variant="secondary"
-                    className={
-                      order.is_delivered
-                        ? "bg-green-100 text-green-800"
-                        : "bg-orange-100 text-orange-800"
-                    }
+                    className={getOrderStatusColor(order.status)}
                   >
-                    {order.is_delivered ? "Delivered" : "Pending"}
+                    {getOrderStatusDisplay(order.status)}
                   </Badge>
                 </div>
               </div>

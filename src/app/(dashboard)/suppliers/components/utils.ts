@@ -1,3 +1,5 @@
+import { OrderStatus } from "./types"
+
 export const formatDate = (iso?: string | null) => {
   if (!iso) return "-"
   try {
@@ -39,5 +41,37 @@ export const getSupplierStatus = (lastPurchaseDate: string | null): "Active" | "
   const daysDiff = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
   // If last purchase was within 90 days, consider it Active
   return daysDiff <= 90 ? "Active" : "Inactive"
+}
+
+export const getOrderStatusDisplay = (status: OrderStatus | string): string => {
+  if (typeof status === "string") {
+    status = status as OrderStatus
+  }
+  switch (status) {
+    case OrderStatus.PENDING:
+      return "Pending"
+    case OrderStatus.FULFILLED:
+      return "Fulfilled"
+    case OrderStatus.CANCELLED:
+      return "Cancelled"
+    default:
+      return status
+  }
+}
+
+export const getOrderStatusColor = (status: OrderStatus | string): string => {
+  if (typeof status === "string") {
+    status = status as OrderStatus
+  }
+  switch (status) {
+    case OrderStatus.FULFILLED:
+      return "bg-green-100 text-green-800"
+    case OrderStatus.PENDING:
+      return "bg-orange-100 text-orange-800"
+    case OrderStatus.CANCELLED:
+      return "bg-red-100 text-red-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
 }
 

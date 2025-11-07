@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Save, Package, Image as ImageIcon, QrCode, ScanLine } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { toast } from "react-toastify"
-import { useUser } from "@/contexts/UserContext"
 import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
+import { useProductCategories } from "@/hooks/useProductCategories"
+import { useProductUnits } from "@/hooks/useProductUnits"
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -24,36 +25,46 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   const isEditMode = !!product
   
   const [formData, setFormData] = useState({
-    // Updated to Paracetamol
-    name: "Paracetamol 500mg",
-    description: "Paracetamol is a pain reliever and fever reducer used to treat mild to moderate pain and fever.",
-    generic_name: "Paracetamol",
-    manufacturer: "GSK",
-    barcode: "1234567890123",
-    qr_code: "1234567890123",
-    category: "OTC",
-    unit_price: "3.25",
-    selling_price: "5.50",
-    unit_of_measure: "tablets",
-    pack_size: "1",
-    min_stock_level: "20",
-    max_stock_level: "1000",
+    name: "",
+    description: "",
+    generic_name: "",
+    manufacturer: "",
+    barcode: "",
+    qr_code: "",
+    category: "",
+    product_category_id: "",
+    sku: "",
+    unit_id: "",
+    unit_price: "",
+    selling_price: "",
+    pack_size: "",
+    min_stock_level: "",
+    max_stock_level: "",
     requires_prescription: false,
   })
 
   const [isLoading, setIsLoading] = useState(false)
-  const { user } = useUser()
   const [error, setError] = useState("")
-  const [userRole, setUserRole] = useState<string | null>("ADMIN")
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { categories, isLoading: isLoadingCategories } = useProductCategories()
+  const { units, isLoading: isLoadingUnits } = useProductUnits()
 
   // Populate form when editing
   useEffect(() => {
-    if (product && isEditMode) {
+    if (product && isEditMode && categories.length > 0 && units.length > 0) {
+      // Find matching category ID from API categories
+      const matchingCategory = categories.find(
+        cat => cat.category_name.toLowerCase().replace(/_/g, "-") === product.category?.toLowerCase().replace(/_/g, "-")
+      )
+      
+      // Find matching unit ID from API units
+      const matchingUnit = units.find(
+        unit => unit.unit.toLowerCase() === product.unit_of_measure?.toLowerCase()
+      )
+      
       setFormData({
         name: product.name || "",
         description: product.description || "",
@@ -61,10 +72,12 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         manufacturer: product.manufacturer || "",
         barcode: product.barcode || "",
         qr_code: product.qr_code || "",
-        category: product.category || "OTC",
+        category: product.category || "",
+        product_category_id: matchingCategory?.id.toString() || "",
+        sku: "",
+        unit_id: matchingUnit?.id.toString() || "",
         unit_price: product.unit_price?.toString() || "",
         selling_price: product.selling_price?.toString() || "",
-        unit_of_measure: product.unit_of_measure || "tablets",
         pack_size: product.pack_size?.toString() || "1",
         min_stock_level: product.min_stock_level?.toString() || "10",
         max_stock_level: product.max_stock_level?.toString() || "1000",
@@ -77,37 +90,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         setImagePreview(product.image_url)
       }
     } 
-    // else {
-    //   // Reset form for add mode
-    //   setFormData({
-    //     name: "",
-    //     description: "",
-    //     generic_name: "",
-    //     manufacturer: "",
-    //     barcode: "",
-    //     qr_code: "",
-    //     category: "OTC",
-    //     unit_price: "",
-    //     selling_price: "",
-    //     unit_of_measure: "tablets",
-    //     pack_size: "1",
-    //     min_stock_level: "10",
-    //     max_stock_level: "1000",
-    //     requires_prescription: false,
-    //   })
-    // }
-  }, [product, isEditMode])
-
-  const categories = [
-    { value: "OTC", label: "OTC (Over The Counter)" },
-    { value: "PRESCRIPTION", label: "Prescription Medicines" },
-    { value: "SUPPLEMENTS", label: "Supplements & Vitamins" },
-    { value: "MEDICAL_DEVICES", label: "Medical Devices" },
-    { value: "COSMETICS", label: "Cosmetics" },
-    { value: "OTHER", label: "Other" },
-  ]
-
-  const unitOfMeasure = ["tablets", "capsules", "ml", "mg", "grams", "units", "bottles", "boxes", "strips", "vials"]
+  }, [product, isEditMode, categories, units])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -169,7 +152,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       setError("Product name is required")
       return false
     }
-    if (!formData.category) {
+    if (!formData.product_category_id) {
       setError("Category is required")
       return false
     }
@@ -181,8 +164,8 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       setError("Valid selling price is required")
       return false
     }
-    if (!formData.unit_of_measure) {
-      setError("Unit of measure is required")
+    if (!formData.unit_id) {
+      setError("Unit is required")
       return false
     }
     return true
@@ -195,31 +178,10 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
     setError("")
 
     try {
-      let finalImageUrl = imageUrl
+      let result: Product
 
-      // Upload image if a new file is selected
-      if (imageFile && !imageUrl) {
-        setIsUploadingImage(true)
-        try {
-          const formData = new FormData()
-          formData.append('image', imageFile)
-          const response = await backendApi.post('/products/upload-image', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          })
-          finalImageUrl = response.data?.data?.url || response.data?.url
-        } catch (error: unknown) {
-          const err = error as { message?: string; response?: { data?: { message?: string } } }
-          const errorMessage = err.response?.data?.message || err.message || 'Failed to upload image'
-          setError(errorMessage)
-          toast.error(errorMessage)
-          return
-        } finally {
-          setIsUploadingImage(false)
-        }
-      }
-
+      if (isEditMode && product) {
+        // Edit mode - update product
       const productData = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -228,25 +190,67 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         barcode: formData.barcode.trim() || undefined,
         qr_code: formData.qr_code.trim() || undefined,
         category: formData.category,
-        unit_price: Number.parseFloat(formData.unit_price),
-        selling_price: Number.parseFloat(formData.selling_price),
-        unit_of_measure: formData.unit_of_measure,
-        pack_size: Number.parseInt(formData.pack_size) || 1,
+          unit_price: Number.parseFloat(formData.unit_price),
+          selling_price: Number.parseFloat(formData.selling_price),
+          pack_size: Number.parseInt(formData.pack_size) || 1,
         min_stock_level: Number.parseInt(formData.min_stock_level) || 10,
         max_stock_level: Number.parseInt(formData.max_stock_level) || 1000,
         requires_prescription: formData.requires_prescription,
-        image_url: finalImageUrl || undefined,
       }
 
-      let result: Product
-
-      if (isEditMode && product) {  
         const response = await backendApi.put(`/products/${product.id}`, productData)
         result = response.data?.data || response.data
         toast.success("Product updated successfully!")
       } else {
-        // Create new product
-        const response = await backendApi.post('/products', productData)
+        // Create new product - use FormData format for /v1/products/new-product
+        const formDataToSend = new FormData()
+        
+        // Map fields according to API requirements
+        formDataToSend.append('product_name', formData.name.trim())
+        if (formData.generic_name.trim()) {
+          formDataToSend.append('generic_name', formData.generic_name.trim())
+        }
+        
+        // Generate SKU if not provided
+        const sku = formData.sku.trim() || (formData.barcode.trim() || `SKU-${Date.now()}`)
+        formDataToSend.append('sku', sku)
+        
+        if (formData.manufacturer.trim()) {
+          formDataToSend.append('manufacturer', formData.manufacturer.trim())
+        }
+        formDataToSend.append('unit_id', formData.unit_id)
+        formDataToSend.append('product_category_id', formData.product_category_id)
+        formDataToSend.append('requires_prescription', formData.requires_prescription.toString())
+        
+        if (formData.description.trim()) {
+          formDataToSend.append('description', formData.description.trim())
+        }
+        if (formData.barcode.trim()) {
+          formDataToSend.append('barcode', formData.barcode.trim())
+        }
+        if (formData.qr_code.trim()) {
+          formDataToSend.append('qrcode', formData.qr_code.trim())
+        }
+        
+        formDataToSend.append('unit_price', formData.unit_price)
+        formDataToSend.append('selling_price', formData.selling_price)
+        const packSizeNum = Number.parseInt(formData.pack_size || '1', 10)
+        const validPackSize = Number.isNaN(packSizeNum) || packSizeNum <= 0 ? 1 : packSizeNum
+        formDataToSend.append('unit', validPackSize.toString())
+        formDataToSend.append('pack_size', validPackSize.toString())
+        formDataToSend.append('min_stock', formData.min_stock_level || '10')
+        formDataToSend.append('max_stock', formData.max_stock_level || '1000')
+        
+        // Add image file if available
+        if (imageFile) {
+          formDataToSend.append('image', imageFile)
+        }
+
+        const response = await backendApi.post('/v1/products/new-product', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
         result = response.data?.data || response.data
         toast.success("Product created successfully!")
       }
@@ -276,9 +280,11 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       barcode: "",
       qr_code: "",
       category: "OTC",
+      product_category_id: "",
+      sku: "",
+      unit_id: "",
       unit_price: "",
       selling_price: "",
-      unit_of_measure: "tablets",
       pack_size: "1",
       min_stock_level: "10",
       max_stock_level: "1000",
@@ -393,20 +399,37 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
                   />
                 </div>
 
-                <div>
+                <div className="w-full">
                   <Label htmlFor="category" className="text-sm font-medium">
                     Category <span className="text-red-500">*</span>
                   </Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
-                    <SelectTrigger className="mt-1.5">
-                      <SelectValue />
+                  <Select 
+                    value={formData.product_category_id} 
+                    onValueChange={(value) => {
+                      handleInputChange("product_category_id", value)
+                      // Also set category name for display
+                      const selectedCat = categories.find(cat => cat.id.toString() === value)
+                      if (selectedCat) {
+                        handleInputChange("category", selectedCat.category_name)
+                      }
+                    }}
+                    disabled={isLoadingCategories}
+                  >
+                    <SelectTrigger className="mt-1.5 w-full">
+                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
+                      {categories.length > 0 ? (
+                        categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id.toString()}>
+                            {cat.category_name.replace(/_/g, " ")}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          {isLoadingCategories ? "Loading categories..." : "No categories available"}
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -478,32 +501,25 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
                       accept="image/*"
                       onChange={handleImageChange}
                       className="hidden"
-                      disabled={isUploadingImage}
+                      disabled={isLoading}
                     />
                     <div className="space-y-2">
-                      {isUploadingImage ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-4 h-4 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Uploading...</span>
+                      <>
+                        <ImageIcon className="w-8 h-8 text-gray-400 mx-auto" />
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-teal-600 hover:text-teal-700 font-medium text-sm"
+                          >
+                            Click to upload
+                          </button>
+                          <span className="text-gray-500 text-sm"> or drag and drop</span>
                         </div>
-                      ) : (
-                        <>
-                          <ImageIcon className="w-8 h-8 text-gray-400 mx-auto" />
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="text-teal-600 hover:text-teal-700 font-medium text-sm"
-                            >
-                              Click to upload
-                            </button>
-                            <span className="text-gray-500 text-sm"> or drag and drop</span>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            PNG, JPG, GIF up to 10MB
-                          </p>
-                        </>
-                      )}
+                        <p className="text-xs text-gray-500">
+                          PNG, JPG, GIF up to 10MB
+                        </p>
+                      </>
                     </div>
                   </div>
                 </div>
@@ -643,22 +659,29 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="unit_of_measure" className="text-sm font-medium">
-                    Unit of Measure <span className="text-red-500">*</span>
+                  <Label htmlFor="unit_id" className="text-sm font-medium">
+                    Unit <span className="text-red-500">*</span>
                   </Label>
                   <Select
-                    value={formData.unit_of_measure}
-                    onValueChange={(value) => handleInputChange("unit_of_measure", value)}
+                    value={formData.unit_id}
+                    onValueChange={(value) => handleInputChange("unit_id", value)}
+                    disabled={isLoadingUnits}
                   >
                     <SelectTrigger className="mt-1.5">
-                      <SelectValue />
+                      <SelectValue placeholder={isLoadingUnits ? "Loading units..." : "Select unit"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {unitOfMeasure.map((unit) => (
-                        <SelectItem key={unit} value={unit}>
-                          {unit}
+                      {units.length > 0 ? (
+                        units.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.id.toString()}>
+                            {unit.unit}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="loading" disabled>
+                          {isLoadingUnits ? "Loading units..." : "No units available"}
                         </SelectItem>
-                      ))}
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -721,11 +744,11 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isLoading || isUploadingImage} className="bg-teal-600 hover:bg-teal-700 text-white">
-              {isLoading || isUploadingImage ? (
+            <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
+              {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  {isUploadingImage ? 'Uploading image...' : 'Saving...'}
+                  Saving...
                 </>
               ) : (
                 <>

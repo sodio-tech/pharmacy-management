@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ChevronsUpDownIcon, CheckIcon, SearchIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { backendApi } from "@/lib/axios-config"
+import { useProductCategories } from "@/hooks/useProductCategories"
 
 interface Supplier {
   supplier_id: number
@@ -38,8 +39,8 @@ interface NewPODialogProps {
 export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [categories, setCategories] = useState<ProductCategory[]>([])
   const [isLoadingData, setIsLoadingData] = useState(false)
+  const { categories } = useProductCategories()
   const [supplierOpen, setSupplierOpen] = useState(false)
   const [supplierSearch, setSupplierSearch] = useState("")
   const [debouncedSupplierSearch, setDebouncedSupplierSearch] = useState("")
@@ -85,10 +86,6 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       const suppliersResponse = await backendApi.get(`/v1/supplier/list?${params.toString()}`)
       const suppliersData = suppliersResponse.data?.data || suppliersResponse.data
       setSuppliers(suppliersData?.suppliers || [])
-
-      const categoriesResponse = await backendApi.get("/v1/products/categories")
-      const categoriesData = categoriesResponse.data?.data || categoriesResponse.data
-      setCategories(categoriesData?.categories || [])
     } catch (error: unknown) {
       console.error("Failed to fetch data:", error)
       toast.error("Failed to load suppliers and categories")
@@ -126,7 +123,7 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
         expected_delivery_date: new Date(formData.expected_delivery_date).toISOString(),
       }
 
-      const response = await backendApi.post("/v1/supplier/make-order", payload)
+      const response = await backendApi.post("/v1/orders/make-order", payload)
       const data = response.data?.data || response.data
 
       toast.success(data?.message || "Purchase order created successfully")

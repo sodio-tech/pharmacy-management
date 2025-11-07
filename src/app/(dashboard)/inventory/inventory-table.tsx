@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import { toast } from "react-toastify"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
+import { useProductCategories } from "@/hooks/useProductCategories"
 
 interface InventoryTableProps {
   onAddProduct: () => void
@@ -31,39 +32,108 @@ export function InventoryTable({
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [activeFilter, setActiveFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const limit = 10
+  
+  // Fetch categories from API
+  const { categories } = useProductCategories()
 
-  // useEffect(() => {
-  //   fetchProducts()
-  // }, [searchTerm, selectedCategory, activeFilter, page])
+  // Debounce search term
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
 
-  const fetchProducts = async () => {
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+      setPage(1) // Reset to page 1 when search changes
+    }, 500) // 500ms debounce delay
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [searchTerm])
+
+  // Reset page when category or filter changes
+  useEffect(() => {
+    setPage(1)
+  }, [selectedCategory, activeFilter])
+
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
-      if (selectedCategory !== "all") params.append('category', selectedCategory)
-      if (activeFilter === "lowStock") params.append('lowStock', 'true')
-      if (activeFilter === "expiringSoon") params.append('expiringSoon', 'true')
       params.append('page', page.toString())
-      params.append('limit', '20')
+      params.append('limit', limit.toString())
+      
+      if (debouncedSearchTerm.trim()) {
+        params.append('search', debouncedSearchTerm.trim())
+      }
+      
+      if (selectedCategory !== "all") {
+        params.append('product_category_id', selectedCategory)
+      }
+      
+      if (activeFilter === "lowStock") {
+        params.append('lowStock', 'true')
+      }
+      
+      if (activeFilter === "expiringSoon") {
+        params.append('expiringSoon', 'true')
+      }
 
-      const response = await backendApi.get(`/products?${params.toString()}`)
-      const products = response.data?.data || response.data || []
-      setProducts(products)
-      setTotalPages(response.data?.pagination?.total_pages || response.data?.total_pages || 1)
+      const response = await backendApi.get(`/v1/products/catalogue?${params.toString()}`)
+      const data = response.data?.data || response.data
+      
+      // Map API response to Product type
+      const mappedProducts: Product[] = (data.products || []).map((product: any) => ({
+        id: product.id,
+        name: product.product_name,
+        generic_name: product.generic_name,
+        description: product.description,
+        category: product.product_category_name,
+        manufacturer: product.manufacturer,
+        barcode: product.barcode,
+        qr_code: product.qrcode,
+        unit_price: Number.parseFloat(product.unit_price || '0'),
+        selling_price: Number.parseFloat(product.selling_price || '0'),
+        unit_of_measure: product.unit,
+        pack_size: product.pack_size,
+        min_stock_level: product.min_stock,
+        max_stock_level: product.max_stock,
+        requires_prescription: product.requires_prescription,
+        is_active: product.is_active,
+        image_url: product.image,
+        created_at: product.created_at,
+        updated_at: product.updated_at,
+      }))
+      
+      setProducts(mappedProducts)
+      setTotal(data.total || 0)
+      setTotalPages(data.total_pages || 1)
     } catch (error: unknown) {
+      console.error("Failed to fetch products:", error)
       toast.error("Failed to load products")
+      setProducts([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, debouncedSearchTerm, selectedCategory])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product)
@@ -93,15 +163,34 @@ export function InventoryTable({
   }
 
   const getCategoryColor = (category?: string) => {
-    const colors: Record<string, string> = {
-      OTC: "bg-blue-100 text-blue-800",
-      PRESCRIPTION: "bg-red-100 text-red-800",
-      SUPPLEMENTS: "bg-green-100 text-green-800",
-      MEDICAL_DEVICES: "bg-purple-100 text-purple-800",
-      COSMETICS: "bg-pink-100 text-pink-800",
-      OTHER: "bg-gray-100 text-gray-800",
+    if (!category) return "bg-gray-100 text-gray-800"
+    
+    const categoryLower = category.toLowerCase()
+    
+    // Map actual category names to colors
+    if (categoryLower.includes("pharmaceutical")) {
+      return "bg-indigo-100 text-indigo-800"
     }
-    return (category && colors[category]) || colors.OTHER
+    if (categoryLower.includes("prescription") || categoryLower.includes("prescription medication")) {
+      return "bg-red-100 text-red-800"
+    }
+    if (categoryLower.includes("otc") || categoryLower.includes("over the counter")) {
+      return "bg-blue-100 text-blue-800"
+    }
+    if (categoryLower.includes("supplement")) {
+      return "bg-green-100 text-green-800"
+    }
+    if (categoryLower.includes("medical device")) {
+      return "bg-purple-100 text-purple-800"
+    }
+    if (categoryLower.includes("cosmetic")) {
+      return "bg-pink-100 text-pink-800"
+    }
+    if (categoryLower.includes("opioid")) {
+      return "bg-orange-100 text-orange-800"
+    }
+    
+    return "bg-gray-100 text-gray-800"
   }
 
   if (loading) {
@@ -136,12 +225,11 @@ export function InventoryTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="OTC">OTC</SelectItem>
-                <SelectItem value="PRESCRIPTION">Prescription</SelectItem>
-                <SelectItem value="SUPPLEMENTS">Supplements</SelectItem>
-                <SelectItem value="MEDICAL_DEVICES">Medical Devices</SelectItem>
-                <SelectItem value="COSMETICS">Cosmetics</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.category_name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -222,7 +310,7 @@ export function InventoryTable({
                             {product.image_url ? (
                               <img
                                 src={product.image_url || "/placeholder.svg"}
-                                alt={product.name}
+                                alt={product.name || ""}
                                 className="w-full h-full object-cover rounded-lg"
                               />
                             ) : (
@@ -234,24 +322,14 @@ export function InventoryTable({
                               {product.name}
                             </div>
                             <div className="text-xs md:text-sm text-[#6b7280] truncate">
-                              {product.generic_name || `SKU: ${String(product.id).slice(0, 8)}`}
+                              {product.generic_name || `ID: ${product.id}`}
                             </div>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={`${getCategoryColor(product.category)} border-0 font-medium text-xs`}>
-                          {product.category === "PRESCRIPTION"
-                            ? "Rx"
-                            : product.category === "OTC"
-                              ? "OTC"
-                              : product.category === "SUPPLEMENTS"
-                                ? "Supp"
-                                : product.category === "MEDICAL_DEVICES"
-                                  ? "Device"
-                                  : product.category === "COSMETICS"
-                                    ? "Care"
-                                    : "Other"}
+                          {product.category || "Other"}
                         </Badge>
                       </TableCell>
 

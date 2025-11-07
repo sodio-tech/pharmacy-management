@@ -1,3 +1,9 @@
+export enum OrderStatus {
+  PENDING = "pending",
+  FULFILLED = "fulfilled",
+  CANCELLED = "cancelled",
+}
+
 export interface Supplier {
   supplier_id: number
   supplier_name: string
@@ -14,11 +20,11 @@ export interface PurchaseOrder {
   pharmacy_id: number
   purchase_amount: number
   expected_delivery_date: string
-  delivered_on: string | null
-  is_delivered: boolean
+  fulfilled_on: string | null
+  status: OrderStatus
   supplier_name: string
   phone_number: string
-  product_category_name: string
+  product_categories: string[]
   gstin: string
 }
 
