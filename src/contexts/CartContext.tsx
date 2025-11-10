@@ -158,8 +158,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       toast.success(`Sale completed successfully! Sale #${sale?.sale_number || sale?.id}`)
       clearCart()
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Failed to process checkout')
+      console.error("Error processing checkout:", error)
     } finally {
       setIsProcessing(false)
     }

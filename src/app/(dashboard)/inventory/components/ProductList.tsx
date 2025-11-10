@@ -72,11 +72,9 @@ export function ProductList({
         const data = await response.json();
         setProducts(data.products);
         setTotalPages(data.pagination.totalPages);
-      } else {
-        toast.error("Failed to fetch products");
       }
     } catch (error: any) {
-      toast.error("Error loading products");
+      console.error("Error loading products:", error);
     } finally {
       setLoading(false);
     }
@@ -96,12 +94,9 @@ export function ProductList({
         toast.success("Product deleted successfully");
         fetchProducts();
         onStatsUpdate();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to delete product");
       }
     } catch (error: any) {
-      toast.error("Error deleting product");
+      console.error("Error deleting product:", error);
     }
   };
 

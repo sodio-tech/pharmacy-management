@@ -55,11 +55,9 @@ const LoginForm = () => {
             if (response.status === 200) {
                 toast.success("Email verified successfully! You can now login.")
                 router.replace('/login')
-            } else {
-                toast.error(response.data.message || "Email verification failed.")
             }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || err.message || "Email verification error occurred.")
+            console.error("Email verification error:", err)
         } finally {
             setIsVerifying(false)
         }
@@ -78,8 +76,6 @@ const LoginForm = () => {
 
                 toast.success("Login successful!")
                 window.location.href = DEFAULT_REDIRECT_PATH
-            } else {
-                toast.error(response.data.message || "An unexpected error occurred.")
             }
         } catch (err: any) {
             if (err.response?.data?.message === "email_not_verified") {
@@ -89,12 +85,11 @@ const LoginForm = () => {
                     await resendVerificationEmail(userData.email)
                     toast.success("Verification email sent! Please check your inbox.")
                 } catch (resendErr: unknown) {
-                    const resendError = resendErr as { message?: string }
-                    toast.error(resendError.message || "Failed to resend verification email. Please try again later.")
+                    console.error("Error resending verification email:", resendErr)
                 }
                 router.push(`/verify-email?email=${userData.email}`)
             } else {
-                toast.error(err.response?.data?.message || err.message || "An unexpected error occurred.")
+                console.error("Login error:", err)
             }
         } finally {
             setIsLoading(false)

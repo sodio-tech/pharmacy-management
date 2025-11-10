@@ -28,10 +28,10 @@ export default function ForgotPassword() {
             setEmail('');
             toast.success('Password reset link sent successfully!');
         } catch (err: unknown) {
+            console.error("Error sending reset link:", err)
             const error = err as { response?: { data?: { message?: string } } };
             const errorMessage = error.response?.data?.message || 'Failed to send reset link. Please try again.';
             setError(errorMessage);
-            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

@@ -103,13 +103,11 @@ function ResetPassword() {
                 setTimeout(() => {
                     router.push('/login');
                 }, 2000);
-            } else {
-                toast.error('Failed to reset password. Please try again.');
             }
         } catch (err: unknown) {
+            console.error("Error resetting password:", err)
             const error = err as { response?: { data?: { message?: string } } };
             const errorMessage = error.response?.data?.message || 'Failed to reset password. Please try again.';
-            toast.error(errorMessage);
             setPasswordError(errorMessage);
         } finally {
             setIsSubmitting(false);

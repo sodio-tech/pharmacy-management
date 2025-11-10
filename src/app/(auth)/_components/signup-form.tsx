@@ -106,12 +106,9 @@ const SignUpForm = () => {
                 setTimeout(() => {
                     router.push(`/verify-email?email=${encodeURIComponent(email)}`)
                 }, 1500);
-            } else {
-                toast.error(response.data.message || "An unexpected error occurred.")
             }
         } catch (err: any) {
-            toast.error(err.response.data.message || err.message || "An unexpected error occurred.")
-            toast.error("Registration failed");
+            console.error("Registration error:", err)
         } finally {
             setIsLoading(false);
         }

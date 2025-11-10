@@ -79,7 +79,6 @@ export function SupplierTable() {
       setTotalPages(data.total_pages || 1)
     } catch (error: unknown) {
       console.error("Failed to fetch suppliers:", error)
-      toast.error("Failed to load suppliers")
       setSuppliers([])
     } finally {
       setLoading(false)
@@ -114,7 +113,6 @@ export function SupplierTable() {
       setTotalPages(data.total_pages || 1)
     } catch (error: unknown) {
       console.error("Failed to fetch purchase orders:", error)
-      toast.error("Failed to load purchase orders")
       setOrders([])
     } finally {
       setLoading(false)
@@ -152,8 +150,6 @@ export function SupplierTable() {
       }
     } catch (error: unknown) {
       console.error("Failed to complete order:", error)
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(err?.response?.data?.message || err?.message || "Failed to complete order")
     } finally {
       setCompletingOrderId(null)
     }

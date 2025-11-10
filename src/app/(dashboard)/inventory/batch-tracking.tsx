@@ -62,7 +62,7 @@ export function BatchTracking() {
 
       setProducts(productsWithBatches)
     } catch (error: unknown) {
-      toast.error("Failed to load batch information")
+      console.error("Failed to load batch information:", error)
     } finally {
       setLoading(false)
     }

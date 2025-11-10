@@ -72,11 +72,9 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
             icon: '/favicon.ico',
           });
         }
-      } else {
-        toast.error("Failed to fetch alerts");
       }
     } catch (error: any) {
-      toast.error("Error loading alerts");
+      console.error("Error loading alerts:", error);
     } finally {
       setLoading(false);
     }
@@ -91,11 +89,9 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
         setAlertsData(data);
         onRefresh(); // Update parent component stats
         toast.success("Alerts refreshed successfully");
-      } else {
-        toast.error("Failed to refresh alerts");
       }
     } catch (error: any) {
-      toast.error("Error refreshing alerts");
+      console.error("Error refreshing alerts:", error);
     } finally {
       setRefreshing(false);
     }
@@ -130,11 +126,9 @@ export function StockAlerts({ onClose, onRefresh }: StockAlertsProps) {
           };
         });
         toast.success("Alert marked as processed");
-      } else {
-        toast.error("Failed to mark alert as processed");
       }
     } catch (error: any) {
-      toast.error("Error processing alert");
+      console.error("Error processing alert:", error);
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);

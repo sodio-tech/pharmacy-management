@@ -64,7 +64,6 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       reader.readAsDataURL(file)
     } catch (error) {
       console.error('Error uploading photo:', error)
-      toast.error('Failed to upload photo')
       setIsUploading(false)
     }
   }

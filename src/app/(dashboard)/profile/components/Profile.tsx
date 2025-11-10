@@ -72,7 +72,6 @@ const Profile = () => {
       toast.success('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
-      toast.error('Failed to update profile. Please try again.')
     } finally {
       setIsUpdating(false)
     }
@@ -118,7 +117,6 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      toast.error('Failed to upload image. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -132,7 +130,6 @@ const Profile = () => {
       toast.success('Profile image removed successfully!')
     } catch (error) {
       console.error('Error removing image:', error)
-      toast.error('Failed to remove image. Please try again.')
     } finally {
       setIsLoading(false)
     }

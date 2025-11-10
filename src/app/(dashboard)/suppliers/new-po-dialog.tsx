@@ -88,7 +88,6 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       setSuppliers(suppliersData?.suppliers || [])
     } catch (error: unknown) {
       console.error("Failed to fetch data:", error)
-      toast.error("Failed to load suppliers and categories")
     } finally {
       setIsLoadingData(false)
     }
@@ -141,8 +140,6 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       onOpenChange(false)
     } catch (error: unknown) {
       console.error("Failed to create purchase order:", error)
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(err?.response?.data?.message || err?.message || "Failed to create purchase order")
     } finally {
       setIsLoading(false)
     }

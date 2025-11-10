@@ -262,10 +262,10 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
 
       onClose()
     } catch (err: unknown) {
+      console.error("Error saving product:", err)
       const error = err as { message?: string; response?: { data?: { message?: string } } }
       const errorMessage = error.response?.data?.message || error.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
       setError(errorMessage)
-      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

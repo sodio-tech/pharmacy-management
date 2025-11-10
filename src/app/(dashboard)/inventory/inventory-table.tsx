@@ -124,7 +124,6 @@ export function InventoryTable({
       setTotalPages(data.total_pages || 1)
     } catch (error: unknown) {
       console.error("Failed to fetch products:", error)
-      toast.error("Failed to load products")
       setProducts([])
     } finally {
       setLoading(false)
@@ -151,7 +150,7 @@ export function InventoryTable({
       setDeleteModalOpen(false)
       setProductToDelete(null)
     } catch (error: unknown) {
-      toast.error("Failed to delete product")
+      console.error("Failed to delete product:", error)
     } finally {
       setIsDeleting(false)
     }

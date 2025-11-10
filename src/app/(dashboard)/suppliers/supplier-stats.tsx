@@ -38,7 +38,6 @@ export function SupplierStats() {
       setAnalytics(data)
     } catch (error: unknown) {
       console.error("Failed to fetch supplier analytics:", error)
-      toast.error("Failed to load supplier statistics")
       // Set fallback data
       setAnalytics({
         supplier_actvity: {

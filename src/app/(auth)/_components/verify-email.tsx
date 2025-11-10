@@ -54,8 +54,6 @@ export default function VerifyEmail() {
       toast.success("Verification email sent successfully! Please check your inbox.")
     } catch (error: unknown) {
       console.error('Resend error:', error)
-      const err = error as { message?: string }
-      toast.error(err.message || "Failed to resend verification email")
       setResendSuccess(false)
     } finally {
       setIsResending(false)

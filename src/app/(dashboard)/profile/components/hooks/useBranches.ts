@@ -26,12 +26,10 @@ export function useBranches(pharmacyId?: number): UseBranchesReturn {
       if (response.data.success) {
         setBranches(response.data.data.branches || [])
       } else {
-        toast.error(response.data.message || "Failed to fetch branches")
         setBranches([])
       }
     } catch (error) {
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
-      toast.error(errorMessage || "Failed to fetch branches")
+      console.error("Error fetching branches:", error)
       setBranches([])
     } finally {
       setIsLoading(false)

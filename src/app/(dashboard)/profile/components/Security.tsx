@@ -50,7 +50,6 @@ export default function Security() {
             toast.success("Session revoked successfully")
         } catch (error) {
             console.error("Error revoking session:", error)
-            toast.error("Failed to revoke session")
         } finally {
             setIsRevokingSession(null)
         }
@@ -75,7 +74,7 @@ export default function Security() {
             //     setConfirmPassword("")
             // }
         } catch (error) {
-            toast.error("Failed to update password. Please try again.")
+            console.error("Error updating password:", error)
         } finally {
             setIsUpdatingPassword(false)
         }
@@ -88,7 +87,6 @@ export default function Security() {
             toast.success("Sessions revoked successfully")
         } catch (error) {
             console.error("Error signing out:", error)
-            toast.error("Failed to sign out. Please try again.")
         } finally {
             setIsSigningOutAll(false)
         }
@@ -101,7 +99,6 @@ export default function Security() {
             toast.success("Two-factor authentication setup initiated! Please check your email for setup instructions.")
         } catch (error) {
             console.error("Error enabling 2FA:", error)
-            toast.error("Failed to enable 2FA. Please try again.")
         } finally {
             setIsEnabling2FA(false)
         }
@@ -168,7 +165,6 @@ export default function Security() {
             toast.error("Session management is currently unavailable")
         } catch (error) {
             console.error("Error loading sessions:", error)
-            toast.error("Failed to load sessions")
         } finally {
             setIsLoadingSessions(false)
         }

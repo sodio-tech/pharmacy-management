@@ -99,12 +99,9 @@ export default function AddEmployeeDialog({
         onSuccess()
         onOpenChange(false)
         resetForm()
-      } else {
-        toast.error(response.data.message || "Failed to add employee")
       }
     } catch (error) {
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
-      toast.error(errorMessage || "Failed to add employee")
+      console.error("Error adding employee:", error)
     } finally {
       setIsLoading(false)
     }

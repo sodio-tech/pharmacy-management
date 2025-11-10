@@ -53,8 +53,6 @@ export function AddSupplierDialog({ open, onOpenChange }: AddSupplierDialogProps
       onOpenChange(false)
     } catch (error: unknown) {
       console.error("Failed to add supplier:", error)
-      const err = error as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(err?.response?.data?.message || err?.message || "Failed to add supplier")
     } finally {
       setIsLoading(false)
     }

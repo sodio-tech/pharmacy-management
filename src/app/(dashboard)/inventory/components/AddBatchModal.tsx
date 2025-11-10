@@ -95,23 +95,6 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
       }
     } catch (error: unknown) {
       console.error("Error loading data:", error)
-      const err = error as { message?: string; response?: { status?: number; data?: { message?: string } } }
-      
-      // Show specific error messages based on the error type
-      if (err.response?.status === 401) {
-        toast.error("Authentication required. Please log in again.")
-      } else if (err.response?.status === 403) {
-        toast.error("You do not have permission to access this data.")
-      } else if (err.response?.status === 404) {
-        toast.error("Product or supplier not found. Please check your data.")
-      } else if (err.response?.status && err.response.status >= 500) {
-        toast.error("Server error occurred. Please try again later.")
-      } else if (!err.response) {
-        toast.error("Network error. Please check your connection and try again.")
-      } else {
-        const errorMessage = err.response?.data?.message || err.message || "Failed to load data. Please try again."
-        toast.error(errorMessage)
-      }
     } finally {
       setLoadingData(false)
     }
@@ -179,23 +162,6 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
       onSuccess()
     } catch (error: unknown) {
       console.error("Error creating batch:", error)
-      const err = error as { message?: string; response?: { status?: number; data?: { message?: string; error?: string } } }
-      
-      // Show specific error messages based on the error type
-      if (err.response?.status === 401) {
-        toast.error("Authentication required. Please log in again.")
-      } else if (err.response?.status === 403) {
-        toast.error("You do not have permission to create batches.")
-      } else if (err.response?.status === 400) {
-        toast.error(err.response?.data?.error || err.response?.data?.message || "Invalid batch data. Please check your inputs.")
-      } else if (err.response?.status && err.response.status >= 500) {
-        toast.error("Server error occurred while creating batch. Please try again later.")
-      } else if (!err.response) {
-        toast.error("Network error. Please check your connection and try again.")
-      } else {
-        const errorMessage = err.response?.data?.message || err.message || "Failed to create batch. Please try again."
-        toast.error(errorMessage)
-      }
     } finally {
       setLoading(false)
     }

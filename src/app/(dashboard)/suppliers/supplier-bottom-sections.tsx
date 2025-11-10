@@ -52,7 +52,6 @@ export function SupplierBottomSections() {
       setPurchaseOrders(orders)
     } catch (error: unknown) {
       console.error("Failed to fetch purchase orders:", error)
-      toast.error("Failed to load purchase orders")
       setPurchaseOrders([])
     } finally {
       setLoadingOrders(false)
@@ -68,7 +67,6 @@ export function SupplierBottomSections() {
       setPerformanceReport(report)
     } catch (error: unknown) {
       console.error("Failed to fetch performance report:", error)
-      toast.error("Failed to load performance report")
       setPerformanceReport([])
     } finally {
       setLoadingPerformance(false)

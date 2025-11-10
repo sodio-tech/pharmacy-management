@@ -77,12 +77,9 @@ export default function AddBranchDialog({
         onSuccess(response.data.data)
         onOpenChange(false)
         resetForm()
-      } else {
-        toast.error(response.data.message || "Failed to add branch")
       }
     } catch (error) {
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
-      toast.error(errorMessage || "Failed to add branch")
+      console.error("Error adding branch:", error)
     } finally {
       setIsLoading(false)
     }

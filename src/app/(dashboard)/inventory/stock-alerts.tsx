@@ -48,7 +48,7 @@ export function StockAlerts() {
       setLowStockProducts(data.alerts?.lowStockProducts || data.lowStockProducts || [])
       setExpiringProducts(data.alerts?.expiringProducts || data.expiringProducts || [])
     } catch (error: unknown) {
-      toast.error("Failed to load stock alerts")
+      console.error("Failed to load stock alerts:", error)
     } finally {
       setLoading(false)
     }

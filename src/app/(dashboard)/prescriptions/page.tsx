@@ -42,18 +42,9 @@ const page = () => {
             
             setCurrentView('list');
         } catch (err: unknown) {
-            // Show error toast
+            console.error("Error uploading prescription:", err);
             const error = err as { response?: { data?: { error?: string; message?: string } } }
             const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to upload prescription. Please try again.';
-            toast.error(errorMessage, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
-            
             setError(errorMessage);
         } finally {
             // setCurrentView('list');
@@ -85,18 +76,7 @@ const page = () => {
         } catch (err: unknown) {
             console.error('Failed to validate prescription:', err);
             const error = err as { response?: { data?: { error?: string; message?: string } } }
-            
-            // Show error toast
             const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to validate prescription. Please try again.';
-            toast.error(errorMessage, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
-            
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -129,18 +109,7 @@ const page = () => {
         } catch (err: unknown) {
             console.error('Failed to reject prescription:', err);
             const error = err as { response?: { data?: { error?: string; message?: string } } }
-            
-            // Show error toast
             const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to reject prescription. Please try again.';
-            toast.error(errorMessage, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
-            
             setError(errorMessage);
         } finally {
             setLoading(false);
@@ -171,18 +140,7 @@ const page = () => {
         } catch (err: unknown) {
             console.error('Failed to dispense prescription:', err);
             const error = err as { response?: { data?: { error?: string; message?: string } } }
-            
-            // Show error toast
             const errorMessage = error?.response?.data?.error || error?.response?.data?.message || 'Failed to dispense prescription. Please try again.';
-            toast.error(errorMessage, {
-                position: "top-right",
-                autoClose: 5000,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-            });
-            
             setError(errorMessage);
         } finally {
             setLoading(false);
