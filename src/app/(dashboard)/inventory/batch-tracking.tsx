@@ -1,71 +1,158 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Search, Package, Calendar, TrendingUp, AlertTriangle, Clock } from "lucide-react"
-import { toast } from "react-toastify"
-import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
+import { useUser } from "@/contexts/UserContext"
+import { useBranches } from "@/hooks/useBranches"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { toast } from "react-toastify"
 
 interface BatchInfo {
-  id: string
-  batchNumber: string
-  currentQuantity: number
-  costPrice: number
-  expiryDate: string
-  daysUntilExpiry: number
+  id: number
+  product_id: number
+  available_stock: number
+  expiry_date: string
+  manufacturer_name: string
+  manufacturer_code: string
+  notes?: string
+  is_active: boolean
+  batch_number: string
+  batch_name: string
+  product_name: string
+  generic_name: string
+  image?: string
 }
 
-interface ProductWithBatches extends Product {
+interface ProductWithBatches {
+  product_id: number
+  product_name: string
+  generic_name: string
+  image?: string
   batches: BatchInfo[]
 }
 
 export function BatchTracking() {
+  const { user } = useUser()
+  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const [allProducts, setAllProducts] = useState<ProductWithBatches[]>([])
   const [products, setProducts] = useState<ProductWithBatches[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [expiryFilter, setExpiryFilter] = useState("all")
 
+  // Auto-select first branch when branches are loaded
   useEffect(() => {
-    fetchProductsWithBatches()
-  }, [searchTerm, expiryFilter])
+    if (branches.length > 0 && !selectedBranchId) {
+      setSelectedBranchId(branches[0].id.toString())
+    }
+  }, [branches, selectedBranchId])
 
-  const fetchProductsWithBatches = async () => {
+  const fetchBatches = useCallback(async () => {
+    if (!selectedBranchId) return
+
     try {
       setLoading(true)
       const params = new URLSearchParams()
-      if (searchTerm) params.append('search', searchTerm)
-      params.append('limit', '50')
       
-      const response = await backendApi.get(`/products?${params.toString()}`)
-      const products = response.data?.data || response.data || []
+      // Map filter to API query params
+      if (expiryFilter === "expiring") {
+        params.append('expiry', 'in_30_days')
+      } else if (expiryFilter === "good") {
+        params.append('expiry', 'after_30_days')
+      }
+      // "all" and "expired" don't need query params
+      
+      const queryString = params.toString()
+      const url = `/v1/inventory/batches/${selectedBranchId}${queryString ? `?${queryString}` : ''}`
+      
+      const response = await backendApi.get(url)
+      const data = response.data?.data || response.data
+      const batches: BatchInfo[] = data?.batches || []
 
-      const productsWithBatches = await Promise.all(
-        products.map(async (product: Product) => {
-          try {
-            const stockResponse = await backendApi.get(`/products/${product.id}/stock`)
-            const stockData = stockResponse.data?.data || stockResponse.data
-            return {
-              ...product,
-              batches: stockData?.stock?.batches || stockData?.batches || [],
-            }
-          } catch (error: unknown) {
-            return {
-              ...product,
-              batches: [],
-            }
-          }
-        }),
-      )
+      // Group batches by product_id
+      const productMap = new Map<number, ProductWithBatches>()
+      
+      batches.forEach((batch) => {
+        if (!productMap.has(batch.product_id)) {
+          productMap.set(batch.product_id, {
+            product_id: batch.product_id,
+            product_name: batch.product_name,
+            generic_name: batch.generic_name,
+            image: batch.image,
+            batches: [],
+          })
+        }
+        productMap.get(batch.product_id)!.batches.push(batch)
+      })
 
-      setProducts(productsWithBatches)
+      let productsList = Array.from(productMap.values())
+
+      // Apply expired filter (client-side for expired)
+      if (expiryFilter === "expired") {
+        productsList = productsList.map((product) => ({
+          ...product,
+          batches: product.batches.filter((batch) => {
+            const daysUntilExpiry = calculateDaysUntilExpiry(batch.expiry_date)
+            return daysUntilExpiry < 0
+          }),
+        })).filter((product) => product.batches.length > 0)
+      }
+
+      setAllProducts(productsList)
     } catch (error: unknown) {
       console.error("Failed to load batch information:", error)
+      toast.error("बैच जानकारी लोड करने में विफल")
     } finally {
       setLoading(false)
     }
+  }, [selectedBranchId, expiryFilter])
+
+  // Fetch batches when branch or filter changes
+  useEffect(() => {
+    if (selectedBranchId) {
+      fetchBatches()
+    }
+  }, [selectedBranchId, expiryFilter, fetchBatches])
+
+  // Apply search filter client-side
+  useEffect(() => {
+    let filtered = [...allProducts]
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase()
+      filtered = filtered.filter(
+        (product) =>
+          product.product_name.toLowerCase().includes(searchLower) ||
+          product.generic_name.toLowerCase().includes(searchLower) ||
+          product.batches.some((batch) =>
+            batch.batch_number.toLowerCase().includes(searchLower) ||
+            batch.batch_name.toLowerCase().includes(searchLower)
+          )
+      )
+    }
+
+    setProducts(filtered)
+  }, [searchTerm, allProducts])
+
+  const calculateDaysUntilExpiry = (expiryDate: string): number => {
+    const expiry = new Date(expiryDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    expiry.setHours(0, 0, 0, 0)
+    const diffTime = expiry.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
   }
 
   const getExpiryStatus = (daysUntilExpiry: number) => {
@@ -74,19 +161,6 @@ export function BatchTracking() {
     if (daysUntilExpiry <= 30) return { status: "warning", color: "secondary", text: "Expiring Soon" }
     return { status: "good", color: "default", text: "Good" }
   }
-
-  const filteredProducts = products.filter((product) => {
-    if (expiryFilter === "expired") {
-      return product.batches.some((batch) => batch.daysUntilExpiry < 0)
-    }
-    if (expiryFilter === "expiring") {
-      return product.batches.some((batch) => batch.daysUntilExpiry <= 30 && batch.daysUntilExpiry > 0)
-    }
-    if (expiryFilter === "good") {
-      return product.batches.every((batch) => batch.daysUntilExpiry > 30)
-    }
-    return true
-  })
 
   if (loading) {
     return (
@@ -100,10 +174,29 @@ export function BatchTracking() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-4">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-gray-900">Batch Tracking</h2>
           <p className="text-xs sm:text-sm text-gray-600">Monitor product batches and expiry dates</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Select Branch:</label>
+          <Select
+            value={selectedBranchId}
+            onValueChange={setSelectedBranchId}
+            disabled={loadingBranches || branches.length === 0}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={loadingBranches ? "Loading..." : branches.length === 0 ? "No branches" : "Select branch"} />
+            </SelectTrigger>
+            <SelectContent>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id.toString()}>
+                  {branch.branch_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -112,44 +205,41 @@ export function BatchTracking() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
             <Input
-              placeholder="Search products..."
+              placeholder="Search products or batches..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm"
             />
           </div>
 
-          <select
-            value={expiryFilter}
-            onChange={(e) => setExpiryFilter(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            <option value="all">All Batches</option>
-            <option value="expired">Expired</option>
-            <option value="expiring">Expiring Soon (≤30 days)</option>
-            <option value="good">Good (&gt;30 days)</option>
-          </select>
+          <Select value={expiryFilter} onValueChange={setExpiryFilter}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filter by expiry" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Batches</SelectItem>
+              <SelectItem value="expiring">Expiring Soon (≤30 days)</SelectItem>
+              <SelectItem value="good">Good (&gt;30 days)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
       <div className="space-y-3 sm:space-y-4">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="p-3 sm:p-4 md:p-6">
+        {products.map((product) => (
+          <Card key={product.product_id} className="p-3 sm:p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
               <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                 <div className="p-1.5 sm:p-2 bg-teal-100 rounded-lg flex-shrink-0">
                   <Package className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">{product.name}</h3>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">{product.product_name}</h3>
                   <p className="text-xs sm:text-sm text-gray-600 truncate">
-                    {product.generic_name || product.manufacturer}
+                    {product.generic_name}
                   </p>
                   <div className="flex items-center gap-1.5 sm:gap-2 mt-1 flex-wrap">
-                    <Badge className={`text-xs }`}>{product.category}</Badge>
-                    {product.barcode && (
-                      <span className="text-xs text-gray-500 hidden sm:inline">Barcode: {product.barcode}</span>
-                    )}
+                    <Badge className="text-xs">{product.generic_name}</Badge>
                   </div>
                 </div>
               </div>
@@ -167,7 +257,8 @@ export function BatchTracking() {
             ) : (
               <div className="grid gap-2 sm:gap-3">
                 {product.batches.map((batch) => {
-                  const expiryStatus = getExpiryStatus(batch.daysUntilExpiry)
+                  const daysUntilExpiry = calculateDaysUntilExpiry(batch.expiry_date)
+                  const expiryStatus = getExpiryStatus(daysUntilExpiry)
                   return (
                     <div
                       key={batch.id}
@@ -179,13 +270,19 @@ export function BatchTracking() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                            Batch: {batch.batchNumber}
+                            Batch: {batch.batch_number}
                           </h4>
+                          <p className="text-xs text-gray-500 mt-0.5 truncate">{batch.batch_name}</p>
                           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-xs text-gray-600 mt-1">
-                            <span>Qty: {batch.currentQuantity}</span>
-                            <span>Cost: ₹{batch.costPrice}</span>
-                            <span className="truncate">Expires: {new Date(batch.expiryDate).toLocaleDateString()}</span>
+                            <span>Qty: {batch.available_stock}</span>
+                            <span className="truncate">Expires: {new Date(batch.expiry_date).toLocaleDateString()}</span>
+                            {batch.manufacturer_name && (
+                              <span className="truncate">Manufacturer: {batch.manufacturer_name}</span>
+                            )}
                           </div>
+                          {batch.notes && (
+                            <p className="text-xs text-gray-500 mt-1 italic">{batch.notes}</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">
@@ -211,7 +308,7 @@ export function BatchTracking() {
         ))}
       </div>
 
-      {filteredProducts.length === 0 && (
+      {products.length === 0 && !loading && (
         <Card className="p-6 sm:p-8 text-center">
           <Package className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300" />
           <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-1 sm:mb-2">No Products Found</h3>

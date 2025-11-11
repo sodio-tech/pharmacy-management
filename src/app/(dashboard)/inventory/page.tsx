@@ -68,9 +68,9 @@ function InventoryContent({
 
 
   const tabs = [
-    { id: "inventory", label: "Inventory", icon: Package, count: 1247 },
-    { id: "alerts", label: "Stock Alerts", icon: AlertTriangle, count: 23 },
-    { id: "batch-tracking", label: "Batch Tracking", icon: Scan, count: 156 }
+    { id: "inventory", label: "Inventory", icon: Package },
+    { id: "alerts", label: "Stock Alerts", icon: AlertTriangle },
+    { id: "batch-tracking", label: "Batch Tracking", icon: Scan }
   ]
 
   return (
@@ -93,14 +93,6 @@ function InventoryContent({
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   <span className="hidden sm:inline">{tab.label}</span>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span
-                      className={`inline-flex items-center justify-center px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-bold rounded-full ${activeTab === tab.id ? "bg-teal-100 text-teal-800" : "bg-gray-100 text-gray-800"
-                        }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
                 </button>
               )
             })}
