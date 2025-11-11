@@ -181,24 +181,58 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       let result: Product
 
       if (isEditMode && product) {
-        // Edit mode - update product
-      const productData = {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        generic_name: formData.generic_name.trim() || undefined,
-        manufacturer: formData.manufacturer.trim() || undefined,
-        barcode: formData.barcode.trim() || undefined,
-        qr_code: formData.qr_code.trim() || undefined,
-        category: formData.category,
-          unit_price: Number.parseFloat(formData.unit_price),
-          selling_price: Number.parseFloat(formData.selling_price),
-          pack_size: Number.parseInt(formData.pack_size) || 1,
-        min_stock_level: Number.parseInt(formData.min_stock_level) || 10,
-        max_stock_level: Number.parseInt(formData.max_stock_level) || 1000,
-        requires_prescription: formData.requires_prescription,
-      }
+        // Edit mode - update product using FormData format
+        const formDataToSend = new FormData()
+        
+        // Map fields according to API requirements
+        formDataToSend.append('product_name', formData.name.trim())
+        if (formData.generic_name.trim()) {
+          formDataToSend.append('generic_name', formData.generic_name.trim())
+        }
+        
+        // Use existing SKU or generate one
+        const sku = formData.sku.trim() || (formData.barcode.trim() || `SKU-${Date.now()}`)
+        formDataToSend.append('sku', sku)
+        
+        if (formData.manufacturer.trim()) {
+          formDataToSend.append('manufacturer', formData.manufacturer.trim())
+        }
+        
+        if (formData.unit_id) {
+          formDataToSend.append('unit_id', formData.unit_id)
+        }
+        const packSizeNum = Number.parseInt(formData.pack_size || '1', 10)
+        const validPackSize = Number.isNaN(packSizeNum) || packSizeNum <= 0 ? 1 : packSizeNum
+        formDataToSend.append('unit', validPackSize.toString())
+        formDataToSend.append('product_category_id', formData.product_category_id)
+        formDataToSend.append('requires_prescription', formData.requires_prescription.toString())
+        
+        if (formData.description.trim()) {
+          formDataToSend.append('description', formData.description.trim())
+        }
+        if (formData.barcode.trim()) {
+          formDataToSend.append('barcode', formData.barcode.trim())
+        }
+        if (formData.qr_code.trim()) {
+          formDataToSend.append('qrcode', formData.qr_code.trim())
+        }
+        
+        formDataToSend.append('unit_price', formData.unit_price)
+        formDataToSend.append('selling_price', formData.selling_price)
+        formDataToSend.append('pack_size', validPackSize.toString())
+        formDataToSend.append('min_stock', formData.min_stock_level || '10')
+        formDataToSend.append('max_stock', formData.max_stock_level || '1000')
+        
+        // Add image file if available (only if new image is selected)
+        if (imageFile) {
+          formDataToSend.append('image', imageFile)
+        }
 
-        const response = await backendApi.put(`/products/${product.id}`, productData)
+        const response = await backendApi.put(`/v1/products/update-product/${product.id}`, formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
         result = response.data?.data || response.data
         toast.success("Product updated successfully!")
       } else {
