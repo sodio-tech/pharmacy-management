@@ -1,110 +1,124 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Scan } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Search, Scan, Plus } from "lucide-react"
+import Image from "next/image"
 import { toast } from "react-toastify"
 import { backendApi } from "@/lib/axios-config"
+import { useCart } from "@/contexts/CartContext"
 
 interface ProductCategoriesProps {
   onCategorySelect: (category: string) => void
   onSearchChange: (searchTerm: string) => void
   selectedCategory: string
+  selectedBranchId: string
+  onProductsLoad?: (products: any[]) => void
 }
 
-interface Category {
-  name: string
-  icon: string
-  color: string
-  value: string
+interface BranchStockProduct {
+  product_id: number
+  product_name: string
+  generic_name: string
+  image: string
+  unit_price: string
+  gst_rate: number
+  pack_size: number
+  available_stock: number
+  min_stock: number
+  max_stock: number
 }
 
 export function ProductCategories({ 
   onCategorySelect, 
   onSearchChange, 
-  selectedCategory 
+  selectedCategory,
+  selectedBranchId,
+  onProductsLoad
 }: ProductCategoriesProps) {
-  const [categories, setCategories] = useState<Category[]>([
-    { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" }
-  ])
+  const { addToCart } = useCart()
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(false)
+  const [products, setProducts] = useState<BranchStockProduct[]>([])
 
-  const categoryIcons: { [key: string]: string } = {
-    "OTC": "💊",
-    "PRESCRIPTION": "🩺",
-    "SUPPLEMENTS": "💊",
-    "MEDICAL_DEVICES": "🩹",
-    "COSMETICS": "✨",
-    "OTHER": "📦"
-  }
+  // Filter products based on search term
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return products
+    }
+    const query = searchTerm.toLowerCase()
+    return products.filter(
+      (product) =>
+        product.product_name?.toLowerCase().includes(query) ||
+        product.generic_name?.toLowerCase().includes(query)
+    )
+  }, [products, searchTerm])
 
-  const categoryColors: { [key: string]: string } = {
-    "OTC": "bg-blue-100 text-blue-700",
-    "PRESCRIPTION": "bg-red-100 text-red-700",
-    "SUPPLEMENTS": "bg-green-100 text-green-700",
-    "MEDICAL_DEVICES": "bg-purple-100 text-purple-700",
-    "COSMETICS": "bg-pink-100 text-pink-700",
-    "OTHER": "bg-gray-100 text-gray-700"
-  }
+  const fetchBranchStock = useCallback(async (branchId: string) => {
+    if (!branchId) return
 
-  // const fetchCategories = async () => {
-  //   try {
-  //     setLoading(true)
-  //     // Get all products to extract unique categories
-  //     const response = await backendApi.get('/products?limit=1000')
-  //     const products = response.data?.data || response.data || []
-      
-  //     // If no products returned, use fallback categories
-  //     if (!products || products.length === 0) {
-  //       const fallbackCategories: Category[] = [
-  //         { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
-  //         { name: "OTC", icon: "💊", color: "bg-blue-100 text-blue-700", value: "OTC" },
-  //         { name: "Prescription", icon: "🩺", color: "bg-red-100 text-red-700", value: "PRESCRIPTION" },
-  //         { name: "Supplements", icon: "💊", color: "bg-green-100 text-green-700", value: "SUPPLEMENTS" }
-  //       ]
-  //       setCategories(fallbackCategories)
-  //     } else {
-  //       const uniqueCategories = [...new Set(products.map((product: any) => product.category).filter(Boolean))] as string[]
-        
-  //       const categoryList: Category[] = [
-  //         { name: "All", icon: "➕", color: "bg-gray-100 text-gray-700", value: "all" },
-  //         ...uniqueCategories.map((category: string) => ({
-  //           name: category.charAt(0) + category.slice(1).toLowerCase(),
-  //           icon: categoryIcons[category] || "📦",
-  //           color: categoryColors[category] || "bg-gray-100 text-gray-700",
-  //           value: category
-  //         }))
-  //       ]
-        
-  //       setCategories(categoryList)
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching categories:', error)
-  //     toast.error('Failed to fetch categories')
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
+    try {
+      setLoading(true)
+      const response = await backendApi.get(`/v1/inventory/branch-stock/${branchId}`)
+      const data = response.data?.data
 
-  // useEffect(() => {
-  //   fetchCategories()
-  // }, [])
+      if (data?.branch_stock) {
+        setProducts(data.branch_stock)
+        if (onProductsLoad) {
+          onProductsLoad(data.branch_stock)
+        }
+      } else {
+        setProducts([])
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching branch stock:', error)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      toast.error(err?.response?.data?.message || 'Failed to fetch branch stock')
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }, [onProductsLoad])
+
+  useEffect(() => {
+    if (selectedBranchId) {
+      fetchBranchStock(selectedBranchId)
+    }
+  }, [selectedBranchId, fetchBranchStock])
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value)
     onSearchChange(value)
   }
 
+  const handleAddToCart = (product: BranchStockProduct) => {
+    // Map BranchStockProduct to Product type for cart
+    const cartProduct = {
+      id: product.product_id.toString(),
+      name: product.product_name,
+      generic_name: product.generic_name,
+      selling_price: parseFloat(product.unit_price),
+      unit_price: parseFloat(product.unit_price),
+      unit_of_measure: "unit",
+      image_url: product.image,
+      pack_size: product.pack_size,
+      is_active: product.available_stock > 0,
+      requires_prescription: false,
+    }
+    addToCart(cartProduct, 1)
+    toast.success(`${product.product_name} added to cart`)
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-4">
       {/* Search Bar */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input 
-            placeholder="Search products by name, barcode, or category..." 
+            placeholder="Search products by name..." 
             className="pl-10"
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -116,29 +130,83 @@ export function ProductCategories({
         </Button>
       </div>
 
-      {/* Category Buttons */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Products Grid */}
         {loading ? (
-          // Loading skeleton for categories
-          [...Array(6)].map((_, index) => (
-            <div key={index} className="h-20 bg-muted rounded-lg animate-pulse"></div>
-          ))
-        ) : (
-          categories.map((category, index) => (
-            <Button
-              key={index}
-              variant="outline"
-              className={`h-20 flex-col space-y-2 ${category.color} border-2 hover:scale-105 transition-transform ${
-                selectedCategory === category.value ? 'ring-2 ring-teal-500' : ''
-              }`}
-              onClick={() => onCategorySelect(category.value)}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {[...Array(8)].map((_, index) => (
+            <Card key={index} className="animate-pulse">
+              <div className="aspect-square bg-muted"></div>
+              <CardContent className="p-4">
+                <div className="h-4 bg-muted rounded mb-2"></div>
+                <div className="h-6 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-sm">
+            {searchTerm ? "No products found matching your search" : "No products available in this branch"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {filteredProducts.map((product) => (
+            <Card
+              key={product.product_id}
+              className="group relative overflow-hidden py-0 hover:shadow-lg transition-all duration-300"
             >
-              <span className="text-2xl">{category.icon}</span>
-              <span className="text-sm font-medium">{category.name}</span>
-            </Button>
-          ))
+              <div className="relative aspect-square overflow-hidden bg-muted">
+                <Image
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.product_name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                {product.available_stock > 0 && (
+                  <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                      <path
+                        fillRule="evenodd"
+                        d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                )}
+                {product.available_stock === 0 && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">Out of Stock</span>
+                  </div>
         )}
       </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-sm mb-1 line-clamp-2 min-h-[2.5rem]">{product.product_name}</h3>
+                {product.generic_name && (
+                  <p className="text-xs text-muted-foreground mb-2 line-clamp-1">{product.generic_name}</p>
+                )}
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <p className="text-lg font-bold text-teal-600">₹{parseFloat(product.unit_price).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">Stock: {product.available_stock}</p>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="bg-teal-600 hover:bg-teal-700 h-8 w-8 p-0 rounded-full"
+                    onClick={() => handleAddToCart(product)}
+                    disabled={product.available_stock === 0}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {product.pack_size > 1 && (
+                  <p className="text-xs text-muted-foreground">Pack: {product.pack_size}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

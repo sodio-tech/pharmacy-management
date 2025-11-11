@@ -1,47 +1,69 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Wallet } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
-import { SalesStats as SalesStatsType } from "@/types/sales"
 
-export function SalesStats() {
-  const [stats, setStats] = useState<SalesStatsType | null>(null)
+interface SalesStatsProps {
+  branchId?: string
+}
+
+interface ApiAnalyticsResponse {
+  success: boolean
+  message: string
+  data: {
+    today_earnings: number
+    earnings_change_percent: number
+    today_avg_earnings: number
+    avg_earnings_change_percent: number
+    today_transactions: number
+    transactions_change_percent: number
+    this_month_earnings: number
+    this_month_earnings_change_percent: number
+  }
+}
+
+export function SalesStats({ branchId }: SalesStatsProps) {
+  const [stats, setStats] = useState<ApiAnalyticsResponse['data'] | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // useEffect(() => {
-  //   const fetchStats = async () => {
-  //     try {
-  //       setLoading(true)
-  //       const today = new Date()
-  //       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-        
-  //       const params = new URLSearchParams({
-  //         start_date: startOfDay.toISOString(),
-  //         end_date: today.toISOString()
-  //       })
-        
-  //       const response = await backendApi.get(`/sales/stats/overview?${params.toString()}`)
-  //       const salesStats = response.data?.data || response.data
-        
-  //       setStats(salesStats)
-  //     } catch (error) {
-  //       console.error('Error fetching sales stats:', error)
-  //       // Use fallback data if API fails
-  //       setStats({
-  //         total_sales: 45280,
-  //         total_amount: 45280,
-  //         total_transactions: 127,
-  //         average_sale: 356
-  //       })
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
+  const fetchStats = useCallback(async () => {
+    if (!branchId) {
+      setStats(null)
+      return
+    }
 
-  //   fetchStats()
-  // }, [])
+    try {
+      setLoading(true)
+      const response = await backendApi.get<ApiAnalyticsResponse>(`/v1/sales/general-analytics/${branchId}`)
+      const data = response.data?.data
+
+      if (data) {
+        setStats(data)
+      } else {
+        setStats(null)
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching sales stats:', error)
+      setStats(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [branchId])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  const formatChange = (percent: number): { text: string; type: "positive" | "negative" | "neutral" } => {
+    if (percent > 0) {
+      return { text: `+${percent}%`, type: "positive" }
+    } else if (percent < 0) {
+      return { text: `${percent}%`, type: "negative" }
+    }
+    return { text: "0%", type: "neutral" }
+  }
 
   if (loading) {
     return (
@@ -66,36 +88,40 @@ export function SalesStats() {
     )
   }
 
+  const earningsChange = stats ? formatChange(stats.earnings_change_percent) : { text: "0%", type: "neutral" as const }
+  const avgChange = stats ? formatChange(stats.avg_earnings_change_percent) : { text: "0%", type: "neutral" as const }
+  const transactionsChange = stats ? formatChange(stats.transactions_change_percent) : { text: "0%", type: "neutral" as const }
+
   const statsData = [
     {
       title: "Today's Sales",
-      value: `₹${(stats?.total_amount || 0).toLocaleString('en-IN')}`,
-      change: "+12% from yesterday",
-      changeType: "positive" as "positive" | "negative" | "neutral",
+      value: `₹${(stats?.today_earnings || 0).toLocaleString('en-IN')}`,
+      change: `${earningsChange.text} from yesterday`,
+      changeType: earningsChange.type,
       icon: TrendingUp,
       color: "text-green-600",
     },
     {
       title: "Transactions",
-      value: stats?.total_transactions?.toString() || "0",
-      change: "+8 from yesterday",
-      changeType: "positive" as const,
+      value: stats?.today_transactions?.toString() || "0",
+      change: `${transactionsChange.text} from yesterday`,
+      changeType: transactionsChange.type,
       icon: ShoppingCart,
       color: "text-blue-600",
     },
     {
       title: "Avg. Sale",
-      value: `₹${(stats?.average_sale || 0).toLocaleString('en-IN')}`,
-      change: "+5% increase",
-      changeType: "positive" as const,
+      value: `₹${(stats?.today_avg_earnings || 0).toLocaleString('en-IN')}`,
+      change: `${avgChange.text} from yesterday`,
+      changeType: avgChange.type,
       icon: DollarSign,
       color: "text-purple-600",
     },
     {
-      title: "Cash in Hand",
-      value: "₹12,450",
-      change: "Current balance",
-      changeType: "neutral" as "positive" | "negative" | "neutral",
+      title: "This Month",
+      value: `₹${(stats?.this_month_earnings || 0).toLocaleString('en-IN')}`,
+      change: stats ? `${formatChange(stats.this_month_earnings_change_percent).text} change` : "0% change",
+      changeType: stats ? formatChange(stats.this_month_earnings_change_percent).type : "neutral" as const,
       icon: Wallet,
       color: "text-orange-600",
     },

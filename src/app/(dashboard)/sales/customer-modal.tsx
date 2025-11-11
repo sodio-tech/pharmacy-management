@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { X, Upload, Camera, User, Stethoscope, FileText } from "lucide-react"
+import { X, User, Phone, Mail, Calendar, Users, Search } from "lucide-react"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import type { Customer } from "@/types/sales"
+import { backendApi } from "@/lib/axios-config"
+
 import { toast } from "react-toastify"
-import { Customer } from "@/types/sales"
 
 interface CustomerModalProps {
   isOpen: boolean
@@ -18,86 +21,153 @@ interface CustomerModalProps {
 }
 
 export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: CustomerModalProps) {
+  const [mode, setMode] = useState<"list" | "create">(existingCustomer ? "create" : "list")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
   const [formData, setFormData] = useState({
-    patient_name: existingCustomer?.patient_name || "Ayush Dixit",
-    patient_phone: existingCustomer?.patient_phone || "7524048480",
-    patient_email: existingCustomer?.patient_email || "fsayush100@gmail.com",
-    doctor_name: existingCustomer?.doctor_name || "Rajesh Kumar",
-    doctor_license: existingCustomer?.doctor_license || "DL-1234567",
-    doctor_phone: existingCustomer?.doctor_phone || "72723939823",
-    prescription_text: existingCustomer?.prescription_text || "Just take medicine once a day"
+    patient_name: existingCustomer?.patient_name || "",
+    patient_phone: existingCustomer?.patient_phone || "",
+    patient_email: existingCustomer?.patient_email || "",
+    age: "",
+    gender: "",
   })
 
-  const [prescriptionPhoto, setPrescriptionPhoto] = useState<string | null>(existingCustomer?.prescription_photo || null)
-  const [isUploading, setIsUploading] = useState(false)
+  useEffect(() => {
+    if (isOpen && mode === "list") {
+      fetchCustomers()
+    }
+  }, [isOpen, mode])
+
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredCustomers(customers)
+    } else {
+      const query = searchQuery.toLowerCase()
+      const filtered = customers.filter(
+        (customer) =>
+          customer.patient_name?.toLowerCase().includes(query) ||
+          customer.patient_phone?.includes(query) ||
+          customer.patient_email?.toLowerCase().includes(query),
+      )
+      setFilteredCustomers(filtered)
+    }
+  }, [searchQuery, customers])
+
+  const fetchCustomers = async () => {
+    setIsLoading(true)
+    try {
+      const response = await backendApi.get("/v1/customer/customer-list")
+      const data = response.data
+
+      if (data.success) {
+        // Map API response to Customer type
+        const mappedCustomers: Customer[] = data.data.customers.map((customer: any) => ({
+          id: customer.id,
+          patient_name: customer.name || "",
+          patient_phone: customer.phone_number || "",
+          patient_email: customer.email || "",
+          age: customer.age,
+          gender: customer.gender,
+        }))
+        setCustomers(mappedCustomers)
+        setFilteredCustomers(mappedCustomers)
+      } else {
+        toast.error("Failed to fetch customers")
+      }
+    } catch (error: unknown) {
+      console.error("[v0] Error fetching customers:", error)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      toast.error(err?.response?.data?.message || "Error connecting to the server")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSelectCustomer = (customer: Customer) => {
+    onSave(customer)
+    toast.success("Customer selected")
+    onClose()
+    setMode("list")
+  }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
   }
 
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file')
+  const handleSave = async () => {
+    // Validate required fields
+    if (!formData.patient_name.trim() && !formData.patient_phone.trim()) {
+      toast.error("At least one of customer name or phone number is required")
       return
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB')
-      return
-    }
-    setIsUploading(true)
+    setIsLoading(true)
+
     try {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPrescriptionPhoto(e.target?.result as string)
-        setIsUploading(false)
-        toast.success('Prescription photo uploaded successfully')
+      const payload: {
+        name?: string
+        phone_number?: string
+        email?: string
+        age?: number
+        gender?: string
+      } = {}
+
+      if (formData.patient_name.trim()) {
+        payload.name = formData.patient_name.trim()
       }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error('Error uploading photo:', error)
-      setIsUploading(false)
+      if (formData.patient_phone.trim()) {
+        payload.phone_number = formData.patient_phone.trim()
+      }
+      if (formData.patient_email.trim()) {
+        payload.email = formData.patient_email.trim()
+      }
+      if (formData.age.trim()) {
+        const ageNum = Number.parseInt(formData.age.trim(), 10)
+        if (!isNaN(ageNum) && ageNum > 0) {
+          payload.age = ageNum
+        }
+      }
+      if (formData.gender) {
+        payload.gender = formData.gender
+      }
+
+      const response = await backendApi.post("/v1/customer/new-customer", payload)
+      const data = response.data?.data
+
+      const customerData: Customer = {
+        id: data?.id,
+        patient_name: data?.name || "",
+        patient_phone: data?.phone_number || "",
+        patient_email: data?.email || formData.patient_email || "",
+        age: data?.age,
+        gender: data?.gender,
+        created_at: data?.created_at,
+      }
+
+      onSave(customerData)
+      toast.success("Customer created successfully")
+      onClose()
+      setMode("list")
+    } catch (error: unknown) {
+      console.error("[v0] Error creating customer:", error)
+      const err = error as { response?: { data?: { message?: string; error?: string } }; message?: string }
+      const errorMessage =
+        err?.response?.data?.message || err?.response?.data?.error || err?.message || "Failed to create customer"
+      toast.error(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleSave = () => {
-    // Validate required fields
-    if (!formData.patient_name.trim()) {
-      toast.error('Patient name is required')
-      return
-    }
-    if (!formData.patient_phone.trim()) {
-      toast.error('Patient phone number is required')
-      return
-    }
-    if (!formData.doctor_name.trim()) {
-      toast.error('Doctor name is required')
-      return
-    }
-
-    const customerData: Customer = {
-      ...(existingCustomer?.id && { id: existingCustomer.id }), // Only include ID if it's an existing customer
-      patient_name: formData.patient_name.trim(),
-      patient_phone: formData.patient_phone.trim(),
-      patient_email: formData.patient_email.trim(),
-      doctor_name: formData.doctor_name.trim(),
-      doctor_license: formData.doctor_license.trim(),
-      doctor_phone: formData.doctor_phone.trim(),
-      prescription_photo: prescriptionPhoto || undefined,
-      prescription_text: formData.prescription_text.trim(),
-      ...(existingCustomer?.created_at && { created_at: existingCustomer.created_at })
-    }
-
-    onSave(customerData)
-    toast.success('Customer information saved successfully')
+  const handleClose = () => {
+    setMode("list")
+    setSearchQuery("")
     onClose()
   }
 
@@ -106,180 +176,170 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-xl font-semibold">
-            {existingCustomer ? 'Edit Customer' : 'Add New Customer'}
+            {mode === "list" ? "Select Customer" : existingCustomer ? "Edit Customer" : "Add New Customer"}
           </CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={handleClose}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* Patient Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <User className="h-5 w-5 text-teal-600" />
-              <h3 className="text-lg font-semibold">Patient Information</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="patient_name">Patient Name *</Label>
-                <Input
-                  id="patient_name"
-                  value={formData.patient_name}
-                  onChange={(e) => handleInputChange('patient_name', e.target.value)}
-                  placeholder="Enter patient name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="patient_phone">Phone Number *</Label>
-                <Input
-                  id="patient_phone"
-                  value={formData.patient_phone}
-                  onChange={(e) => handleInputChange('patient_phone', e.target.value)}
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-              
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="patient_email">Email Address</Label>
-                <Input
-                  id="patient_email"
-                  type="email"
-                  value={formData.patient_email}
-                  onChange={(e) => handleInputChange('patient_email', e.target.value)}
-                  placeholder="patient@example.com"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Doctor Information */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Stethoscope className="h-5 w-5 text-teal-600" />
-              <h3 className="text-lg font-semibold">Doctor Information</h3>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="doctor_name">Doctor Name *</Label>
-                <Input
-                  id="doctor_name"
-                  value={formData.doctor_name}
-                  onChange={(e) => handleInputChange('doctor_name', e.target.value)}
-                  placeholder="Dr. John Smith"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="doctor_license">License Number</Label>
-                <Input
-                  id="doctor_license"
-                  value={formData.doctor_license}
-                  onChange={(e) => handleInputChange('doctor_license', e.target.value)}
-                  placeholder="MD12345"
-                />
-              </div>
-              
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="doctor_phone">Doctor Phone</Label>
-                <Input
-                  id="doctor_phone"
-                  value={formData.doctor_phone}
-                  onChange={(e) => handleInputChange('doctor_phone', e.target.value)}
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Prescription Photo */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Camera className="h-5 w-5 text-teal-600" />
-              <h3 className="text-lg font-semibold">Prescription Photo</h3>
-            </div>
-            
+          {mode === "list" ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-center w-full">
-                <label
-                  htmlFor="prescriptionPhoto"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                >
-                  {prescriptionPhoto ? (
-                    <div className="relative w-full h-full">
-                      <img
-                        src={prescriptionPhoto}
-                        alt="Prescription"
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPrescriptionPhoto(null)
-                        }}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                      <p className="mb-2 text-sm text-gray-500">
-                        <span className="font-semibold">Click to upload</span> prescription photo
-                      </p>
-                      <p className="text-xs text-gray-500">PNG, JPG or JPEG (MAX. 5MB)</p>
-                    </div>
-                  )}
-                  <input
-                    id="prescriptionPhoto"
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    disabled={isUploading}
-                  />
-                </label>
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, phone, or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Create New Button */}
+              <Button
+                variant="outline"
+                className="w-full border-dashed border-2 bg-transparent"
+                onClick={() => setMode("create")}
+              >
+                <User className="h-4 w-4 mr-2" />
+                Create New Customer
+              </Button>
+
+              {/* Customer List */}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+                    <span className="ml-3 text-muted-foreground">Loading customers...</span>
+                  </div>
+                ) : filteredCustomers.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">
+                      {searchQuery ? "No customers found matching your search" : "No customers available"}
+                    </p>
+                  </div>
+                ) : (
+                  filteredCustomers.map((customer) => (
+                    <button
+                      key={customer.id}
+                      onClick={() => handleSelectCustomer(customer)}
+                      className="w-full flex items-center space-x-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors text-left"
+                    >
+                       <Avatar className="h-12 w-12 bg-teal-100">
+                         <AvatarFallback className="bg-teal-100 text-teal-700 font-semibold">
+                           {(customer.patient_name || "")
+                             .split(" ")
+                             .map((n) => n[0])
+                             .join("")
+                             .toUpperCase()
+                             .slice(0, 2)}
+                         </AvatarFallback>
+                       </Avatar>
+                       <div className="flex-1 min-w-0">
+                         <p className="font-semibold text-sm">{customer.patient_name}</p>
+                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
+                           <span className="flex items-center">
+                             <Phone className="h-3 w-3 mr-1" />
+                             {customer.patient_phone}
+                           </span>
+                           {customer.patient_email && (
+                             <span className="flex items-center">
+                               <Mail className="h-3 w-3 mr-1" />
+                               {customer.patient_email}
+                             </span>
+                           )}
+                          {customer.age && (
+                            <span className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {customer.age} yrs
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
-          </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="patient_name">Customer Name</Label>
+                  <Input
+                    id="patient_name"
+                    value={formData.patient_name}
+                    onChange={(e) => handleInputChange("patient_name", e.target.value)}
+                    placeholder="Enter customer name"
+                  />
+                </div>
 
-          {/* Prescription Notes */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-teal-600" />
-              <h3 className="text-lg font-semibold">Prescription Notes</h3>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="prescription_text">Additional Notes</Label>
-              <Textarea
-                id="prescription_text"
-                value={formData.prescription_text}
-                onChange={(e) => handleInputChange('prescription_text', e.target.value)}
-                placeholder="Enter any additional prescription notes or instructions..."
-                rows={3}
-              />
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="patient_phone">Phone Number</Label>
+                  <Input
+                    id="patient_phone"
+                    value={formData.patient_phone}
+                    onChange={(e) => handleInputChange("patient_phone", e.target.value)}
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} className="bg-teal-600 hover:bg-teal-700">
-              {existingCustomer ? 'Update Customer' : 'Save Customer'}
-            </Button>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="patient_email">Email Address</Label>
+                  <Input
+                    id="patient_email"
+                    type="email"
+                    value={formData.patient_email}
+                    onChange={(e) => handleInputChange("patient_email", e.target.value)}
+                    placeholder="customer@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    min="1"
+                    value={formData.age}
+                    onChange={(e) => handleInputChange("age", e.target.value)}
+                    placeholder="Enter age"
+                  />
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <Label className="w-full" htmlFor="gender">
+                    Gender
+                  </Label>
+                  <Select value={formData.gender} onValueChange={(value) => handleInputChange("gender", value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-6 mt-6 border-t">
+                <Button variant="outline" onClick={() => setMode("list")}>
+                  Back to List
+                </Button>
+                <Button onClick={handleSave} className="bg-teal-600 hover:bg-teal-700" disabled={isLoading}>
+                  {isLoading ? "Saving..." : existingCustomer ? "Update Customer" : "Save Customer"}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

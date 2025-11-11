@@ -1,72 +1,171 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { Eye, CheckCircle, Package } from "lucide-react"
+import { Eye } from "lucide-react"
 import { PrescriptionTableProps, Prescription } from "./types"
 import { backendApi } from "@/lib/axios-config"
 
+interface ApiPrescriptionResponse {
+  prescription_id: number
+  customer_id: number
+  customer_name: string
+  doctor_name: string | null
+  prescription_link: string
+  prescription_notes: string
+  created_at: string
+}
+
+interface ApiResponse {
+  success: boolean
+  message: string
+  data: {
+    prescriptions: ApiPrescriptionResponse[]
+    total: string
+    page: number
+    limit: number
+    total_pages: number
+  }
+}
+
 export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter, dateFilter }: PrescriptionTableProps) {
   const [items, setItems] = useState<Prescription[]>([])
-  const [loading, setLoading] = useState<boolean>(false) // Start with loading true
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [pageSize, setPageSize] = useState<number>(20)
   const [totalPages, setTotalPages] = useState<number>(0)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const filters = useMemo(() => {
-    const f: any = {}
-    if (searchTerm) {
-      // backend supports patient_name/doctor_name filters; use both for simple search
-      f.patient_name = searchTerm
-      f.doctor_name = searchTerm
+  // Debounce search term
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
     }
-    if (statusFilter && statusFilter !== 'all-status') f.status = statusFilter
-    if (dateFilter && dateFilter !== 'all-dates') {
-      // simple range example: today/week/month handled server-side if supported; otherwise ignore
-      f.date_range = dateFilter
-    }
-    f.page = currentPage
-    f.limit = pageSize
-    return f
-  }, [searchTerm, statusFilter, dateFilter, currentPage, pageSize])
 
-  // useEffect(() => {
-  //   let cancelled = false
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true)
-  //       setError(null)
-  //       const params = new URLSearchParams()
-  //       if (filters.patient_name) params.append('patient_name', filters.patient_name)
-  //       if (filters.doctor_name) params.append('doctor_name', filters.doctor_name)
-  //       if (filters.status) params.append('status', filters.status)
-  //       if (filters.date_range) params.append('date_range', filters.date_range)
-  //       if (filters.page) params.append('page', filters.page.toString())
-  //       if (filters.limit) params.append('limit', filters.limit.toString())
-        
-  //       const response = await backendApi.get(`/prescriptions?${params.toString()}`)
-  //       const res = response.data?.data || response.data
-  //       if (cancelled) return
-  //       setItems(res.prescriptions || res || [])
-  //       setTotal(res.pagination?.total ?? res.prescriptions?.length ?? res.length ?? 0)
-  //       setTotalPages(res.pagination?.total_pages ?? 1)
-  //     } catch (e: unknown) {
-  //       if (cancelled) return
-  //       const err = e as { response?: { data?: { error?: string; message?: string } } }
-  //       setError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load prescriptions')
-  //       setItems([])
-  //       setTotal(0)
-  //     } finally {
-  //       if (!cancelled) setLoading(false)
-  //     }
-  //   }
-  //   fetchData()
-  //   return () => { cancelled = true }
-  // }, [filters])
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm || "")
+      setCurrentPage(1)
+    }, 500)
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [searchTerm])
+
+  // Convert dateFilter to start_date and end_date (YYYY-MM-DD format)
+  const getDateRange = useCallback((filter: string): { start_date?: string; end_date?: string } => {
+    if (!filter || filter === 'all-dates') {
+      return {}
+    }
+
+    const today = new Date()
+    const formatDate = (date: Date): string => {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    switch (filter) {
+      case 'today': {
+        return {
+          start_date: formatDate(today),
+          end_date: formatDate(today),
+        }
+      }
+      case 'week': {
+        const startDate = new Date(today)
+        startDate.setDate(today.getDate() - 7)
+        return {
+          start_date: formatDate(startDate),
+          end_date: formatDate(today),
+        }
+      }
+      case 'month': {
+        const startDate = new Date(today)
+        startDate.setMonth(today.getMonth() - 1)
+        return {
+          start_date: formatDate(startDate),
+          end_date: formatDate(today),
+        }
+      }
+      default:
+        return {}
+    }
+  }, [])
+
+  // Map API response to Prescription type - only map fields displayed in table
+  const mapApiResponseToPrescription = useCallback((apiPrescription: ApiPrescriptionResponse): Prescription => {
+    return {
+      id: apiPrescription.prescription_id.toString(),
+      prescription_number: `${apiPrescription.prescription_id}`,
+      patient_name: apiPrescription.customer_name,
+      doctor_name: apiPrescription.doctor_name || 'N/A',
+      file_url: apiPrescription.prescription_link,
+      created_at: apiPrescription.created_at,
+    } as Prescription
+  }, [])
+
+  // Fetch prescriptions from API
+  const fetchPrescriptions = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams()
+      params.append('page', currentPage.toString())
+      params.append('limit', pageSize.toString())
+
+      if (debouncedSearchTerm.trim()) {
+        params.append('search', debouncedSearchTerm.trim())
+      }
+
+      const dateRange = getDateRange(dateFilter || 'all-dates')
+      if (dateRange.start_date) {
+        params.append('start_date', dateRange.start_date)
+      }
+      if (dateRange.end_date) {
+        params.append('end_date', dateRange.end_date)
+      }
+
+      const response = await backendApi.get<ApiResponse>(`/v1/customer/prescriptions?${params.toString()}`)
+      const responseData = response.data?.data
+
+      if (responseData) {
+        const mappedPrescriptions = responseData.prescriptions.map(mapApiResponseToPrescription)
+        setItems(mappedPrescriptions)
+        setTotal(parseInt(responseData.total) || 0)
+        setTotalPages(responseData.total_pages || 1)
+      } else {
+        setItems([])
+        setTotal(0)
+        setTotalPages(0)
+      }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { error?: string; message?: string } } }
+      setError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to load prescriptions')
+      setItems([])
+      setTotal(0)
+      setTotalPages(0)
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, pageSize, debouncedSearchTerm, dateFilter, getDateRange, mapApiResponseToPrescription])
+
+  useEffect(() => {
+    fetchPrescriptions()
+  }, [fetchPrescriptions])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [statusFilter, dateFilter])
 
   const formatDate = (iso?: string) => {
     if (!iso) return '-'
@@ -76,15 +175,8 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
     } catch { return '-' }
   }
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchTerm, statusFilter, dateFilter])
-
   const retryFetch = () => {
-    setError(null)
-    setLoading(true)
-    // The useEffect will trigger a new fetch due to the loading state change
+    fetchPrescriptions()
   }
 
   return (
@@ -120,16 +212,13 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
             <TableHead className="text-[#6b7280] font-medium">Patient</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Doctor</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Date</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Medications</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Status</TableHead>
-            <TableHead className="text-[#6b7280] font-medium">Validation</TableHead>
             <TableHead className="text-[#6b7280] font-medium">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={9}>
+              <TableCell colSpan={6}>
                 <div className="p-6 text-sm text-[#6b7280] flex items-center justify-center">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0f766e]"></div>
@@ -140,7 +229,7 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
             </TableRow>
           ) : error ? (
             <TableRow>
-              <TableCell colSpan={9}>
+              <TableCell colSpan={6}>
                 <div className="p-6 text-sm text-red-600 flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-red-500 mb-2">⚠️</div>
@@ -157,7 +246,7 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
             </TableRow>
           ) : items.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9}>
+              <TableCell colSpan={6}>
                 <div className="p-6 text-sm text-[#6b7280] flex items-center justify-center">
                   <div className="text-center">
                     <div className="text-gray-400 mb-2">📋</div>
@@ -196,87 +285,23 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
                   </Avatar>
                   <div>
                     <div className="font-medium text-[#111827]">{prescription.patient_name}</div>
-                    <div className="text-sm text-[#6b7280]">{prescription.patient_phone || prescription.patient_email || '-'}</div>
                   </div>
                 </div>
               </TableCell>
               <TableCell>
-                <div>
-                  <div className="font-medium text-[#111827]">{prescription.doctor_name}</div>
-                  <div className="text-sm text-[#6b7280]">{prescription.doctor_specialty || '-'}</div>
-                </div>
+                <div className="font-medium text-[#111827]">{prescription.doctor_name}</div>
               </TableCell>
               <TableCell>
-                <div>
-                  <div className="font-medium text-[#111827]">{formatDate(prescription.created_at)}</div>
-                  <div className="text-sm text-[#6b7280]">{formatDate(prescription.updated_at)}</div>
-                </div>
+                <div className="font-medium text-[#111827]">{formatDate(prescription.created_at)}</div>
               </TableCell>
               <TableCell>
-                <div>
-                  <div className="font-medium text-[#111827]">
-                    {prescription.medications && prescription.medications.length > 0 
-                      ? `${prescription.medications.length} medication${prescription.medications.length > 1 ? 's' : ''}`
-                      : 'No medications'
-                    }
-                  </div>
-                  <div className="text-sm text-[#6b7280]">
-                    {prescription.medications && prescription.medications.length > 0 
-                      ? prescription.medications.slice(0, 2).map(med => med.medication_name).join(', ') + 
-                        (prescription.medications.length > 2 ? '...' : '')
-                      : 'View details'
-                    }
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge className="border-0 font-medium">
-                  {prescription.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  className={`border-0 font-medium ${
-                    prescription.validation_status === 'APPROVED' 
-                      ? 'bg-green-100 text-green-800' 
-                      : prescription.validation_status === 'REJECTED'
-                      ? 'bg-red-100 text-red-800'
-                      : prescription.validation_status === 'NEEDS_REVISION'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onViewPrescription?.(prescription)}
                 >
-                  {prescription.validation_status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onViewPrescription?.(prescription)}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  {prescription.status === "PENDING_VALIDATION" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-green-600 border-green-600 hover:bg-green-50"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {prescription.status === "VALIDATED" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
-                    >
-                      <Package className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
+                  <Eye className="w-4 h-4" />
+                </Button>
               </TableCell>
             </TableRow>
             ))

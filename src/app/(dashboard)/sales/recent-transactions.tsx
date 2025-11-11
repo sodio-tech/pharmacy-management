@@ -1,59 +1,125 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Receipt } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { Transaction } from "@/types/sales"
 
-export function RecentTransactions() {
+interface RecentTransactionsProps {
+  branchId?: string
+}
+
+interface ApiSaleItem {
+  price: number
+  gst_rate: number
+  quantity: number
+  product_id: number
+}
+
+interface ApiSale {
+  id: number
+  payment_mode: string
+  status: string
+  total_amount: number
+  created_at: string
+  prescription: {
+    doctor_name: string | null
+    doctor_contact: string | null
+    notes: string
+    prescription_link: string
+  }
+  customer: {
+    id: number
+    name: string
+    phone_number: string
+    email: string | null
+  }
+  sale_items: ApiSaleItem[]
+}
+
+interface ApiResponse {
+  success: boolean
+  message: string
+  data: {
+    sales: ApiSale[]
+    total: number
+    page: number
+    limit: number
+    total_pages: number
+  }
+}
+
+export function RecentTransactions({ branchId }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
 
-  // useEffect(() => {
-  //   const fetchTransactions = async () => {
-  //     try {
-  //       setLoading(true)
-  //       const response = await backendApi.get('/sales/transactions/recent?limit=5')
-  //       const recentTransactions = response.data?.data || response.data || []
-  //       setTransactions(recentTransactions)
-  //     } catch (error) {
-  //       console.error('Error fetching recent transactions:', error)
-  //       // Use fallback data if API fails
-  //       setTransactions([
-  //         {
-  //           id: "#INV-2024-001234",
-  //           customer: "Walk-in Customer",
-  //           items: 2,
-  //           amount: 485.00,
-  //           time: "2 mins ago",
-  //           status: "COMPLETED"
-  //         },
-  //         {
-  //           id: "#INV-2024-001233",
-  //           customer: "John Smith",
-  //           items: 5,
-  //           amount: 1250.00,
-  //           time: "15 mins ago",
-  //           status: "COMPLETED"
-  //         },
-  //         {
-  //           id: "#INV-2024-001232",
-  //           customer: "Sarah Johnson",
-  //           items: 3,
-  //           amount: 750.00,
-  //           time: "32 mins ago",
-  //           status: "COMPLETED"
-  //         }
-  //       ])
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
+  const formatTimeAgo = (dateString: string): string => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-  //   fetchTransactions()
-  // }, [])
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds} sec${diffInSeconds !== 1 ? 's' : ''} ago`
+    }
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min${diffInMinutes !== 1 ? 's' : ''} ago`
+    }
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) {
+      return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`
+    }
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`
+  }
+
+  const mapApiSaleToTransaction = useCallback((sale: ApiSale): Transaction => {
+    const totalItems = sale.sale_items.reduce((sum, item) => sum + item.quantity, 0)
+    // Map API status to UI status
+    let status = sale.status.toUpperCase()
+    if (status === 'PAID') {
+      status = 'COMPLETED'
+    }
+    return {
+      id: `${sale.id}`,
+      customer: sale.customer.name || 'Walk-in Customer',
+      items: totalItems,
+      amount: sale.total_amount,
+      time: formatTimeAgo(sale.created_at),
+      status: status,
+    }
+  }, [])
+
+  const fetchTransactions = useCallback(async () => {
+    if (!branchId) {
+      setTransactions([])
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await backendApi.get<ApiResponse>(`/v1/sales/list/${branchId}?page=1&limit=2`)
+      const data = response.data?.data
+
+      if (data?.sales) {
+        const mappedTransactions = data.sales.map(mapApiSaleToTransaction)
+        setTransactions(mappedTransactions)
+      } else {
+        setTransactions([])
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching recent transactions:', error)
+      setTransactions([])
+    } finally {
+      setLoading(false)
+    }
+  }, [branchId, mapApiSaleToTransaction])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -109,7 +175,7 @@ export function RecentTransactions() {
                   <Receipt className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-medium">{transaction.id}</p>
+                  <p className="font-medium">Sale ID: {transaction.id}</p>
                   <p className="text-sm text-muted-foreground">
                     {transaction.customer} • {transaction.items} items
                   </p>

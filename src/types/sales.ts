@@ -23,15 +23,12 @@ export interface Product {
 }
 
 export interface Customer {
-  id?: string
+  id?: string | number
   patient_name: string
   patient_phone: string
   patient_email: string
-  doctor_name?: string
-  doctor_license?: string
-  doctor_phone?: string
-  prescription_photo?: string | null
-  prescription_text?: string
+  age?: number
+  gender?: string
   created_at?: string
 }
 
