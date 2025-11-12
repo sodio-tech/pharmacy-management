@@ -70,7 +70,7 @@ export function StockAlerts() {
       }
     } catch (error: unknown) {
       console.error("Failed to load stock alerts:", error)
-      toast.error("अलर्ट लोड करने में विफल")
+      toast.error("Failed to load alerts")
     } finally {
       setLoading(false)
     }

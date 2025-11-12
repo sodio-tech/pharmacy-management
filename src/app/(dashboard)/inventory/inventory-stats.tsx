@@ -79,7 +79,7 @@ export function InventoryStats() {
         }
       } catch (error) {
         console.error("Failed to fetch analytics:", error)
-        toast.error("एनालिटिक्स लोड करने में विफल")
+        toast.error("Failed to load analytics")
         setRealTimeUpdates(false)
       } finally {
         setLoading(false)
@@ -149,7 +149,7 @@ export function InventoryStats() {
             disabled={loadingBranches || branches.length === 0}
           >
             <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder={loadingBranches ? "लोड हो रहा है..." : branches.length === 0 ? "कोई शाखा उपलब्ध नहीं" : "शाखा चुनें"} />
+              <SelectValue placeholder={loadingBranches ? "Loading..." : branches.length === 0 ? "No branches available" : "Select branch"} />
             </SelectTrigger>
             <SelectContent>
               {branches.map((branch) => (

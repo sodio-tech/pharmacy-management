@@ -45,7 +45,7 @@ export function useBranches(pharmacyId: number | undefined): UseBranchesReturn {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       setError(errorMessage || "Failed to fetch branches")
       setBranches([])
-      toast.error("शाखाएं लोड करने में विफल")
+      toast.error("Failed to load branches")
     } finally {
       setIsLoading(false)
     }
