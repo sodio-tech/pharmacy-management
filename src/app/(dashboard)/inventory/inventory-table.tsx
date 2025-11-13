@@ -43,11 +43,17 @@ export function InventoryTable({
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<Product | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [categorySearchTerm, setCategorySearchTerm] = useState("")
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const limit = 10
   
   // Fetch categories from API
   const { categories } = useProductCategories()
+
+  // Filter categories based on search term
+  const filteredCategories = categories.filter((category) =>
+    category.category_name.toLowerCase().replace(/_/g, " ").includes(categorySearchTerm.toLowerCase())
+  )
 
   // Debounce search term
   useEffect(() => {
@@ -227,17 +233,52 @@ export function InventoryTable({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory} defaultValue="all">
+            <Select 
+              value={selectedCategory} 
+              onValueChange={(value) => {
+                setSelectedCategory(value)
+                setCategorySearchTerm("") // Reset search when category is selected
+              }} 
+              defaultValue="all"
+            >
               <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.category_name}
+                {/* Search Input */}
+                <div className="px-2 pt-2 pb-1 sticky top-0 bg-white z-10 border-b border-gray-200">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearchTerm}
+                      onChange={(e) => {
+                        e.stopPropagation()
+                        setCategorySearchTerm(e.target.value)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="pl-8 h-8 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all" className="cursor-pointer">
+                    All Categories
                   </SelectItem>
-                ))}
+                  {filteredCategories.length > 0 ? (
+                    filteredCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()} className="cursor-pointer">
+                        {category.category_name.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-2 py-4 text-sm text-gray-500 text-center">
+                      {categorySearchTerm ? `No categories found matching "${categorySearchTerm}"` : "No categories available"}
+                    </div>
+                  )}
+                </div>
               </SelectContent>
             </Select>
 
