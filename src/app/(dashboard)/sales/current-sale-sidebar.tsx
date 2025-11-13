@@ -348,7 +348,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                     <div className="flex-1">
                       <p className="font-semibold text-sm md:text-base">Prescription Added</p>
                       {prescription.doctor_name && (
-                        <p className="text-xs md:text-sm text-muted-foreground">Dr. {prescription.doctor_name}</p>
+                        <p className="text-xs md:text-sm text-muted-foreground">{prescription.doctor_name}</p>
                       )}
                       {prescription.prescription && <p className="text-xs text-teal-600">Image attached</p>}
                     </div>

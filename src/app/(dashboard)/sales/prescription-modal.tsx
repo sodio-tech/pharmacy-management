@@ -33,11 +33,25 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Helper function to remove "Dr." prefix if present
+  const removeDrPrefix = (name: string): string => {
+    if (!name) return ""
+    return name.trim().replace(/^Dr\.?\s*/i, "")
+  }
+
+  // Helper function to add "Dr." prefix
+  const addDrPrefix = (name: string): string => {
+    if (!name.trim()) return ""
+    const cleanedName = removeDrPrefix(name)
+    return cleanedName ? `Dr. ${cleanedName}` : ""
+  }
+
   useEffect(() => {
     if (existingPrescription) {
       setPrescriptionFile(existingPrescription.prescription || null)
       setPrescriptionNotes(existingPrescription.prescription_notes || "")
-      setDoctorName(existingPrescription.doctor_name || "")
+      // Remove "Dr." prefix when loading existing data to avoid duplication
+      setDoctorName(removeDrPrefix(existingPrescription.doctor_name || ""))
       setDoctorContact(existingPrescription.doctor_contact || "")
     } else {
       setPrescriptionFile(null)
@@ -93,7 +107,8 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
       prescriptionData.prescription_notes = prescriptionNotes.trim()
     }
     if (doctorName.trim()) {
-      prescriptionData.doctor_name = doctorName.trim()
+      // Add "Dr." prefix when saving
+      prescriptionData.doctor_name = addDrPrefix(doctorName.trim())
     }
     if (doctorContact.trim()) {
       prescriptionData.doctor_contact = doctorContact.trim()
@@ -187,12 +202,20 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
             <Label htmlFor="doctor-name" className="text-sm font-medium">
               Doctor Name <span className="text-muted-foreground text-xs">(Optional)</span>
             </Label>
-            <Input
-              id="doctor-name"
-              placeholder="Enter doctor's name"
-              value={doctorName}
-              onChange={(e) => setDoctorName(e.target.value)}
-            />
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-gray-500 font-medium pointer-events-none">Dr.</span>
+              <Input
+                id="doctor-name"
+                placeholder="Enter doctor's name"
+                value={doctorName}
+                onChange={(e) => {
+                  // Remove "Dr." if user tries to type it
+                  const value = e.target.value.replace(/^Dr\.?\s*/i, "")
+                  setDoctorName(value)
+                }}
+                className="pl-10"
+              />
+            </div>
           </div>
 
           {/* Doctor Contact */}
