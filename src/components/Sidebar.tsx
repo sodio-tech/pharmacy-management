@@ -115,17 +115,27 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
           ) : user ? (
             <>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {user.fullname
-                      ? user.fullname
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                      : "U"}
-                  </span>
-                </div>
+                {user.image || user.profile_image ? (
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#0f766e]">
+                    <img
+                      src={user.image || user.profile_image || ""}
+                      alt={user.fullname || "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-sm">
+                      {user.fullname
+                        ? user.fullname
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                        : "U"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[#111827] text-sm truncate">{user.fullname || "Unknown User"}</p>
                   <p className="text-xs text-[#6b7280] truncate">{user.email || "No email"}</p>

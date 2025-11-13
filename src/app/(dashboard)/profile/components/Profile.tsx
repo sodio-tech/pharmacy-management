@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Camera, Trash2, Loader2 } from 'lucide-react'
+import { Camera, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useUser } from '@/contexts/UserContext'
@@ -15,13 +15,13 @@ interface UserProfile {
   pharmacy_name: string
   image?: string
   role: string
-  subscription_status: string
+  subscription_status?: string
 }
 
 const Profile = () => {
   const { user: sessionUser, isLoading: isPending, refetch } = useUser()
-  const [isLoading, setIsLoading] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<File | null>(null)
   const [formData, setFormData] = useState<UserProfile>({
     id: 0,
     fullname: '',
@@ -33,7 +33,7 @@ const Profile = () => {
     subscription_status: ''
   })
 
-  // Initialize form data when user loads
+  // Initialize form data when user loads or image updates
   useEffect(() => {
     if (sessionUser) {
       setFormData({
@@ -47,7 +47,7 @@ const Profile = () => {
         subscription_status: sessionUser.subscription_status || ''
       })
     }
-  }, [sessionUser?.id]) // Only depend on user ID to avoid infinite loops
+  }, [sessionUser?.id, sessionUser?.image]) // Update when user ID or image changes
 
   const handleInputChange = (field: keyof UserProfile, value: string) => {
     setFormData(prev => ({
@@ -61,17 +61,32 @@ const Profile = () => {
 
     setIsUpdating(true)
     try {
-      const updateData = {
-        fullname: formData.fullname,
-        phone_number: formData.phone_number,
-        pharmacy_name: formData.pharmacy_name,
+      // Create FormData for form-data body type
+      const formDataToSend = new FormData()
+      
+      // Add text fields
+      formDataToSend.append('new_name', formData.fullname)
+      formDataToSend.append('phone_number', formData.phone_number)
+      formDataToSend.append('pharmacy_name', formData.pharmacy_name)
+      
+      // Add profile photo file if selected
+      if (selectedProfilePhoto) {
+        formDataToSend.append('profile_photo', selectedProfilePhoto)
       }
 
-      await backendApi.put('/v1/profile', updateData)
+      await backendApi.put('/v1/update-profile', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      // Clear selected photo after successful update
+      setSelectedProfilePhoto(null)
       await refetch()
       toast.success('Profile updated successfully!')
     } catch (error) {
       console.error('Error updating profile:', error)
+      toast.error('Failed to update profile. Please try again.')
     } finally {
       setIsUpdating(false)
     }
@@ -89,51 +104,30 @@ const Profile = () => {
         role: sessionUser.role || '',
         subscription_status: sessionUser.subscription_status || ''
       })
+      setSelectedProfilePhoto(null)
     }
   }
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setIsLoading(true)
-    try {
-      // Create FormData for file upload
-      const formData = new FormData()
-      formData.append('image', file)
-
-      const response = await fetch('/api/upload/profile-image', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (response.ok) {
-        const { imageUrl } = await response.json()
-        await backendApi.put('/v1/profile', { image: imageUrl })
-        await refetch()
-        toast.success('Profile image updated successfully!')
-      } else {
-        throw new Error('Failed to upload image')
+    // Store the file in state to be sent with form data
+    setSelectedProfilePhoto(file)
+    
+    // Create preview URL for immediate display
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      if (reader.result) {
+        setFormData(prev => ({
+          ...prev,
+          image: reader.result as string
+        }))
       }
-    } catch (error) {
-      console.error('Error uploading image:', error)
-    } finally {
-      setIsLoading(false)
     }
+    reader.readAsDataURL(file)
   }
 
-  const handleRemoveImage = async () => {
-    setIsLoading(true)
-    try {
-      await backendApi.put('/v1/profile', { image: null })
-      await refetch()
-      toast.success('Profile image removed successfully!')
-    } catch (error) {
-      console.error('Error removing image:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   if (isPending) {
     return (
@@ -255,7 +249,7 @@ const Profile = () => {
                 </span>
               </div>
             )}
-            {isLoading && (
+            {isUpdating && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-white" />
               </div>
@@ -269,28 +263,17 @@ const Profile = () => {
               accept="image/*"
               onChange={handleImageUpload}
               className="hidden"
-              disabled={isLoading}
+              disabled={isUpdating}
             />
             <Button
               variant="outline"
               onClick={() => document.getElementById('image-upload')?.click()}
-              disabled={isLoading}
+              disabled={isUpdating}
               className="w-full border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb] bg-transparent disabled:opacity-50"
             >
               <Camera className="w-4 h-4 mr-2" />
-              {isLoading ? 'Uploading...' : 'Change Photo'}
+              Change Photo
             </Button>
-            {formData.image && (
-              <Button
-                variant="outline"
-                onClick={handleRemoveImage}
-                disabled={isLoading}
-                className="w-full border-[#e5e7eb] text-[#ef4444] hover:bg-[#fef2f2] hover:border-[#ef4444] bg-transparent disabled:opacity-50"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Remove Photo
-              </Button>
-            )}
           </div>
         </div>
       </div>

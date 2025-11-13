@@ -10,14 +10,17 @@ export interface User {
   fullname: string
   pharmacy_name: string
   email: string
-  email_verified: boolean
+  email_verified?: boolean
   role: string
-  subscription_status: string
+  subscription_status?: string
   phone_number: string
-  drug_license_number: string
+  drug_license_number?: string
   two_fa_enabled: boolean
   pharmacy_id: number
-  image?: string | null // Optional field for UI
+  pharmacy_branch_id?: number
+  profile_image?: string | null // API response field
+  last_login?: string | null
+  image?: string | null // Mapped from profile_image for UI compatibility
 }
 
 interface UserContextType {
@@ -59,6 +62,11 @@ export function UserProvider({ children }: UserProviderProps) {
         userData = response.data.data
       } else {
         userData = response.data
+      }
+      
+      // Map profile_image to image for UI compatibility
+      if (userData.profile_image) {
+        userData.image = userData.profile_image
       }
       
       setUser(userData)
