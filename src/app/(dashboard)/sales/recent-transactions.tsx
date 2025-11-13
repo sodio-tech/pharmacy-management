@@ -138,9 +138,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
     <Card className="mt-3">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-        <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700">
-          View All
-        </Button>
+      
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
