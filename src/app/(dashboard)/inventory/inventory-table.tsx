@@ -20,7 +20,7 @@ interface InventoryTableProps {
   onViewBatch: (product: Product) => void
   onAddBatch: (productId: string) => void
   canAddProducts?: boolean
-  refreshTrigger?: number | string
+  refreshTrigger?: number
 }
 
 export function InventoryTable({
