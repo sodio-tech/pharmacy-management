@@ -17,8 +17,6 @@ import { useProductCategories } from "@/hooks/useProductCategories"
 interface InventoryTableProps {
   onAddProduct: () => void
   onEditProduct: (product: Product) => void
-  onViewBatch: (product: Product) => void
-  onAddBatch: (productId: string) => void
   canAddProducts?: boolean
   refreshTrigger?: number
 }
@@ -26,8 +24,6 @@ interface InventoryTableProps {
 export function InventoryTable({
   onAddProduct,
   onEditProduct,
-  onViewBatch,
-  onAddBatch,
   canAddProducts = true,
   refreshTrigger,
 }: InventoryTableProps) {
@@ -294,7 +290,7 @@ export function InventoryTable({
               </SelectContent>
             </Select>
 
-            <Button variant="outline" className="gap-2 bg-transparent hidden sm:flex">
+            {/* <Button variant="outline" className="gap-2 bg-transparent hidden sm:flex">
               <Filter className="w-4 h-4" />
               <span className="hidden md:inline">More Filters</span>
             </Button>
@@ -306,7 +302,7 @@ export function InventoryTable({
               <Button variant="ghost" size="sm" className="p-2">
                 <Grid className="w-4 h-4" />
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -422,34 +418,7 @@ export function InventoryTable({
                               <Edit className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 h-7 w-7 md:h-8 md:w-8"
-                            onClick={() => onViewBatch?.(product)}
-                            title="View Batch"
-                          >
-                            <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
-                          </Button>
-                          {canAddProducts && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="p-1 h-7 w-7 md:h-8 md:w-8 hidden sm:flex"
-                              onClick={() => onAddBatch(String(product.id))}
-                              title="Add Batch"
-                            >
-                              <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-1 h-7 w-7 md:h-8 md:w-8 hidden md:flex"
-                            title="Analytics"
-                          >
-                            <BarChart3 className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
-                          </Button>
+                        
 
                           {canAddProducts && (
                             <Button

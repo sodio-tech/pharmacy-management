@@ -117,15 +117,15 @@ export function InventoryStats() {
       color: stats.outOfStockCount > 0 ? "text-[#dc2626]" : "text-[#16a34a]",
       bgColor: stats.outOfStockCount > 0 ? "bg-[#fee2e2]" : "bg-[#dcfce7]",
     },
-    {
-      title: "Expiring Soon",
-      value: loading ? "..." : stats.expiringSoonCount.toString(),
-      change: "Within 30 days",
-      changeType: stats.expiringSoonCount > 0 ? "warning" as const : "positive" as const,
-      icon: "⏰",
-      color: stats.expiringSoonCount > 0 ? "text-[#ca8a04]" : "text-[#16a34a]",
-      bgColor: stats.expiringSoonCount > 0 ? "bg-[#fef9c3]" : "bg-[#dcfce7]",
-    },
+    // {
+    //   title: "Expiring Soon",
+    //   value: loading ? "..." : stats.expiringSoonCount.toString(),
+    //   change: "Within 30 days",
+    //   changeType: stats.expiringSoonCount > 0 ? "warning" as const : "positive" as const,
+    //   icon: "⏰",
+    //   color: stats.expiringSoonCount > 0 ? "text-[#ca8a04]" : "text-[#16a34a]",
+    //   bgColor: stats.expiringSoonCount > 0 ? "bg-[#fef9c3]" : "bg-[#dcfce7]",
+    // },
     {
       title: "Stock Value",
       value: loading ? "..." : `₹${stats.totalStockValue.toLocaleString()}`,
@@ -163,7 +163,7 @@ export function InventoryStats() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((stat, index) => (
           <Card key={index} className="p-6 bg-white border border-[#e5e7eb] hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -183,7 +183,6 @@ export function InventoryStats() {
                 }`}>
                 {stat.changeType === "positive" && "↗"}
                 {stat.changeType === "negative" && "↘"}
-                {stat.changeType === "warning" && "⚠"}
                 {stat.change}
               </span>
             </div>

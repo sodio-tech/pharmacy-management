@@ -5,8 +5,6 @@ import { toast } from 'react-toastify';
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
 import { Button } from '@/components/ui/button'
-import { Download, Scan, Upload } from 'lucide-react'
-import { HeaderActions, HeaderAction } from '@/components/HeaderActions'
 import PrescriptionContent from './prescription-content'
 import { PrescriptionUpload } from './prescription-upload'
 import { PrescriptionValidation } from './prescription-validation'
@@ -288,26 +286,26 @@ const page = () => {
         );
     }
 
-    const prescriptionActions: HeaderAction[] = [
-        {
-            label: "Upload Prescription",
-            icon: Upload,
-            onClick: handleUploadClick,
-            variant: 'primary'
-        },
-        {
-            label: "Scan Prescription",
-            icon: Scan,
-            onClick: handleScanClick,
-            variant: 'secondary'
-        },
-        {
-            label: "Export",
-            icon: Download,
-            onClick: handleExportClick,
-            variant: 'tertiary'
-        }
-    ]
+    // const prescriptionActions: HeaderAction[] = [
+    //     {
+    //         label: "Upload Prescription",
+    //         icon: Upload,
+    //         onClick: handleUploadClick,
+    //         variant: 'primary'
+    //     },
+    //     {
+    //         label: "Scan Prescription",
+    //         icon: Scan,
+    //         onClick: handleScanClick,
+    //         variant: 'secondary'
+    //     },
+    //     {
+    //         label: "Export",
+    //         icon: Download,
+    //         onClick: handleExportClick,
+    //         variant: 'tertiary'
+    //     }
+    // ]
 
     return (
         <LayoutSkeleton
@@ -315,7 +313,7 @@ const page = () => {
                 <DynamicHeader
                     maintext="Prescription Management"
                     para="Manage patient prescriptions and medication orders"
-                    children={<HeaderActions actions={prescriptionActions} />}
+                    // children={<HeaderActions actions={prescriptionActions} />}
                 />
             }
         >

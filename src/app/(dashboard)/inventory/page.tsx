@@ -1,12 +1,10 @@
 
-"use client"
-import { Button } from "@/components/ui/button"
-import { Plus, Scan, Download, TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
+  "use client"
+import { Plus, TriangleAlert as AlertTriangle, Package, Shield } from "lucide-react"
 import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 import { InventoryStats } from "./inventory-stats"
 import { InventoryTable } from "./inventory-table"
 import { AddProductModal } from "./add-product-modal"
-import { BarcodeScanner } from "./barcode-scanner"
 import { StockAlerts } from "./stock-alerts"
 import { BatchTracking } from "./batch-tracking"
 import { AddBatchModal } from "./components/AddBatchModal"
@@ -18,16 +16,12 @@ import { useUser } from "@/contexts/UserContext"
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
   setIsAddProductModalOpen: (open: boolean) => void
-  isBarcodeScannerOpen: boolean
-  setIsBarcodeScannerOpen: (open: boolean) => void
   canAddProducts?: boolean
 }
 
 function InventoryContent({
   isAddProductModalOpen,
   setIsAddProductModalOpen,
-  isBarcodeScannerOpen,
-  setIsBarcodeScannerOpen,
   canAddProducts = true,
 }: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
@@ -36,30 +30,19 @@ function InventoryContent({
   const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const handleProductFound = (product: any) => {
-    setIsBarcodeScannerOpen(false)
-    // Handle found product logic
-  }
-
-  const handleProductNotFound = (barcode: string) => {
-    setIsBarcodeScannerOpen(false)
-    setIsAddProductModalOpen(true)
-    // Pre-fill barcode in add product form
-  }
-
   const handleEditProduct = (product: any) => {
     setSelectedProduct(product)
     setIsAddProductModalOpen(true)
   }
 
-  const handleViewBatch = (product: any) => {
-    setActiveTab("batch-tracking")
-  }
+  // const handleViewBatch = (product: any) => {
+  //   setActiveTab("batch-tracking")
+  // }
 
-  const handleAddBatch = (productId: string) => {
-    setSelectedProductForBatch(productId)
-    setIsAddBatchModalOpen(true)
-  }
+  // const handleAddBatch = (productId: string) => {
+  //   setSelectedProductForBatch(productId)
+  //   setIsAddBatchModalOpen(true)
+  // }
 
   const handleBatchSuccess = () => {
     setIsAddBatchModalOpen(false)
@@ -71,7 +54,7 @@ function InventoryContent({
   const tabs = [
     { id: "inventory", label: "Inventory", icon: Package },
     { id: "alerts", label: "Stock Alerts", icon: AlertTriangle },
-    { id: "batch-tracking", label: "Batch Tracking", icon: Scan }
+    // { id: "batch-tracking", label: "Batch Tracking", icon: Scan }
   ]
 
   return (
@@ -108,8 +91,6 @@ function InventoryContent({
               <InventoryTable
                 onAddProduct={() => setIsAddProductModalOpen(true)}
                 onEditProduct={handleEditProduct}
-                onViewBatch={handleViewBatch}
-                onAddBatch={handleAddBatch}
                 canAddProducts={canAddProducts}
                 refreshTrigger={refreshTrigger}
               />
@@ -148,20 +129,12 @@ function InventoryContent({
         }}
       />
 
-      <BarcodeScanner
-        isOpen={isBarcodeScannerOpen}
-        onClose={() => setIsBarcodeScannerOpen(false)}
-        onProductFound={handleProductFound}
-        onProductNotFound={handleProductNotFound}
-      />
-
     </>
   )
 }
 
 export default function InventoryManagement() {
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false)
-  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false)
   const { user } = useUser()
   const canAddProducts = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
 
@@ -172,19 +145,8 @@ export default function InventoryManagement() {
       onClick: () => setIsAddProductModalOpen(true),
       variant: 'primary'
     },
-    {
-      label: "Export",
-      icon: Download,
-      onClick: () => { },
-      variant: 'tertiary'
-    }
   ] : [
-    {
-      label: "Export",
-      icon: Download,
-      onClick: () => { },
-      variant: 'tertiary'
-    }
+   
   ]
 
   return (
@@ -209,8 +171,6 @@ export default function InventoryManagement() {
       <InventoryContent
         isAddProductModalOpen={isAddProductModalOpen}
         setIsAddProductModalOpen={setIsAddProductModalOpen}
-        isBarcodeScannerOpen={isBarcodeScannerOpen}
-        setIsBarcodeScannerOpen={setIsBarcodeScannerOpen}
         canAddProducts={canAddProducts}
       />
     </LayoutSkeleton>

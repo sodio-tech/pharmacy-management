@@ -16,7 +16,7 @@ export default function PrescriptionContent({ onViewPrescription }: Prescription
 
     return (
         <div className="bg-[#f9fafb]">
-            <PrescriptionStats />
+            {/* <PrescriptionStats /> */}
 
             <div className="mb-6 bg-white p-4 rounded-lg border border-[#e5e7eb]">
                 <div className="flex items-center gap-4 flex-wrap">
@@ -55,20 +55,6 @@ export default function PrescriptionContent({ onViewPrescription }: Prescription
                             <SelectItem value="month">This Month</SelectItem>
                         </SelectContent>
                     </Select>
-
-                    <Button variant="outline" className="gap-2 bg-transparent">
-                        <Filter className="w-4 h-4" />
-                        More Filters
-                    </Button>
-
-                    <div className="flex items-center gap-1 border border-[#e5e7eb] rounded">
-                        <Button variant="ghost" size="sm" className="p-2">
-                            <List className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="p-2">
-                            <Grid className="w-4 h-4" />
-                        </Button>
-                    </div>
                 </div>
             </div>
 

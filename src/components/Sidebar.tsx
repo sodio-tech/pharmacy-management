@@ -26,11 +26,11 @@ const sidebarItems = [
   { icon: Package, label: "Inventory", href: "/inventory" },
   { icon: FileText, label: "Prescriptions", href: "/prescriptions" },
   { icon: ShoppingCart, label: "Sales & POS", href: "/sales" },
-  { icon: Users, label: "Suppliers", href: "/suppliers" },
+  // { icon: Users, label: "Suppliers", href: "/suppliers" },
   { icon: BarChart3, label: "Reports", href: "/reports" },
   { icon: Shield, label: "Compliance", href: "/compliance" },
   { icon: UserCheck, label: "User Management", href: "/users" },
-  { icon: CreditCard, label: "Subscription", href: "/profile?tab=subscription" },
+  // { icon: CreditCard, label: "Subscription", href: "/profile?tab=subscription" },
   { icon: User, label: "Profile", href: "/profile" },
 ]
 

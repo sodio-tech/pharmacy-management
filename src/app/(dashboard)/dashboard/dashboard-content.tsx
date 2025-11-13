@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -60,8 +62,8 @@ export function DashboardContent() {
   const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([])
   const [expiringItems, setExpiringItems] = useState<ExpiringProduct[]>([])
   const [recentPrescriptions, setRecentPrescriptions] = useState<DashboardPrescription[]>([])
-  const [salesAnalytics, setSalesAnalytics] = useState<{ this_month_earnings: number; this_month_earnings_change_percent: number } | null>(null)
-  const [supplierAnalytics, setSupplierAnalytics] = useState<{ this_month_orders: number; orders_percentage_change: number } | null>(null)
+  const [salesAnalytics, setSalesAnalytics] = useState<{ today_transactions: number; transactions_change_percent: number; this_month_earnings: number; this_month_earnings_change_percent: number } | null>(null)
+  // const [supplierAnalytics, setSupplierAnalytics] = useState<{ this_month_orders: number; orders_percentage_change: number } | null>(null)
 
   // Auto-select first branch when branches are loaded
   useEffect(() => {
@@ -131,6 +133,8 @@ export function DashboardContent() {
       const data = response.data?.data || response.data
       if (data) {
         setSalesAnalytics({
+          today_transactions: data.today_transactions || 0,
+          transactions_change_percent: data.transactions_change_percent || 0,
           this_month_earnings: data.this_month_earnings || 0,
           this_month_earnings_change_percent: data.this_month_earnings_change_percent || 0,
         })
@@ -141,21 +145,21 @@ export function DashboardContent() {
     }
   }, [selectedBranchId])
 
-  const fetchSupplierAnalytics = useCallback(async () => {
-    try {
-      const response = await backendApi.get("/v1/supplier/general-analytics")
-      const data = response.data?.data || response.data
-      if (data) {
-        setSupplierAnalytics({
-          this_month_orders: data.this_month_orders || 0,
-          orders_percentage_change: data.orders_percentage_change || 0,
-        })
-      }
-    } catch (error) {
-      console.error("Failed to load supplier analytics:", error)
-      setSupplierAnalytics(null)
-    }
-  }, [])
+  // const fetchSupplierAnalytics = useCallback(async () => {
+  //   try {
+  //     const response = await backendApi.get("/v1/supplier/general-analytics")
+  //     const data = response.data?.data || response.data
+  //     if (data) {
+  //       setSupplierAnalytics({
+  //         this_month_orders: data.this_month_orders || 0,
+  //         orders_percentage_change: data.orders_percentage_change || 0,
+  //       })
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to load supplier analytics:", error)
+  //     setSupplierAnalytics(null)
+  //   }
+  // }, [])
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -172,8 +176,8 @@ export function DashboardContent() {
 
     fetchDashboardData()
     fetchRecentPrescriptions()
-    fetchSupplierAnalytics()
-  }, [fetchRecentPrescriptions, fetchSupplierAnalytics])
+    // fetchSupplierAnalytics()
+  }, [fetchRecentPrescriptions])
 
   // Fetch stock alerts and expiring stock when branch is selected
   useEffect(() => {
@@ -201,9 +205,9 @@ export function DashboardContent() {
     },
     {
       title: "Orders",
-      value: (supplierAnalytics?.this_month_orders || 0).toString(),
-      change: `${(supplierAnalytics?.orders_percentage_change || 0).toFixed(1)}% vs previous month`,
-      trend: (supplierAnalytics?.orders_percentage_change || 0) >= 0 ? "up" : "down",
+      value: (salesAnalytics?.today_transactions || 0).toString(),
+      change: `${(salesAnalytics?.transactions_change_percent || 0).toFixed(1)}% vs previous month`,
+      trend: (salesAnalytics?.transactions_change_percent || 0) >= 0 ? "up" : "down",
       icon: ShoppingCart,
       color: "bg-[#2563eb]",
     },
@@ -217,9 +221,9 @@ export function DashboardContent() {
     },
     {
       title: "Expiring Soon",
-      value: expiringItems.length.toString(),
-      change: "Within 30 days",
-      trend: "danger",
+      value: "Coming Soon",
+      change: "Feature in development",
+      trend: "neutral",
       icon: Clock,
       color: "bg-[#dc2626]",
     },
@@ -227,6 +231,43 @@ export function DashboardContent() {
 
   return (
     <>
+      {/* Branch Selector */}
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827]">Dashboard</h1>
+          <p className="text-sm text-[#6b7280] mt-1">Overview of your pharmacy operations</p>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Label htmlFor="branch" className="text-sm font-medium text-[#374151] whitespace-nowrap">
+            Select Branch:
+          </Label>
+          <Select
+            value={selectedBranchId}
+            onValueChange={setSelectedBranchId}
+            disabled={loadingBranches || branches.length === 0}
+          >
+            <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectValue 
+                placeholder={
+                  loadingBranches 
+                    ? "Loading branches..." 
+                    : branches.length === 0 
+                      ? "No branches available" 
+                      : "Select branch"
+                } 
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id.toString()}>
+                  {branch.branch_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {kpiCards.map((card, index) => (
           <Card key={index} className="bg-white border-[#e5e7eb] py-0">
@@ -349,13 +390,13 @@ export function DashboardContent() {
                   <Plus className="w-4 h-4" />
                   New Sale
                 </Button>
-                <Button 
+                {/* <Button 
                   onClick={() => router.push("/prescriptions")}
                   className="w-full h-12 sm:h-[55px] bg-[#14b8a6] hover:bg-[#14b8a6]/90 text-white justify-start gap-2 text-sm sm:text-base"
                 >
                   <Upload className="w-4 h-4" />
                   Upload Prescription
-                </Button>
+                </Button> */}
                 <Button 
                   onClick={() => router.push("/inventory")}
                   className="w-full h-12 sm:h-[55px] bg-[#06b6d4] hover:bg-[#06b6d4]/90 text-white justify-start gap-2 text-sm sm:text-base"
@@ -370,7 +411,7 @@ export function DashboardContent() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-6 sm:mt-8">
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 mt-6 sm:mt-8">
         {/* Low Stock Alerts */}
         <Card className="bg-white border-[#e5e7eb]">
           <CardHeader className="flex flex-row items-center justify-between p-4 sm:p-6">
@@ -405,7 +446,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Expiry Tracking */}
-        <Card className="bg-white border-[#e5e7eb]">
+        {/* <Card className="bg-white border-[#e5e7eb]">
           <CardHeader className="flex flex-row items-center justify-between p-4 sm:p-6">
             <CardTitle className="text-lg sm:text-xl font-semibold text-[#111827]">Expiry Tracking</CardTitle>
             <Badge variant="secondary" className="bg-[#fee2e2] text-[#991b1b] text-xs sm:text-sm">
@@ -455,7 +496,7 @@ export function DashboardContent() {
               )}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </>
   )

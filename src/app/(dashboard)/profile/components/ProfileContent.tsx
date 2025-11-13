@@ -21,8 +21,8 @@ export default function ProfileContent() {
 
   const allTabs = [
     { id: "profile" as TabType, label: "Profile", icon: User },
-    { id: "security" as TabType, label: "Security", icon: Shield },
-    { id: "subscription" as TabType, label: "Subscription", icon: CreditCard },
+    // { id: "security" as TabType, label: "Security", icon: Shield },
+    // { id: "subscription" as TabType, label: "Subscription", icon: CreditCard },
     { id: "organization" as TabType, label: "Organization", icon: Building2 },
   ]
 
