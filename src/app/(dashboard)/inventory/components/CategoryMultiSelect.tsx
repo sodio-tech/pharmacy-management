@@ -81,7 +81,7 @@ export function CategoryMultiSelect({ selectedCategoryIds, onCategoryChange }: C
       </div>
       {selectedCategoryIds.length > 0 && (
         <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          {selectedCategoryIds.length} category{selectedCategoryIds.length > 1 ? 'ies' : 'y'} selected
+          {selectedCategoryIds.length} {selectedCategoryIds.length === 1 ? 'category' : 'categories'} selected
         </p>
       )}
     </div>
