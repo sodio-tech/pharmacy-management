@@ -28,9 +28,11 @@ interface AddProductModalProps {
 
 export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProductModalProps) {
   const isEditMode = !!product
-  const { formData, handleInputChange, resetForm, isLoadingProduct } = useProductForm(product)
   const { user } = useUser()
   const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  
+  const { formData, handleInputChange, resetForm, isLoadingProduct, productImages } = useProductForm(product, selectedBranchId)
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -42,54 +44,31 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   // Auto-select first branch when branches are loaded
   useEffect(() => {
     if (branches.length > 0 && !formData.branch_id && !isEditMode) {
-      handleInputChange("branch_id", branches[0].id.toString())
+      const firstBranchId = branches[0].id.toString()
+      handleInputChange("branch_id", firstBranchId)
+      setSelectedBranchId(firstBranchId)
     }
   }, [branches, formData.branch_id, isEditMode, handleInputChange])
-
-  // Fetch and set existing image URLs when editing
+  
+  // Update selectedBranchId when formData.branch_id changes
   useEffect(() => {
-    const fetchProductImages = async () => {
-      if (!product?.id || !isEditMode) return
-
-      try {
-        const response = await backendApi.get(`/v1/products/details?product_id=${product.id}`)
-        const apiProduct = response.data?.data?.products?.[0]
-        
-        if (apiProduct) {
-          const images: string[] = []
-          
-          // Add main image
-          if (apiProduct.image) {
-            images.push(apiProduct.image)
-          }
-          
-          // Add additional images
-          if (apiProduct.additional_images && Array.isArray(apiProduct.additional_images)) {
-            images.push(...apiProduct.additional_images.filter((img: any): img is string => typeof img === 'string' && !!img))
-          }
-          
-          setImageUrls(images)
-        }
-      } catch (error) {
-        console.error("Error fetching product images:", error)
-        // Fallback to product prop if API fails
-        if (product.image_url) {
-          const urls = Array.isArray(product.image_url) ? product.image_url : [product.image_url]
-          setImageUrls(urls.filter((url): url is string => !!url))
-        }
-      }
+    if (formData.branch_id) {
+      setSelectedBranchId(formData.branch_id)
     }
+  }, [formData.branch_id])
 
-    if (product?.id) {
-      fetchProductImages()
-    } else if (product && !product.id) {
+  // Set existing image URLs from useProductForm hook (no duplicate API call needed)
+  useEffect(() => {
+    if (isEditMode && productImages.length > 0) {
+      setImageUrls(productImages)
+    } else if (product && !product.id && product.image_url) {
       // Legacy support: use product prop directly
-      if (product.image_url) {
-        const urls = Array.isArray(product.image_url) ? product.image_url : [product.image_url]
-        setImageUrls(urls.filter((url): url is string => !!url))
-      }
+      const urls = Array.isArray(product.image_url) ? product.image_url : [product.image_url]
+      setImageUrls(urls.filter((url): url is string => !!url))
+    } else if (!isEditMode) {
+      setImageUrls([])
     }
-  }, [product, isEditMode])
+  }, [productImages, product, isEditMode])
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -366,7 +345,10 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
                     </Label>
                     <Select
                       value={formData.branch_id}
-                      onValueChange={(value) => handleInputChange("branch_id", value)}
+                      onValueChange={(value) => {
+                        handleInputChange("branch_id", value)
+                        setSelectedBranchId(value)
+                      }}
                       disabled={isLoadingBranches}
                     >
                       <SelectTrigger className="mt-1.5 w-full">

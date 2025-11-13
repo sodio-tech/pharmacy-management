@@ -66,9 +66,10 @@ interface ApiProductResponse {
   additional_images?: string[]
 }
 
-export function useProductForm(product?: Product | null) {
+export function useProductForm(product?: Product | null, branchId?: string) {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [isLoadingProduct, setIsLoadingProduct] = useState(false)
+  const [productImages, setProductImages] = useState<string[]>([])
   const { categories } = useProductCategories()
   const { units } = useProductUnits()
 
@@ -80,7 +81,12 @@ export function useProductForm(product?: Product | null) {
 
       setIsLoadingProduct(true)
       try {
-        const response = await backendApi.get(`/v1/products/details?product_id=${product.id}`)
+        const params = new URLSearchParams()
+        params.append('product_id', product.id.toString())
+        if (branchId) {
+          params.append('branch_id', branchId)
+        }
+        const response = await backendApi.get(`/v1/products/details?${params.toString()}`)
         const apiProduct: ApiProductResponse = response.data?.data?.products?.[0]
         
         if (!apiProduct) {
@@ -124,6 +130,16 @@ export function useProductForm(product?: Product | null) {
           branch_id: (apiProduct as any).branch_id?.toString() || "",
           requires_prescription: apiProduct.requires_prescription || false,
         })
+
+        // Extract and set product images
+        const images: string[] = []
+        if (apiProduct.image) {
+          images.push(apiProduct.image)
+        }
+        if (apiProduct.additional_images && Array.isArray(apiProduct.additional_images)) {
+          images.push(...apiProduct.additional_images.filter((img: any): img is string => typeof img === 'string' && !!img))
+        }
+        setProductImages(images)
       } catch (error) {
         console.error("Error fetching product details:", error)
       } finally {
@@ -136,8 +152,9 @@ export function useProductForm(product?: Product | null) {
     } else {
       // Reset form if no product
       setFormData(initialFormData)
+      setProductImages([])
     }
-  }, [product?.id, categories, units])
+  }, [product?.id, categories, units, branchId])
 
   // Legacy support: populate form from product prop (for backward compatibility)
   useEffect(() => {
@@ -192,7 +209,8 @@ export function useProductForm(product?: Product | null) {
     setFormData,
     handleInputChange,
     resetForm,
-    isLoadingProduct
+    isLoadingProduct,
+    productImages
   }
 }
 
