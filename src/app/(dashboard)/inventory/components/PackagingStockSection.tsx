@@ -37,7 +37,7 @@ export function PackagingStockSection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="unit_id" className="text-sm font-medium">
-            Unit <span className="text-red-500">*</span>
+            Unit
           </Label>
           <Select
             value={unitId}

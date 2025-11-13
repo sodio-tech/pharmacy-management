@@ -31,9 +31,31 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
     patient_name: existingCustomer?.patient_name || "",
     patient_phone: existingCustomer?.patient_phone || "",
     patient_email: existingCustomer?.patient_email || "",
-    age: "",
-    gender: "",
+    age: existingCustomer?.age?.toString() || "",
+    gender: existingCustomer?.gender || "",
   })
+
+  // Update form data when existingCustomer changes
+  useEffect(() => {
+    if (existingCustomer) {
+      setFormData({
+        patient_name: existingCustomer.patient_name || "",
+        patient_phone: existingCustomer.patient_phone || "",
+        patient_email: existingCustomer.patient_email || "",
+        age: existingCustomer.age?.toString() || "",
+        gender: existingCustomer.gender || "",
+      })
+    } else if (!isOpen) {
+      // Reset form when modal closes
+      setFormData({
+        patient_name: "",
+        patient_phone: "",
+        patient_email: "",
+        age: "",
+        gender: "",
+      })
+    }
+  }, [existingCustomer, isOpen])
 
   useEffect(() => {
     if (isOpen && mode === "list") {
@@ -102,8 +124,12 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
 
   const handleSave = async () => {
     // Validate required fields
-    if (!formData.patient_name.trim() && !formData.patient_phone.trim()) {
-      toast.error("At least one of customer name or phone number is required")
+    if (!formData.patient_name.trim()) {
+      toast.error("Customer name is required")
+      return
+    }
+    if (!formData.patient_phone.trim()) {
+      toast.error("Phone number is required")
       return
     }
 
@@ -129,8 +155,12 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       }
       if (formData.age.trim()) {
         const ageNum = Number.parseInt(formData.age.trim(), 10)
-        if (!isNaN(ageNum) && ageNum > 0) {
+        if (!isNaN(ageNum) && ageNum >= 12 && ageNum <= 100) {
           payload.age = ageNum
+        } else {
+          toast.error("Age must be between 12 and 100 years")
+          setIsLoading(false)
+          return
         }
       }
       if (formData.gender) {
@@ -270,22 +300,28 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="patient_name">Customer Name</Label>
+                  <Label htmlFor="patient_name">
+                    Customer Name <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="patient_name"
                     value={formData.patient_name}
                     onChange={(e) => handleInputChange("patient_name", e.target.value)}
                     placeholder="Enter customer name"
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="patient_phone">Phone Number</Label>
+                  <Label htmlFor="patient_phone">
+                    Phone Number <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="patient_phone"
                     value={formData.patient_phone}
                     onChange={(e) => handleInputChange("patient_phone", e.target.value)}
                     placeholder="+91 98765 43210"
+                    required
                   />
                 </div>
 
@@ -305,11 +341,26 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
                   <Input
                     id="age"
                     type="number"
-                    min="1"
+                    min="12"
+                    max="100"
                     value={formData.age}
-                    onChange={(e) => handleInputChange("age", e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value === "" || (Number.parseInt(value, 10) >= 12 && Number.parseInt(value, 10) <= 100)) {
+                        handleInputChange("age", value)
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const value = e.target.value
+                      const ageNum = Number.parseInt(value, 10)
+                      if (value && (isNaN(ageNum) || ageNum < 12 || ageNum > 100)) {
+                        toast.error("Enter your age between 12 and 100 years")
+                        setFormData((prev) => ({ ...prev, age: "" }))
+                      }
+                    }}
                     placeholder="Enter age"
                   />
+                  <p className="text-xs text-muted-foreground">Age must be between 12 and 100 years</p>
                 </div>
 
                 <div className="space-y-2 w-full">

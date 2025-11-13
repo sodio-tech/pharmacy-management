@@ -13,7 +13,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { toast } from "react-toastify"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ChevronsUpDownIcon, CheckIcon, SearchIcon, PlusIcon, XIcon } from "lucide-react"
@@ -45,6 +56,31 @@ interface NewPODialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+// Validation schema with user-friendly error messages
+const purchaseOrderSchema = z.object({
+  supplier_id: z.string().min(1, { message: "Supplier is required" }),
+  product_category_id: z.string().min(1, { message: "Product category is required" }),
+  pharmacy_branch_id: z.string().min(1, { message: "Branch is required" }),
+  purchase_date: z.string().min(1, { message: "Purchase date is required" }),
+  purchase_amount: z
+    .string()
+    .min(1, { message: "Purchase amount is required" })
+    .refine((val) => {
+      const num = Number.parseFloat(val)
+      return !isNaN(num) && num > 0
+    }, { message: "Purchase amount must be a positive number" }),
+  expected_delivery_date: z.string().min(1, { message: "Expected delivery date is required" }),
+}).refine((data) => {
+  const purchaseDate = new Date(data.purchase_date)
+  const deliveryDate = new Date(data.expected_delivery_date)
+  return deliveryDate >= purchaseDate
+}, {
+  message: "Expected delivery date must be on or after purchase date",
+  path: ["expected_delivery_date"],
+})
+
+type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>
+
 export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -58,16 +94,30 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
   const [debouncedSupplierSearch, setDebouncedSupplierSearch] = useState("")
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const [formData, setFormData] = useState({
-    supplier_id: "",
-    product_category_id: "",
-    pharmacy_branch_id: "",
-    purchase_date: "",
-    purchase_amount: "",
-    expected_delivery_date: "",
+  const [productItems, setProductItems] = useState<ProductItem[]>([{ product_id: "", quantity: "" }])
+
+  const form = useForm<PurchaseOrderFormValues>({
+    resolver: zodResolver(purchaseOrderSchema),
+    defaultValues: {
+      supplier_id: "",
+      product_category_id: "",
+      pharmacy_branch_id: "",
+      purchase_date: "",
+      purchase_amount: "",
+      expected_delivery_date: "",
+    },
   })
 
-  const [productItems, setProductItems] = useState<ProductItem[]>([{ product_id: "", quantity: "" }])
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      form.reset()
+      setProductItems([{ product_id: "", quantity: "" }])
+      setSupplierSearch("")
+      setDebouncedSupplierSearch("")
+      setSupplierOpen(false)
+    }
+  }, [open, form])
 
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -165,26 +215,15 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!formData.supplier_id) {
-      toast.error("Please select a supplier")
-      return
-    }
-
-    if (!formData.pharmacy_branch_id) {
-      toast.error("Please select a branch")
-      return
-    }
-
+  const onSubmit = async (data: PurchaseOrderFormValues) => {
+    // Validate products separately
     const validProducts = productItems.filter((p) => p.product_id && p.quantity)
     if (validProducts.length === 0) {
       toast.error("Please add at least one product")
       return
     }
 
-    // Check for duplicate products in valid products
+    // Check for duplicate products
     const productIds = validProducts.map((p) => p.product_id)
     const uniqueProductIds = new Set(productIds)
     if (productIds.length !== uniqueProductIds.size) {
@@ -192,16 +231,25 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       return
     }
 
+    // Validate product quantities
+    for (const product of validProducts) {
+      const quantity = Number.parseInt(product.quantity, 10)
+      if (isNaN(quantity) || quantity <= 0) {
+        toast.error("All product quantities must be positive numbers")
+        return
+      }
+    }
+
     setIsLoading(true)
 
     try {
       const payload = {
-        supplier_id: Number.parseInt(formData.supplier_id),
-        product_category_id: Number.parseInt(formData.product_category_id),
-        pharmacy_branch_id: Number.parseInt(formData.pharmacy_branch_id),
-        purchase_date: new Date(formData.purchase_date).toISOString(),
-        purchase_amount: Number.parseFloat(formData.purchase_amount),
-        expected_delivery_date: new Date(formData.expected_delivery_date).toISOString(),
+        supplier_id: Number.parseInt(data.supplier_id),
+        product_category_id: Number.parseInt(data.product_category_id),
+        pharmacy_branch_id: Number.parseInt(data.pharmacy_branch_id),
+        purchase_date: new Date(data.purchase_date).toISOString(),
+        purchase_amount: Number.parseFloat(data.purchase_amount),
+        expected_delivery_date: new Date(data.expected_delivery_date).toISOString(),
         products: validProducts.map((p) => ({
           product_id: Number.parseInt(p.product_id),
           quantity: Number.parseInt(p.quantity),
@@ -209,18 +257,10 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       }
 
       const response = await backendApi.post("/v1/orders/make-order", payload)
-      const data = response.data?.data || response.data
+      const responseData = response.data?.data || response.data
 
-      toast.success(data?.message || "Purchase order created successfully")
-
-      setFormData({
-        supplier_id: "",
-        product_category_id: "",
-        pharmacy_branch_id: "",
-        purchase_date: "",
-        purchase_amount: "",
-        expected_delivery_date: "",
-      })
+      toast.success(responseData?.message || "Purchase order created successfully!")
+      form.reset()
       setProductItems([{ product_id: "", quantity: "" }])
       setSupplierSearch("")
       setDebouncedSupplierSearch("")
@@ -228,6 +268,42 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
       onOpenChange(false)
     } catch (error: unknown) {
       console.error("Failed to create purchase order:", error)
+      const err = error as {
+        response?: {
+          data?: {
+            message?: string
+            error?: string
+            errors?: Record<string, string[]>
+          }
+        }
+        message?: string
+      }
+
+      // Handle validation errors from API
+      if (err?.response?.data?.errors) {
+        const apiErrors = err.response.data.errors
+        Object.keys(apiErrors).forEach((field) => {
+          const fieldName = field as keyof PurchaseOrderFormValues
+          if (apiErrors[field] && apiErrors[field][0]) {
+            form.setError(fieldName, {
+              type: "server",
+              message: apiErrors[field][0],
+            })
+          }
+        })
+        toast.error("Please correct the errors in the form")
+      } else {
+        // Handle general API errors
+        const errorMessage =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to create purchase order. Please check your connection and try again."
+        toast.error(errorMessage)
+        form.setError("root", {
+          message: errorMessage,
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -240,177 +316,249 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
           <DialogTitle>Create New Purchase Order</DialogTitle>
           <DialogDescription>Enter the purchase order details below to create a new PO.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="supplier_id">Supplier</Label>
-              <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={supplierOpen}
-                    className="w-full justify-between bg-transparent font-normal"
-                    type="button"
-                  >
-                    {formData.supplier_id
-                      ? suppliers.find((s) => s.supplier_id.toString() === formData.supplier_id)?.supplier_name
-                      : "Select supplier..."}
-                    <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                  <div className="flex flex-col">
-                    <div className="border-b p-2">
-                      <div className="relative">
-                        <SearchIcon className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          placeholder="Search supplier..."
-                          value={supplierSearch}
-                          onChange={(e) => setSupplierSearch(e.target.value)}
-                          className="h-9 pl-8"
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape") {
-                              setSupplierOpen(false)
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-[300px] overflow-y-auto p-1">
-                      {isLoadingData ? (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading suppliers...</div>
-                      ) : suppliers.length === 0 ? (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                          {debouncedSupplierSearch ? "No suppliers found" : "No suppliers available"}
-                        </div>
-                      ) : (
-                        suppliers.map((supplier) => (
-                          <div
-                            key={supplier.supplier_id}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 py-4">
+              {/* Root error message */}
+              {form.formState.errors.root && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="supplier_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Supplier <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Popover open={supplierOpen} onOpenChange={setSupplierOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={supplierOpen}
                             className={cn(
-                              "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                              formData.supplier_id === supplier.supplier_id.toString() && "bg-accent",
+                              "w-full justify-between bg-transparent font-normal",
+                              !field.value && "text-muted-foreground",
+                              form.formState.errors.supplier_id && "border-red-500"
                             )}
-                            onClick={() => {
-                              setFormData({ ...formData, supplier_id: supplier.supplier_id.toString() })
-                              setSupplierOpen(false)
-                              setSupplierSearch("")
-                            }}
+                            type="button"
                           >
-                            <CheckIcon
-                              className={cn(
-                                "mr-2 size-4",
-                                formData.supplier_id === supplier.supplier_id.toString() ? "opacity-100" : "opacity-0",
+                            {field.value
+                              ? suppliers.find((s) => s.supplier_id.toString() === field.value)?.supplier_name
+                              : "Select supplier..."}
+                            <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                          <div className="flex flex-col">
+                            <div className="border-b p-2">
+                              <div className="relative">
+                                <SearchIcon className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  placeholder="Search supplier..."
+                                  value={supplierSearch}
+                                  onChange={(e) => setSupplierSearch(e.target.value)}
+                                  className="h-9 pl-8"
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Escape") {
+                                      setSupplierOpen(false)
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto p-1">
+                              {isLoadingData ? (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground">Loading suppliers...</div>
+                              ) : suppliers.length === 0 ? (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                  {debouncedSupplierSearch ? "No suppliers found" : "No suppliers available"}
+                                </div>
+                              ) : (
+                                suppliers.map((supplier) => (
+                                  <div
+                                    key={supplier.supplier_id}
+                                    className={cn(
+                                      "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                      field.value === supplier.supplier_id.toString() && "bg-accent",
+                                    )}
+                                    onClick={() => {
+                                      field.onChange(supplier.supplier_id.toString())
+                                      setSupplierOpen(false)
+                                      setSupplierSearch("")
+                                    }}
+                                  >
+                                    <CheckIcon
+                                      className={cn(
+                                        "mr-2 size-4",
+                                        field.value === supplier.supplier_id.toString() ? "opacity-100" : "opacity-0",
+                                      )}
+                                    />
+                                    {supplier.supplier_name}
+                                  </div>
+                                ))
                               )}
-                            />
-                            {supplier.supplier_name}
+                            </div>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="product_category_id">Product Category</Label>
-              <Select
-                value={formData.product_category_id}
-                onValueChange={(value) => setFormData({ ...formData, product_category_id: value })}
-                required
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingData ? (
-                    <SelectItem value="loading" disabled>
-                      Loading categories...
-                    </SelectItem>
-                  ) : categories.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      No categories available
-                    </SelectItem>
-                  ) : (
-                    categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.category_name.replace(/_/g, " ")}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="pharmacy_branch_id">Branch</Label>
-              <Select
-                value={formData.pharmacy_branch_id}
-                onValueChange={(value) => setFormData({ ...formData, pharmacy_branch_id: value })}
-                disabled={loadingBranches || !branches.length}
-                required
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={loadingBranches ? "Loading branches..." : "Select branch"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {loadingBranches ? (
-                    <SelectItem value="loading" disabled>
-                      Loading branches...
-                    </SelectItem>
-                  ) : branches.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      No branches available
-                    </SelectItem>
-                  ) : (
-                    branches.map((branch) => (
-                      <SelectItem key={branch.id} value={branch.id.toString()}>
-                        {branch.branch_name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="purchase_date">Purchase Date</Label>
-              <Input
-                id="purchase_date"
-                type="datetime-local"
-                value={formData.purchase_date}
-                onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
-                required
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="purchase_amount">Purchase Amount</Label>
-              <Input
-                id="purchase_amount"
-                type="number"
-                step="0.01"
-                placeholder="120"
-                value={formData.purchase_amount}
-                onChange={(e) => setFormData({ ...formData, purchase_amount: e.target.value })}
-                required
+
+              <FormField
+                control={form.control}
+                name="product_category_id"
+              
+                render={({ field }) => (
+                  <FormItem className="w-full">
+                    <FormLabel>
+                      Product Category <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl className="w-full">
+                        <SelectTrigger className={form.formState.errors.product_category_id ? "border-red-500" : ""}>
+                          <SelectValue placeholder="Select category..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingData ? (
+                          <SelectItem value="loading" disabled>
+                            Loading categories...
+                          </SelectItem>
+                        ) : categories.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No categories available
+                          </SelectItem>
+                        ) : (
+                          categories.map((category) => (
+                            <SelectItem className="w-full" key={category.id} value={category.id.toString()}>
+                              {category.category_name.replace(/_/g, " ")}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="expected_delivery_date">Expected Delivery Date</Label>
-              <Input
-                id="expected_delivery_date"
-                type="datetime-local"
-                value={formData.expected_delivery_date}
-                onChange={(e) => setFormData({ ...formData, expected_delivery_date: e.target.value })}
-                required
+
+              <FormField
+                control={form.control}
+                name="pharmacy_branch_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="w-full">
+                      Branch <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={loadingBranches || !branches.length}
+                    >
+                      <FormControl className="w-full">
+                        <SelectTrigger className={form.formState.errors.pharmacy_branch_id ? "border-red-500" : ""}>
+                          <SelectValue placeholder={loadingBranches ? "Loading branches..." : "Select branch"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {loadingBranches ? (
+                          <SelectItem value="loading" disabled>
+                            Loading branches...
+                          </SelectItem>
+                        ) : branches.length === 0 ? (
+                          <SelectItem value="empty" disabled>
+                            No branches available
+                          </SelectItem>
+                        ) : (
+                          branches.map((branch) => (
+                            <SelectItem className="w-full" key={branch.id} value={branch.id.toString()}>
+                              {branch.branch_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
+
+              <FormField
+                control={form.control}
+                name="purchase_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Purchase Date <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        className={form.formState.errors.purchase_date ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="purchase_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Purchase Amount <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="120"
+                        {...field}
+                        className={form.formState.errors.purchase_amount ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="expected_delivery_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Expected Delivery Date <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        className={form.formState.errors.expected_delivery_date ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
             <div className="grid gap-3 border-t pt-4">
               <div className="flex items-center justify-between">
-                <Label className="text-base">Products</Label>
+                <Label className="text-base">
+                  Products <span className="text-red-500">*</span>
+                </Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -484,14 +632,27 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false)
+                form.reset()
+                setProductItems([{ product_id: "", quantity: "" }])
+                setSupplierSearch("")
+                setDebouncedSupplierSearch("")
+                setSupplierOpen(false)
+              }}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create PO"}
+              {isLoading ? "Creating PO..." : "Create PO"}
             </Button>
           </DialogFooter>
         </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

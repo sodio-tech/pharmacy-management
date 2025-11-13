@@ -31,7 +31,7 @@ export function CategoryMultiSelect({ selectedCategoryIds, onCategoryChange }: C
   return (
     <div className="md:col-span-2 w-full">
       <Label htmlFor="category" className="text-sm font-medium">
-        Categories <span className="text-red-500">*</span>
+        Categories
       </Label>
       {/* Search Input */}
       <div className="mt-1.5 mb-2 relative">

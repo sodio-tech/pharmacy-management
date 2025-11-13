@@ -19,6 +19,7 @@ import Image from "next/image"
 import logo from "../../public/logo.png"
 import { useUser } from "@/contexts/UserContext"
 import { logout } from "@/lib/auth"
+import { useState, useEffect } from "react"
 
 const sidebarItems = [
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
@@ -42,8 +43,14 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
   const { user, isLoading: isPending } = useUser()
   const pathname = usePathname()
   const router = useRouter()
+  const [imageError, setImageError] = useState(false)
 
   const isPharmacist = user?.role === "PHARMACIST"
+
+  // Reset image error when user changes
+  useEffect(() => {
+    setImageError(false)
+  }, [user?.id, user?.image, user?.profile_image])
 
   // Filter sidebar items based on user role
   const filteredSidebarItems = isPharmacist
@@ -115,23 +122,30 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
           ) : user ? (
             <>
               <div className="flex items-center gap-3 mb-3">
-                {user.image || user.profile_image ? (
+                {(user.image || user.profile_image) && !imageError ? (
                   <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#0f766e]">
                     <img
                       src={user.image || user.profile_image || ""}
                       alt={user.fullname || "Profile"}
                       className="w-full h-full object-cover"
+                      onError={() => setImageError(true)}
                     />
                   </div>
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center flex-shrink-0">
                     <span className="text-white font-semibold text-sm">
                       {user.fullname
-                        ? user.fullname
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()
+                        ? (() => {
+                            const nameParts = user.fullname.trim().split(" ").filter(n => n.length > 0)
+                            if (nameParts.length >= 2) {
+                              // First letter of first name + first letter of last name
+                              return (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+                            } else if (nameParts.length === 1) {
+                              // If only one name, show first 2 letters
+                              return nameParts[0].substring(0, 2).toUpperCase()
+                            }
+                            return "U"
+                          })()
                         : "U"}
                     </span>
                   </div>

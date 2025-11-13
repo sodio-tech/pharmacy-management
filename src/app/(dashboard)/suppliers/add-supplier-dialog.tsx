@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,18 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { toast } from "react-toastify"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { backendApi } from "@/lib/axios-config"
 
 interface AddSupplierDialogProps {
@@ -22,37 +32,111 @@ interface AddSupplierDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+// Validation schema with user-friendly error messages
+const supplierSchema = z.object({
+  name: z
+    .string()
+    .min(1, { message: "Supplier name is required" })
+    .min(2, { message: "Supplier name must be at least 2 characters" })
+    .max(100, { message: "Supplier name cannot exceed 100 characters" }),
+  email: z
+    .string()
+    .min(1, { message: "Email address is required" })
+    .email({ message: "Please enter a valid email address" })
+    .max(100, { message: "Email address cannot exceed 100 characters" }),
+  gstin: z
+    .string()
+    .min(1, { message: "GSTIN is required" })
+    .min(15, { message: "GSTIN must be exactly 15 characters" })
+    .max(15, { message: "GSTIN must be exactly 15 characters" }),
+  phone_number: z
+    .string()
+    .min(1, { message: "Phone number is required" })
+    .regex(/^[0-9]{10}$/, { message: "Phone number must be exactly 10 digits" }),
+  address: z
+    .string()
+    .min(1, { message: "Address is required" })
+    .min(5, { message: "Address must be at least 5 characters" })
+    .max(500, { message: "Address cannot exceed 500 characters" }),
+  license_number: z
+    .string()
+    .min(1, { message: "License number is required" })
+    .min(3, { message: "License number must be at least 3 characters" })
+    .max(50, { message: "License number cannot exceed 50 characters" }),
+})
+
+type SupplierFormValues = z.infer<typeof supplierSchema>
+
 export function AddSupplierDialog({ open, onOpenChange }: AddSupplierDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    gstin: "",
-    phone_number: "",
-    address: "",
-    license_number: "",
+
+  const form = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      gstin: "",
+      phone_number: "",
+      address: "",
+      license_number: "",
+    },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      form.reset()
+    }
+  }, [open, form])
+
+  const onSubmit = async (data: SupplierFormValues) => {
     setIsLoading(true)
 
     try {
-      const response = await backendApi.post("/v1/supplier/new-supplier", formData)
-      const data = response.data?.data || response.data
+      const response = await backendApi.post("/v1/supplier/new-supplier", data)
+      const responseData = response.data?.data || response.data
 
-      toast.success(data?.message || "Supplier added successfully")
-      setFormData({
-        name: "",
-        email: "",
-        gstin: "",
-        phone_number: "",
-        address: "",
-        license_number: "",
-      })
+      toast.success(responseData?.message || "Supplier added successfully!")
+      form.reset()
       onOpenChange(false)
     } catch (error: unknown) {
       console.error("Failed to add supplier:", error)
+      const err = error as {
+        response?: {
+          data?: {
+            message?: string
+            error?: string
+            errors?: Record<string, string[]>
+          }
+        }
+        message?: string
+      }
+
+      // Handle validation errors from API
+      if (err?.response?.data?.errors) {
+        const apiErrors = err.response.data.errors
+        Object.keys(apiErrors).forEach((field) => {
+          const fieldName = field as keyof SupplierFormValues
+          if (apiErrors[field] && apiErrors[field][0]) {
+            form.setError(fieldName, {
+              type: "server",
+              message: apiErrors[field][0],
+            })
+          }
+        })
+        toast.error("Please correct the errors in the form")
+      } else {
+        // Handle general API errors
+        const errorMessage =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to add supplier. Please check your connection and try again."
+        toast.error(errorMessage)
+        form.setError("root", {
+          message: errorMessage,
+        })
+      }
     } finally {
       setIsLoading(false)
     }
@@ -65,79 +149,158 @@ export function AddSupplierDialog({ open, onOpenChange }: AddSupplierDialogProps
           <DialogTitle>Add New Supplier</DialogTitle>
           <DialogDescription>Enter the supplier details below to add them to your system.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Supplier Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter supplier name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 py-4">
+              {/* Root error message */}
+              {form.formState.errors.root && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Supplier Name <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter supplier name"
+                        {...field}
+                        className={form.formState.errors.name ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Email <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="supplier@example.com"
+                        {...field}
+                        className={form.formState.errors.email ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="gstin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      GSTIN <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="29ABCDE1234F1Z5"
+                        {...field}
+                        maxLength={15}
+                        className={form.formState.errors.gstin ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Phone Number <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="9898912998"
+                        {...field}
+                        maxLength={10}
+                        className={form.formState.errors.phone_number ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                    <p className="text-xs text-muted-foreground">Enter 10 digits without spaces or special characters</p>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Address <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter address"
+                        {...field}
+                        className={form.formState.errors.address ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="license_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      License Number <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="PL-1234567890"
+                        {...field}
+                        className={form.formState.errors.license_number ? "border-red-500" : ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="supplier@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="gstin">GSTIN</Label>
-              <Input
-                id="gstin"
-                placeholder="29ABCDE1234F1Z5"
-                value={formData.gstin}
-                onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                placeholder="9898912998"
-                value={formData.phone_number}
-                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                placeholder="Enter address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="license_number">License Number</Label>
-              <Input
-                id="license_number"
-                placeholder="PL-1234567890"
-                value={formData.license_number}
-                onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Supplier"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false)
+                  form.reset()
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Adding Supplier..." : "Add Supplier"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

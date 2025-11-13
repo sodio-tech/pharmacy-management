@@ -150,22 +150,6 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       setError("Product name is required")
       return false
     }
-    if (!formData.product_category_id || formData.product_category_id.length === 0) {
-      setError("At least one category is required")
-      return false
-    }
-    if (!formData.unit_price || Number.parseFloat(formData.unit_price) <= 0) {
-      setError("Valid unit price is required")
-      return false
-    }
-    if (!formData.selling_price || Number.parseFloat(formData.selling_price) <= 0) {
-      setError("Valid selling price is required")
-      return false
-    }
-    if (!formData.unit_id) {
-      setError("Unit is required")
-      return false
-    }
     return true
   }
 
@@ -400,7 +384,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         {/* Footer - Fixed at Bottom */}
         <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="text-red-500">*</span> Required fields
+            <span className="text-red-500">*</span> Product name is required
           </p>
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>
