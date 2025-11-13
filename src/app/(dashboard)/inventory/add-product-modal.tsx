@@ -14,6 +14,10 @@ import { ImageUploadSection } from "./components/ImageUploadSection"
 import { IdentificationSection } from "./components/IdentificationSection"
 import { PricingSection } from "./components/PricingSection"
 import { PackagingStockSection } from "./components/PackagingStockSection"
+import { useUser } from "@/contexts/UserContext"
+import { useBranches } from "@/hooks/useBranches"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -25,6 +29,8 @@ interface AddProductModalProps {
 export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProductModalProps) {
   const isEditMode = !!product
   const { formData, handleInputChange, resetForm, isLoadingProduct } = useProductForm(product)
+  const { user } = useUser()
+  const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -32,6 +38,13 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   const [imagePreviews, setImagePreviews] = useState<Array<{ file: File; preview: string }>>([])
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-select first branch when branches are loaded
+  useEffect(() => {
+    if (branches.length > 0 && !formData.branch_id && !isEditMode) {
+      handleInputChange("branch_id", branches[0].id.toString())
+    }
+  }, [branches, formData.branch_id, isEditMode, handleInputChange])
 
   // Fetch and set existing image URLs when editing
   useEffect(() => {
@@ -150,6 +163,18 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       setError("Product name is required")
       return false
     }
+    if (!formData.branch_id.trim()) {
+      setError("Branch selection is required")
+      return false
+    }
+    if (!formData.unit_price.trim() || Number.parseFloat(formData.unit_price) <= 0) {
+      setError("Unit price is required and must be greater than 0")
+      return false
+    }
+    if (!formData.selling_price.trim() || Number.parseFloat(formData.selling_price) <= 0) {
+      setError("Selling price is required and must be greater than 0")
+      return false
+    }
     return true
   }
 
@@ -191,8 +216,8 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
         formDataToSend.append('unit_price', formData.unit_price)
         formDataToSend.append('selling_price', formData.selling_price)
         formDataToSend.append('pack_size', validPackSize.toString())
-        formDataToSend.append('min_stock', formData.min_stock_level || '10')
-        formDataToSend.append('max_stock', formData.max_stock_level || '1000')
+        formDataToSend.append('stock', formData.stock || '0')
+        formDataToSend.append('branch_id', formData.branch_id)
         
     imageFiles.forEach((file) => {
       formDataToSend.append('image', file)
@@ -328,6 +353,44 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
                 onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
               />
 
+              {/* Branch Selection */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
+                  Branch Selection
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="branch_id" className="text-sm font-medium">
+                      Branch <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={formData.branch_id}
+                      onValueChange={(value) => handleInputChange("branch_id", value)}
+                      disabled={isLoadingBranches}
+                    >
+                      <SelectTrigger className="mt-1.5 w-full">
+                        <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select branch"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.length > 0 ? (
+                          branches.map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id.toString()}>
+                              {branch.branch_name}
+                              {branch.branch_location && ` - ${branch.branch_location}`}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-branches" disabled>
+                            {isLoadingBranches ? "Loading branches..." : "No branches available"}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
               {/* Category Selection */}
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -370,22 +433,17 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
               <PackagingStockSection
                 unitId={formData.unit_id}
                 packSize={formData.pack_size}
-                minStockLevel={formData.min_stock_level}
-                maxStockLevel={formData.max_stock_level}
+                stock={formData.stock}
                 onUnitIdChange={(value) => handleInputChange("unit_id", value)}
                 onPackSizeChange={(value) => handleInputChange("pack_size", value)}
-                onMinStockLevelChange={(value) => handleInputChange("min_stock_level", value)}
-                onMaxStockLevelChange={(value) => handleInputChange("max_stock_level", value)}
+                onStockChange={(value) => handleInputChange("stock", value)}
                 />
             </div>
             )}
         </div>
 
         {/* Footer - Fixed at Bottom */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            <span className="text-red-500">*</span> Product name is required
-          </p>
+        <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
           <div className="flex gap-3">
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel

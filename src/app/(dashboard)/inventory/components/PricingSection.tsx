@@ -33,7 +33,7 @@ export function PricingSection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="unit_price" className="text-sm font-medium">
-            Unit Price
+            Unit Price <span className="text-red-500">*</span>
           </Label>
           <Input
             id="unit_price"
@@ -44,12 +44,13 @@ export function PricingSection({
             onChange={(e) => onUnitPriceChange(e.target.value)}
             placeholder="0.00"
             className="mt-1.5"
+            required
           />
         </div>
 
         <div>
           <Label htmlFor="selling_price" className="text-sm font-medium">
-            Selling Price
+            Selling Price <span className="text-red-500">*</span>
           </Label>
           <Input
             id="selling_price"
@@ -60,6 +61,7 @@ export function PricingSection({
             onChange={(e) => onSellingPriceChange(e.target.value)}
             placeholder="0.00"
             className="mt-1.5"
+            required
           />
         </div>
 

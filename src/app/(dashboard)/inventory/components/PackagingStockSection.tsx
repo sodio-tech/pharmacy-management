@@ -8,23 +8,19 @@ import { useProductUnits } from "@/hooks/useProductUnits"
 interface PackagingStockSectionProps {
   unitId: string
   packSize: string
-  minStockLevel: string
-  maxStockLevel: string
+  stock: string
   onUnitIdChange: (value: string) => void
   onPackSizeChange: (value: string) => void
-  onMinStockLevelChange: (value: string) => void
-  onMaxStockLevelChange: (value: string) => void
+  onStockChange: (value: string) => void
 }
 
 export function PackagingStockSection({
   unitId,
   packSize,
-  minStockLevel,
-  maxStockLevel,
+  stock,
   onUnitIdChange,
   onPackSizeChange,
-  onMinStockLevelChange,
-  onMaxStockLevelChange
+  onStockChange
 }: PackagingStockSectionProps) {
   const { units, isLoading: isLoadingUnits } = useProductUnits()
 
@@ -79,31 +75,16 @@ export function PackagingStockSection({
         </div>
 
         <div>
-          <Label htmlFor="min_stock_level" className="text-sm font-medium">
-            Minimum Stock Level
+          <Label htmlFor="stock" className="text-sm font-medium">
+            Stock
           </Label>
           <Input
-            id="min_stock_level"
+            id="stock"
             type="number"
             min="0"
-            value={minStockLevel}
-            onChange={(e) => onMinStockLevelChange(e.target.value)}
-            placeholder="10"
-            className="mt-1.5"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="max_stock_level" className="text-sm font-medium">
-            Maximum Stock Level
-          </Label>
-          <Input
-            id="max_stock_level"
-            type="number"
-            min="0"
-            value={maxStockLevel}
-            onChange={(e) => onMaxStockLevelChange(e.target.value)}
-            placeholder="1000"
+            value={stock}
+            onChange={(e) => onStockChange(e.target.value)}
+            placeholder="0"
             className="mt-1.5"
           />
         </div>

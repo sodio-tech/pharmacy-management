@@ -13,8 +13,7 @@ export interface Product {
   selling_price?: number
   unit_of_measure?: string
   pack_size?: number
-  min_stock_level?: number
-  max_stock_level?: number
+  stock?: number
   requires_prescription?: boolean
   is_active?: boolean
   image_url?: string | null

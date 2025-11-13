@@ -18,8 +18,8 @@ export interface ProductFormData {
   unit_price: string
   selling_price: string
   pack_size: string
-  min_stock_level: string
-  max_stock_level: string
+  stock: string
+  branch_id: string
   requires_prescription: boolean
 }
 
@@ -37,8 +37,8 @@ const initialFormData: ProductFormData = {
   unit_price: "",
   selling_price: "",
   pack_size: "1",
-  min_stock_level: "10",
-  max_stock_level: "1000",
+  stock: "0",
+  branch_id: "",
   requires_prescription: false,
 }
 
@@ -120,8 +120,8 @@ export function useProductForm(product?: Product | null) {
           unit_price: apiProduct.unit_price || "",
           selling_price: apiProduct.selling_price || "",
           pack_size: apiProduct.pack_size?.toString() || "1",
-          min_stock_level: apiProduct.min_stock?.toString() || "10",
-          max_stock_level: apiProduct.max_stock?.toString() || "1000",
+          stock: apiProduct.min_stock?.toString() || "0",
+          branch_id: (apiProduct as any).branch_id?.toString() || "",
           requires_prescription: apiProduct.requires_prescription || false,
         })
       } catch (error) {
@@ -172,8 +172,8 @@ export function useProductForm(product?: Product | null) {
         unit_price: product.unit_price?.toString() || "",
         selling_price: product.selling_price?.toString() || "",
         pack_size: product.pack_size?.toString() || "1",
-        min_stock_level: product.min_stock_level?.toString() || "10",
-        max_stock_level: product.max_stock_level?.toString() || "1000",
+        stock: product.stock?.toString() || "0",
+        branch_id: (product as any).branch_id?.toString() || "",
         requires_prescription: product.requires_prescription || false,
       })
     } 
