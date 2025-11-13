@@ -20,6 +20,7 @@ interface InventoryTableProps {
   onViewBatch: (product: Product) => void
   onAddBatch: (productId: string) => void
   canAddProducts?: boolean
+  refreshTrigger?: number | string
 }
 
 export function InventoryTable({
@@ -28,6 +29,7 @@ export function InventoryTable({
   onViewBatch,
   onAddBatch,
   canAddProducts = true,
+  refreshTrigger,
 }: InventoryTableProps) {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
@@ -128,11 +130,18 @@ export function InventoryTable({
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearchTerm, selectedCategory])
+  }, [page, debouncedSearchTerm, selectedCategory, activeFilter])
 
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
+
+  // Refresh table when refreshTrigger changes (but not on initial mount)
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      fetchProducts()
+    }
+  }, [refreshTrigger, fetchProducts])
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product)

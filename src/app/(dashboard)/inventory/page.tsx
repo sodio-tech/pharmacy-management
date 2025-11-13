@@ -34,6 +34,7 @@ function InventoryContent({
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false)
   const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handleProductFound = (product: any) => {
     setIsBarcodeScannerOpen(false)
@@ -110,6 +111,7 @@ function InventoryContent({
                 onViewBatch={handleViewBatch}
                 onAddBatch={handleAddBatch}
                 canAddProducts={canAddProducts}
+                refreshTrigger={refreshTrigger}
               />
             </>
           )}
@@ -137,6 +139,11 @@ function InventoryContent({
         product={selectedProduct}
         onClose={() => {
           setIsAddProductModalOpen(false)
+          setSelectedProduct(null)
+        }}
+        onSuccess={(product) => {
+          // Trigger table refresh when product is added/updated
+          setRefreshTrigger((prev) => prev + 1)
           setSelectedProduct(null)
         }}
       />
