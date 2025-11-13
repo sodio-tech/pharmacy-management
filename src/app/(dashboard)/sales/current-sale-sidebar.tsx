@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { X, Plus, Minus, User, FileCheck, FileText } from "lucide-react"
+import { X, Plus, Minus, User, FileCheck, FileText, Image as ImageIcon } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
@@ -61,6 +62,8 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
   const [reviewData, setReviewData] = useState<ReviewData | null>(null)
   const [isReviewing, setIsReviewing] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
+  const [prescriptionImageUrl, setPrescriptionImageUrl] = useState<string | null>(null)
 
   const { paymentMethods, isLoading: isLoadingPaymentModes } = usePaymentModes()
 
@@ -103,6 +106,15 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
     }
   }, [cartItems, reviewData])
 
+  // Cleanup image URL on unmount
+  useEffect(() => {
+    return () => {
+      if (prescriptionImageUrl) {
+        URL.revokeObjectURL(prescriptionImageUrl)
+      }
+    }
+  }, [prescriptionImageUrl])
+
   const handleSaveCustomer = (customerData: Customer) => {
     setCustomer(customerData)
   }
@@ -117,6 +129,23 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
 
   const handleSavePrescription = (prescriptionData: Prescription) => {
     setPrescription(prescriptionData)
+    // Create preview URL if file exists
+    if (prescriptionData.prescription) {
+      const url = URL.createObjectURL(prescriptionData.prescription)
+      setPrescriptionImageUrl(url)
+    } else {
+      setPrescriptionImageUrl(null)
+    }
+  }
+
+  const handleViewPrescriptionImage = () => {
+    if (prescription?.prescription) {
+      if (!prescriptionImageUrl) {
+        const url = URL.createObjectURL(prescription.prescription)
+        setPrescriptionImageUrl(url)
+      }
+      setIsImagePreviewOpen(true)
+    }
   }
 
   const handleAddPrescription = () => {
@@ -350,7 +379,17 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                       {prescription.doctor_name && (
                         <p className="text-xs md:text-sm text-muted-foreground">{prescription.doctor_name}</p>
                       )}
-                      {prescription.prescription && <p className="text-xs text-teal-600">Image attached</p>}
+                      {prescription.prescription && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50 p-0 h-auto mt-1"
+                          onClick={handleViewPrescriptionImage}
+                        >
+                          <ImageIcon className="h-3 w-3 mr-1" />
+                          View Image
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -581,6 +620,30 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
         onSave={handleSavePrescription}
         existingPrescription={prescription}
       />
+
+      {/* Image Preview Dialog */}
+      <Dialog open={isImagePreviewOpen} onOpenChange={setIsImagePreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogTitle className="sr-only">Prescription Image Preview</DialogTitle>
+          {prescriptionImageUrl && (
+            <div className="relative w-full h-full">
+              <img
+                src={prescriptionImageUrl}
+                alt="Prescription"
+                className="w-full h-auto max-h-[85vh] object-contain rounded-lg"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setIsImagePreviewOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

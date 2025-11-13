@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,8 +30,27 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
   const [prescriptionNotes, setPrescriptionNotes] = useState("")
   const [doctorName, setDoctorName] = useState("")
   const [doctorContact, setDoctorContact] = useState("")
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Get the current file to display (either from state or existing prescription)
+  const currentFile = prescriptionFile || existingPrescription?.prescription || null
+  
+  // Create preview URL directly from file when needed
+  const previewUrl = useMemo(() => {
+    if (currentFile && currentFile instanceof File) {
+      return URL.createObjectURL(currentFile)
+    }
+    return null
+  }, [currentFile])
+  
+  // Cleanup URL when component unmounts or file changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   // Helper function to remove "Dr." prefix if present
   const removeDrPrefix = (name: string): string => {
@@ -47,18 +66,19 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
   }
 
   useEffect(() => {
-    if (existingPrescription) {
+    if (isOpen && existingPrescription) {
+      // Set form values immediately when modal opens
       setPrescriptionFile(existingPrescription.prescription || null)
       setPrescriptionNotes(existingPrescription.prescription_notes || "")
       // Remove "Dr." prefix when loading existing data to avoid duplication
       setDoctorName(removeDrPrefix(existingPrescription.doctor_name || ""))
       setDoctorContact(existingPrescription.doctor_contact || "")
-    } else {
+    } else if (!isOpen && !existingPrescription) {
+      // Only reset when modal closes and there's no existing prescription
       setPrescriptionFile(null)
       setPrescriptionNotes("")
       setDoctorName("")
       setDoctorContact("")
-      setPreviewUrl(null)
     }
   }, [existingPrescription, isOpen])
 
@@ -78,19 +98,11 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
       }
 
       setPrescriptionFile(file)
-
-      // Create preview URL
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
     }
   }
 
   const handleRemoveFile = () => {
     setPrescriptionFile(null)
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-      setPreviewUrl(null)
-    }
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -120,10 +132,6 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
   }
 
   const handleClose = () => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-      setPreviewUrl(null)
-    }
     onClose()
   }
 
@@ -147,7 +155,7 @@ export function PrescriptionModal({ isOpen, onClose, onSave, existingPrescriptio
             {previewUrl ? (
               <div className="relative">
                 <img
-                  src={previewUrl || "/placeholder.svg"}
+                  src={previewUrl}
                   alt="Prescription preview"
                   className="w-full h-48 object-cover rounded-lg border"
                 />
