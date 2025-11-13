@@ -1,11 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Camera, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useUser } from '@/contexts/UserContext'
 import { backendApi } from '@/lib/axios-config'
+import countries from 'world-countries'
 
 interface UserProfile {
   id: number
@@ -16,7 +18,40 @@ interface UserProfile {
   image?: string
   role: string
   subscription_status?: string
+  country?: string
+  currency?: string
 }
+
+interface Country {
+  code: string
+  name: string
+  currency: string
+  currencyCode: string
+}
+
+// Get countries from world-countries library and map to our format
+const getCountriesWithCurrencies = (): Country[] => {
+  return countries
+    .filter((country) => country.cca2 && country.currencies) // Filter countries with currency data
+    .map((country) => {
+      // Get first currency (most countries have one primary currency)
+      const currencyCode = Object.keys(country.currencies || {})[0] || ''
+      const currencyInfo = country.currencies?.[currencyCode]
+      const currencyName = currencyInfo?.name || currencyCode
+      
+      return {
+        code: country.cca2, // ISO 3166-1 alpha-2 code (e.g., 'IN', 'US')
+        name: country.name.common, // Common name
+        currency: currencyName,
+        currencyCode: currencyCode
+      }
+    })
+    .filter((country) => country.currencyCode) // Only include countries with valid currency
+    .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by name
+}
+
+// Memoize countries list for performance
+const COUNTRIES = getCountriesWithCurrencies()
 
 const Profile = () => {
   const { user: sessionUser, isLoading: isPending, refetch } = useUser()
@@ -30,7 +65,9 @@ const Profile = () => {
     pharmacy_name: '',
     image: '',
     role: '',
-    subscription_status: ''
+    subscription_status: '',
+    country: 'IN', // Default to India (INR)
+    currency: 'INR'
   })
 
   // Initialize form data when user loads or image updates
@@ -44,7 +81,9 @@ const Profile = () => {
         pharmacy_name: sessionUser.pharmacy_name || '',
         image: sessionUser.image || '',
         role: sessionUser.role || '',
-        subscription_status: sessionUser.subscription_status || ''
+        subscription_status: sessionUser.subscription_status || '',
+        country: (sessionUser as any).country || 'IN', // Default to India
+        currency: (sessionUser as any).currency || 'INR' // Default to INR
       })
     }
   }, [sessionUser?.id, sessionUser?.image]) // Update when user ID or image changes
@@ -68,6 +107,12 @@ const Profile = () => {
       formDataToSend.append('new_name', formData.fullname)
       formDataToSend.append('phone_number', formData.phone_number)
       formDataToSend.append('pharmacy_name', formData.pharmacy_name)
+      if (formData.country) {
+        formDataToSend.append('country', formData.country)
+      }
+      if (formData.currency) {
+        formDataToSend.append('currency', formData.currency)
+      }
       
       // Add profile photo file if selected
       if (selectedProfilePhoto) {
@@ -102,7 +147,9 @@ const Profile = () => {
         pharmacy_name: sessionUser.pharmacy_name || '',
         image: sessionUser.image || '',
         role: sessionUser.role || '',
-        subscription_status: sessionUser.subscription_status || ''
+        subscription_status: sessionUser.subscription_status || '',
+        country: (sessionUser as any).country || 'IN',
+        currency: (sessionUser as any).currency || 'INR'
       })
       setSelectedProfilePhoto(null)
     }
@@ -201,6 +248,46 @@ const Profile = () => {
               onChange={(e) => handleInputChange('pharmacy_name', e.target.value)}
               className="bg-white border-[#e5e7eb]"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="country" className="text-[#374151] font-medium">
+              Your Currency
+            </Label>
+            <Select
+              value={formData.country || 'IN'}
+              onValueChange={(value) => {
+                const selectedCountry = COUNTRIES.find(c => c.code === value)
+                if (selectedCountry) {
+                  setFormData(prev => ({
+                    ...prev,
+                    country: selectedCountry.code,
+                    currency: selectedCountry.currencyCode
+                  }))
+                }
+              }}
+            >
+              <SelectTrigger className="w-full bg-white border-[#e5e7eb]">
+                <SelectValue placeholder="Select country" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country.code} value={country.code}>
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="flex-1">{country.name}</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {country.currencyCode}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {formData.currency && (
+              <p className="text-xs text-gray-500">
+                Selected currency: <span className="font-medium">{formData.currency}</span>
+              </p>
+            )}
           </div>
         </div>
 
