@@ -30,20 +30,6 @@ export default function PrescriptionContent({ onViewPrescription }: Prescription
                         />
                     </div>
 
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all-status">All Status</SelectItem>
-                            <SelectItem value="UPLOADED">Uploaded</SelectItem>
-                            <SelectItem value="PENDING_VALIDATION">Pending Validation</SelectItem>
-                            <SelectItem value="VALIDATED">Validated</SelectItem>
-                            <SelectItem value="DISPENSED">Dispensed</SelectItem>
-                            <SelectItem value="REJECTED">Rejected</SelectItem>
-                        </SelectContent>
-                    </Select>
-
                     <Select value={dateFilter} onValueChange={setDateFilter}>
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="All Dates" />

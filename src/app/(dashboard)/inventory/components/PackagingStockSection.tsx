@@ -70,7 +70,7 @@ export function PackagingStockSection({
             value={packSize}
             onChange={(e) => onPackSizeChange(e.target.value)}
             placeholder="1"
-            className="mt-1.5"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
           />
         </div>
 
@@ -85,7 +85,7 @@ export function PackagingStockSection({
             value={stock}
             onChange={(e) => onStockChange(e.target.value)}
             placeholder="0"
-            className="mt-1.5"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
           />
         </div>
       </div>

@@ -44,7 +44,7 @@ export function PricingSection({
             value={unitPrice}
             onChange={(e) => onUnitPriceChange(e.target.value)}
             placeholder="0.00"
-            className="mt-1.5"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
             required
           />
         </div>
@@ -61,7 +61,7 @@ export function PricingSection({
             value={sellingPrice}
             onChange={(e) => onSellingPriceChange(e.target.value)}
             placeholder="0.00"
-            className="mt-1.5"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
             required
           />
         </div>
