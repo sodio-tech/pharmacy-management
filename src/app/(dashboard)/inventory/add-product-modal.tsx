@@ -23,16 +23,25 @@ interface AddProductModalProps {
   isOpen: boolean
   onClose: () => void
   product?: Product | null
+  branchId?: string | number | null
   onSuccess?: (product: Product) => void
 }
 
-export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProductModalProps) {
-  const isEditMode = !!product
+export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess }: AddProductModalProps) {
+  const mode = product?.id ? "edit" : "add"
   const { user } = useUser()
   const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
-  
-  const { formData, handleInputChange, resetForm, isLoadingProduct, productImages } = useProductForm(product, selectedBranchId)
+
+  // Use branchId from props if provided, otherwise use product's branch_id, or undefined
+  const branchIdToUse = branchId
+    ? branchId.toString()
+    : (product?.branch_id?.toString() || undefined)
+
+  // useProductForm hook will automatically fetch product details in edit mode
+  const { formData, handleInputChange, resetForm, isLoadingProduct, productImages } = useProductForm(
+    mode === "edit" ? product : null,
+    branchIdToUse
+  )
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
@@ -41,34 +50,21 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Auto-select first branch when branches are loaded
+  // Set branch_id in formData when branchId prop is provided (for edit mode)
   useEffect(() => {
-    if (branches.length > 0 && !formData.branch_id && !isEditMode) {
-      const firstBranchId = branches[0].id.toString()
-      handleInputChange("branch_id", firstBranchId)
-      setSelectedBranchId(firstBranchId)
+    if (branchIdToUse && mode === "edit" && !formData.branch_id) {
+      handleInputChange("branch_id", branchIdToUse)
     }
-  }, [branches, formData.branch_id, isEditMode, handleInputChange])
-  
-  // Update selectedBranchId when formData.branch_id changes
-  useEffect(() => {
-    if (formData.branch_id) {
-      setSelectedBranchId(formData.branch_id)
-    }
-  }, [formData.branch_id])
+  }, [branchIdToUse, mode, formData.branch_id, handleInputChange])
 
-  // Set existing image URLs from useProductForm hook (no duplicate API call needed)
+  // Set existing image URLs from useProductForm hook
   useEffect(() => {
-    if (isEditMode && productImages.length > 0) {
+    if (mode === "edit" && productImages.length > 0) {
       setImageUrls(productImages)
-    } else if (product && !product.id && product.image_url) {
-      // Legacy support: use product prop directly
-      const urls = Array.isArray(product.image_url) ? product.image_url : [product.image_url]
-      setImageUrls(urls.filter((url): url is string => !!url))
-    } else if (!isEditMode) {
+    } else if (mode === "add") {
       setImageUrls([])
     }
-  }, [productImages, product, isEditMode])
+  }, [productImages, mode])
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -79,13 +75,13 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
     const errors: string[] = []
 
     fileArray.forEach((file) => {
-    if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith('image/')) {
         errors.push(`"${file.name}" is not a valid image file`)
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
+        return
+      }
+      if (file.size > 10 * 1024 * 1024) {
         errors.push(`"${file.name}" size must be less than 10MB`)
-      return
+        return
       }
       validFiles.push(file)
     })
@@ -99,14 +95,14 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
 
     const previewPromises = validFiles.map((file) => {
       return new Promise<{ file: File; preview: string }>((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
           resolve({
             file,
             preview: e.target?.result as string
           })
-    }
-    reader.readAsDataURL(file)
+        }
+        reader.readAsDataURL(file)
       })
     })
 
@@ -158,46 +154,48 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
   }
 
   const buildFormData = () => {
-        const formDataToSend = new FormData()
-        
-        formDataToSend.append('product_name', formData.name.trim())
-        if (formData.generic_name.trim()) {
-          formDataToSend.append('generic_name', formData.generic_name.trim())
-        }
-        
-        const sku = formData.sku.trim() || (formData.barcode.trim() || `SKU-${Date.now()}`)
-        formDataToSend.append('sku', sku)
-        
-        if (formData.manufacturer.trim()) {
-          formDataToSend.append('manufacturer', formData.manufacturer.trim())
-        }
-        
-        if (formData.unit_id) {
+    const formDataToSend = new FormData()
+
+    formDataToSend.append('product_name', formData.name.trim())
+    if (formData.generic_name.trim()) {
+      formDataToSend.append('generic_name', formData.generic_name.trim())
+    }
+
+    const sku = formData.sku.trim() || (formData.barcode.trim() || `SKU-${Date.now()}`)
+    formDataToSend.append('sku', sku)
+
+    if (formData.manufacturer.trim()) {
+      formDataToSend.append('manufacturer', formData.manufacturer.trim())
+    }
+
+    if (formData.unit_id) {
       formDataToSend.append('unit', formData.unit_id)
 
-        }
+    }
 
-        const packSizeNum = Number.parseInt(formData.pack_size || '1', 10)
-        const validPackSize = Number.isNaN(packSizeNum) || packSizeNum <= 0 ? 1 : packSizeNum
+    const packSizeNum = Number.parseInt(formData.pack_size || '1', 10)
+    const validPackSize = Number.isNaN(packSizeNum) || packSizeNum <= 0 ? 1 : packSizeNum
     formDataToSend.append('product_category_id', JSON.stringify(formData.product_category_id))
-        formDataToSend.append('requires_prescription', formData.requires_prescription.toString())
-        
-        if (formData.description.trim()) {
-          formDataToSend.append('description', formData.description.trim())
-        }
-        if (formData.barcode.trim()) {
-          formDataToSend.append('barcode', formData.barcode.trim())
-        }
-        if (formData.qr_code.trim()) {
-          formDataToSend.append('qrcode', formData.qr_code.trim())
-        }
-        
-        formDataToSend.append('unit_price', formData.unit_price)
-        formDataToSend.append('selling_price', formData.selling_price)
-        formDataToSend.append('pack_size', validPackSize.toString())
-        formDataToSend.append('stock', formData.stock || '0')
-        formDataToSend.append('branch_id', formData.branch_id)
-        
+    formDataToSend.append('requires_prescription', formData.requires_prescription.toString())
+
+    if (formData.description.trim()) {
+      formDataToSend.append('description', formData.description.trim())
+    }
+    if (formData.barcode.trim()) {
+      formDataToSend.append('barcode', formData.barcode.trim())
+    }
+    if (formData.qr_code.trim()) {
+      formDataToSend.append('qrcode', formData.qr_code.trim())
+    }
+
+    formDataToSend.append('unit_price', formData.unit_price)
+    formDataToSend.append('selling_price', formData.selling_price)
+    formDataToSend.append('pack_size', validPackSize.toString())
+    formDataToSend.append('stock', formData.stock || '0')
+    if (formData.branch_id) {
+      formDataToSend.append('branch_id', formData.branch_id.toString())
+    }
+
     imageFiles.forEach((file) => {
       formDataToSend.append('image', file)
     })
@@ -215,7 +213,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
       const formDataToSend = buildFormData()
       let result: Product
 
-      if (isEditMode && product) {
+      if (mode === "edit" && product?.id) {
         const response = await backendApi.put(`/v1/products/update-product/${product.id}`, formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data'
@@ -241,7 +239,7 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
     } catch (err: unknown) {
       console.error("Error saving product:", err)
       const error = err as { message?: string; response?: { data?: { message?: string } } }
-      const errorMessage = error.response?.data?.message || error.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
+      const errorMessage = error.response?.data?.message || error.message || `Failed to ${mode === "edit" ? 'update' : 'create'} product`
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -264,189 +262,190 @@ export function AddProductModal({ isOpen, onClose, product, onSuccess }: AddProd
 
   return (
     <AnimatePresence>
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={handleClose}
-    >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.95, opacity: 0, y: 20 }}
-        transition={{ type: "spring", duration: 0.5 }}
-        className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        onClick={handleClose}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-teal-600 rounded-lg">
-              <Package className="w-6 h-6 text-white" />
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-teal-600 rounded-lg">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {mode === "edit" ? 'Edit Product' : 'Add New Product'}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                  {mode === "edit" ? 'Update the product details below' : 'Fill in the product details below'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isEditMode ? 'Edit Product' : 'Add New Product'}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-                {isEditMode ? 'Update the product details below' : 'Fill in the product details below'}
-              </p>
-            </div>
+            <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-full">
+              <X className="w-5 h-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleClose} className="rounded-full">
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
 
-        {/* Content - Scrollable Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Error Alert */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-            </div>
-          )}
+          {/* Content - Scrollable Area */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Error Alert */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              </div>
+            )}
 
-            {/* Loading State */}
+            {/* Loading State - Show when fetching product details in edit mode */}
             {isLoadingProduct && (
               <div className="mb-6 flex items-center justify-center p-8">
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Loading product details...</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {mode === "edit" ? "Loading product details..." : "Loading..."}
+                  </p>
                 </div>
               </div>
             )}
 
             {!isLoadingProduct && (
-            <div className="space-y-6">
-            {/* Basic Information */}
-              <BasicInformationSection
-                formData={{
-                  name: formData.name,
-                  generic_name: formData.generic_name,
-                  manufacturer: formData.manufacturer,
-                  description: formData.description,
-                  requires_prescription: formData.requires_prescription
-                }}
-                onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
-              />
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <BasicInformationSection
+                  formData={{
+                    name: formData.name,
+                    generic_name: formData.generic_name,
+                    manufacturer: formData.manufacturer,
+                    description: formData.description,
+                    requires_prescription: formData.requires_prescription
+                  }}
+                  onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
+                />
 
-              {/* Branch Selection */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
-                  Branch Selection
-                </h3>
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <Label htmlFor="branch_id" className="text-sm font-medium">
-                      Branch <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={formData.branch_id}
-                      onValueChange={(value) => {
-                        handleInputChange("branch_id", value)
-                        setSelectedBranchId(value)
-                      }}
-                      disabled={isLoadingBranches}
-                    >
-                      <SelectTrigger className="mt-1.5 w-full">
-                        <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select branch"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {branches.length > 0 ? (
-                          branches.map((branch) => (
-                            <SelectItem key={branch.id} value={branch.id.toString()}>
-                              {branch.branch_name}
-                              {branch.branch_location && ` - ${branch.branch_location}`}
+                {/* Branch Selection */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
+                    Branch Selection
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label htmlFor="branch_id" className="text-sm font-medium">
+                        Branch <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={formData.branch_id}
+                        onValueChange={(value) => {
+                          handleInputChange("branch_id", value)
+                        }}
+                        disabled={isLoadingBranches}
+                      >
+                        <SelectTrigger className="mt-1.5 w-full">
+                          <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select branch"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {branches.length > 0 ? (
+                            branches.map((branch) => (
+                              <SelectItem key={branch.id} value={branch.id.toString()}>
+                                {branch.branch_name}
+                                {branch.branch_location && ` - ${branch.branch_location}`}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-branches" disabled>
+                              {isLoadingBranches ? "Loading branches..." : "No branches available"}
                             </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-branches" disabled>
-                            {isLoadingBranches ? "Loading branches..." : "No branches available"}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Category Selection */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <CategoryMultiSelect
-                    selectedCategoryIds={formData.product_category_id}
-                    onCategoryChange={(ids) => handleInputChange("product_category_id", ids)}
-                  />
-              </div>
-            </div>
+                {/* Category Selection */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CategoryMultiSelect
+                      selectedCategoryIds={formData.product_category_id}
+                      onCategoryChange={(ids) => handleInputChange("product_category_id", ids)}
+                    />
+                  </div>
+                </div>
 
-              {/* Product Images */}
-              <ImageUploadSection
-                imagePreviews={imagePreviews}
-                imageUrls={imageUrls}
-                onImageChange={handleImageChange}
-                onRemoveImage={handleRemoveImage}
-                onRemoveExistingImage={handleRemoveExistingImage}
-                isLoading={isLoading}
-              />
-
-            {/* Identification */}
-              <IdentificationSection
-                barcode={formData.barcode}
-                qrCode={formData.qr_code}
-                onBarcodeChange={(value) => handleInputChange("barcode", value)}
-                onQRCodeChange={(value) => handleInputChange("qr_code", value)}
-                onGenerateBarcode={generateBarcode}
-                onGenerateQRCode={generateQRCode}
-              />
-
-            {/* Pricing */}
-              <PricingSection
-                unitPrice={formData.unit_price}
-                sellingPrice={formData.selling_price}
-                onUnitPriceChange={(value) => handleInputChange("unit_price", value)}
-                onSellingPriceChange={(value) => handleInputChange("selling_price", value)}
-              />
-
-            {/* Packaging & Stock */}
-              <PackagingStockSection
-                unitId={formData.unit_id}
-                packSize={formData.pack_size}
-                stock={formData.stock}
-                onUnitIdChange={(value) => handleInputChange("unit_id", value)}
-                onPackSizeChange={(value) => handleInputChange("pack_size", value)}
-                onStockChange={(value) => handleInputChange("stock", value)}
+                {/* Product Images */}
+                <ImageUploadSection
+                  imagePreviews={imagePreviews}
+                  imageUrls={imageUrls}
+                  onImageChange={handleImageChange}
+                  onRemoveImage={handleRemoveImage}
+                  onRemoveExistingImage={handleRemoveExistingImage}
+                  isLoading={isLoading}
                 />
-            </div>
-            )}
-        </div>
 
-        {/* Footer - Fixed at Bottom */}
-        <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isEditMode ? 'Update Product' : 'Save Product'}
-                </>
-              )}
-            </Button>
+                {/* Identification */}
+                <IdentificationSection
+                  barcode={formData.barcode}
+                  qrCode={formData.qr_code}
+                  onBarcodeChange={(value) => handleInputChange("barcode", value)}
+                  onQRCodeChange={(value) => handleInputChange("qr_code", value)}
+                  onGenerateBarcode={generateBarcode}
+                  onGenerateQRCode={generateQRCode}
+                />
+
+                {/* Pricing */}
+                <PricingSection
+                  unitPrice={formData.unit_price}
+                  sellingPrice={formData.selling_price}
+                  onUnitPriceChange={(value) => handleInputChange("unit_price", value)}
+                  onSellingPriceChange={(value) => handleInputChange("selling_price", value)}
+                />
+
+                {/* Packaging & Stock */}
+                <PackagingStockSection
+                  unitId={formData.unit_id}
+                  packSize={formData.pack_size}
+                  stock={formData.stock}
+                  onUnitIdChange={(value) => handleInputChange("unit_id", value)}
+                  onPackSizeChange={(value) => handleInputChange("pack_size", value)}
+                  onStockChange={(value) => handleInputChange("stock", value)}
+                />
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Footer - Fixed at Bottom */}
+          <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {mode === "edit" ? 'Update Product' : 'Save Product'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
-  </AnimatePresence>
+    </AnimatePresence>
   )
 }

@@ -26,12 +26,15 @@ function InventoryContent({
 }: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false)
   const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (product: any, branchId?: string) => {
     setSelectedProduct(product)
+    // Use branchId from inventory-table filter, fallback to product's branch_id
+    setSelectedBranchId(branchId || product?.branch_id?.toString() || null)
     setIsAddProductModalOpen(true)
   }
 
@@ -118,14 +121,17 @@ function InventoryContent({
       <AddProductModal
         isOpen={isAddProductModalOpen}
         product={selectedProduct}
+        branchId={selectedBranchId}
         onClose={() => {
           setIsAddProductModalOpen(false)
           setSelectedProduct(null)
+          setSelectedBranchId(null)
         }}
         onSuccess={(product) => {
           // Trigger table refresh when product is added/updated
           setRefreshTrigger((prev) => prev + 1)
           setSelectedProduct(null)
+          setSelectedBranchId(null)
         }}
       />
 

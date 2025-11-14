@@ -17,6 +17,7 @@ export interface Product {
   requires_prescription?: boolean
   is_active?: boolean
   image_url?: string | null
+  branch_id?: string | number
   created_at?: string
   updated_at?: string
 }

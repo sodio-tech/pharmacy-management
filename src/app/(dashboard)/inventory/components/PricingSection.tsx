@@ -34,7 +34,7 @@ export function PricingSection({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="unit_price" className="text-sm font-medium">
-            Unit Price <span className="text-red-500">*</span>
+            Cost Price <span className="text-red-500">*</span>
           </Label>
           <Input
             id="unit_price"

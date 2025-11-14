@@ -13,10 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
 import { useProductCategories } from "@/hooks/useProductCategories"
+import { useBranches } from "@/hooks/useBranches"
+import { useUser } from "@/contexts/UserContext"
 
 interface InventoryTableProps {
   onAddProduct: () => void
-  onEditProduct: (product: Product) => void
+  onEditProduct: (product: Product, branchId?: string) => void
   canAddProducts?: boolean
   refreshTrigger?: number
 }
@@ -32,6 +34,7 @@ export function InventoryTable({
   const [searchTerm, setSearchTerm] = useState("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedBranch, setSelectedBranch] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -43,8 +46,17 @@ export function InventoryTable({
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const limit = 10
   
-  // Fetch categories from API
+  // Fetch categories and branches from API
   const { categories } = useProductCategories()
+  const { user } = useUser()
+  const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
+
+  // Auto-select first branch when branches are loaded
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranch) {
+      setSelectedBranch(branches[0].id.toString())
+    }
+  }, [branches, selectedBranch])
 
   // Filter categories based on search term
   const filteredCategories = categories.filter((category) =>
@@ -69,10 +81,10 @@ export function InventoryTable({
     }
   }, [searchTerm])
 
-  // Reset page when category or filter changes
+  // Reset page when category, branch or filter changes
   useEffect(() => {
     setPage(1)
-  }, [selectedCategory, activeFilter])
+  }, [selectedCategory, selectedBranch, activeFilter])
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -87,6 +99,10 @@ export function InventoryTable({
       
       if (selectedCategory !== "all") {
         params.append('product_category_id', selectedCategory)
+      }
+      
+      if (selectedBranch) {
+        params.append('branch_id', selectedBranch)
       }
       
       if (activeFilter === "lowStock") {
@@ -118,6 +134,7 @@ export function InventoryTable({
         requires_prescription: product.requires_prescription,
         is_active: product.is_active,
         image_url: product.image,
+        branch_id: product.branch_id,
         created_at: product.created_at,
         updated_at: product.updated_at,
       }))
@@ -131,7 +148,7 @@ export function InventoryTable({
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearchTerm, selectedCategory, activeFilter])
+  }, [page, debouncedSearchTerm, selectedCategory, selectedBranch, activeFilter])
 
   useEffect(() => {
     fetchProducts()
@@ -277,6 +294,30 @@ export function InventoryTable({
               </SelectContent>
             </Select>
 
+            <Select 
+              value={selectedBranch} 
+              onValueChange={setSelectedBranch} 
+              disabled={isLoadingBranches || branches.length === 0}
+            >
+              <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
+                <SelectValue placeholder={isLoadingBranches ? "Loading..." : branches.length === 0 ? "No branches" : "Select branch"} />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.length > 0 ? (
+                  branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {branch.branch_name}
+                      {branch.branch_location && ` - ${branch.branch_location}`}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-branches" disabled>
+                    {isLoadingBranches ? "Loading branches..." : "No branches available"}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+
             <Select value={activeFilter} onValueChange={setActiveFilter} defaultValue="all">
               <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
                 <SelectValue placeholder="Status" />
@@ -411,7 +452,10 @@ export function InventoryTable({
                               variant="ghost"
                               size="sm"
                               className="p-1 h-7 w-7 md:h-8 md:w-8"
-                              onClick={() => onEditProduct?.(product)}
+                              onClick={() => {
+                                // Pass selected branch_id from filter to edit product
+                                onEditProduct?.(product, selectedBranch || undefined)
+                              }}
                               title="Edit Product"
                             >
                               <Edit className="w-3.5 h-3.5 md:w-4 md:h-4 text-[#6b7280]" />
