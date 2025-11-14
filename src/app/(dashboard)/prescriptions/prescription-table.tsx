@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { PrescriptionTableProps, Prescription } from "./types"
 import { backendApi } from "@/lib/axios-config"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface ApiPrescriptionResponse {
   prescription_id: number
@@ -39,6 +45,8 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
   const [totalPages, setTotalPages] = useState<number>(0)
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null)
+  const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false)
 
   // Debounce search term
   useEffect(() => {
@@ -179,6 +187,13 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
     fetchPrescriptions()
   }
 
+  const handleViewPrescription = (prescription: Prescription) => {
+    setSelectedPrescription(prescription)
+    setIsImageModalOpen(true)
+  }
+
+  console.log(items,"items")
+
   return (
     <div className="bg-white rounded-lg border border-[#e5e7eb]">
       <div className="p-6 border-b border-[#e5e7eb]">
@@ -298,7 +313,7 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onViewPrescription?.(prescription)}
+                  onClick={() => handleViewPrescription(prescription)}
                 >
                   <Eye className="w-4 h-4" />
                 </Button>
@@ -353,6 +368,59 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
         </div>
         </div>
       )}
+
+      {/* Prescription Image Modal */}
+      <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Prescription - {selectedPrescription?.patient_name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            {selectedPrescription?.file_url ? (
+              <div className="flex flex-col gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                    <div>
+                      <span className="text-gray-600">Patient:</span>
+                      <span className="ml-2 font-medium">{selectedPrescription.patient_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Doctor:</span>
+                      <span className="ml-2 font-medium">{selectedPrescription.doctor_name}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Prescription ID:</span>
+                      <span className="ml-2 font-medium">{selectedPrescription.prescription_number || selectedPrescription.id}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Date:</span>
+                      <span className="ml-2 font-medium">{formatDate(selectedPrescription.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center bg-gray-100 rounded-lg p-4">
+                  <img
+                    src={selectedPrescription.file_url}
+                    alt={`Prescription for ${selectedPrescription.patient_name}`}
+                    className="max-w-full h-auto rounded-lg shadow-lg"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = "/placeholder.svg"
+                      target.alt = "Image not available"
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No prescription image available
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
