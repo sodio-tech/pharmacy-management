@@ -426,9 +426,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
           {/* Footer - Fixed at Bottom */}
           <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
             <div className="flex gap-3">
-              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
-                Cancel
-              </Button>
               <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
                 {isLoading ? (
                   <>
