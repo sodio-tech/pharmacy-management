@@ -36,6 +36,7 @@ const signupSchema = z
             .string()
             .min(10, { message: "Please enter a valid phone number" }),
         pharmacyName: z.string().min(2, { message: "Pharmacy name is required" }),
+        branchName: z.string().optional(),
         password: z
             .string()
             .min(8, { message: "Password must be at least 8 characters" })
@@ -72,6 +73,7 @@ const SignUpForm = () => {
             email: "",
             phoneNumber: "",
             pharmacyName: "",
+            branchName: "",
             password: "",
             confirmPassword: "",
             agreeToTerms: false,
@@ -91,12 +93,13 @@ const SignUpForm = () => {
         try {
             setIsLoading(true);
 
-            const { email, password, firstName, lastName, pharmacyName, phoneNumber } = signupData;
+            const { email, password, firstName, lastName, pharmacyName, branchName, phoneNumber } = signupData;
 
             const response = await axios.post(`${API}/api/v1/auth/sign-up`, {
                 "first_name": firstName,
                 "last_name": lastName,
                 "pharmacy_name": pharmacyName,
+                "branch_name": branchName || undefined,
                 "email": email,
                 "password": password,
                 "phone_number": phoneNumber,
@@ -167,7 +170,7 @@ const SignUpForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium text-gray-700">
-                                        First Name
+                                        First Name <span className="text-red-500">*</span>
                                     </FormLabel>
                                     <FormControl>
                                         <Input
@@ -189,7 +192,7 @@ const SignUpForm = () => {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium text-gray-700">
-                                        Last Name
+                                        Last Name <span className="text-red-500">*</span>
                                     </FormLabel>
                                     <FormControl>
                                         <Input
@@ -213,7 +216,7 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Email Address
+                                    Email Address <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Input
@@ -236,7 +239,7 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Phone Number
+                                    Phone Number <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Input
@@ -259,11 +262,33 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Pharmacy Name
+                                    Pharmacy Name <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <FormControl>
                                     <Input
                                         placeholder="Your Pharmacy Name"
+                                        {...field}
+                                        className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
+                                    />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                            </FormItem>
+                        )}
+                    />
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <FormField
+                        control={form.control}
+                        name="branchName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-medium text-gray-700">
+                                    Branch Name
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Branch Name"
                                         {...field}
                                         className="border-gray-300 focus:border-[#0f766e] focus:ring-[#0f766e]"
                                     />
@@ -282,7 +307,7 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Password
+                                    Password <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <div className="relative">
                                     <FormControl>
@@ -364,7 +389,7 @@ const SignUpForm = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-medium text-gray-700">
-                                    Confirm Password
+                                    Confirm Password <span className="text-red-500">*</span>
                                 </FormLabel>
                                 <div className="relative">
                                     <FormControl>
@@ -422,7 +447,8 @@ const SignUpForm = () => {
                                             className="text-[#0f766e] hover:underline"
                                         >
                                             Privacy Policy
-                                        </Link>
+                                        </Link>{" "}
+                                        <span className="text-red-500">*</span>
                                     </FormLabel>
                                     <FormMessage className="text-xs" />
                                 </div>
