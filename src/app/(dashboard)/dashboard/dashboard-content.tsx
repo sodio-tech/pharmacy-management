@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
+import { cn, formatPercentage } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { backendApi } from "@/lib/axios-config"
@@ -198,7 +198,7 @@ export function DashboardContent() {
     {
       title: "Total Revenue",
       value: `₹${(salesAnalytics?.this_month_earnings || 0).toLocaleString()}`,
-      change: `${(salesAnalytics?.this_month_earnings_change_percent || 0).toFixed(1)}% vs last month`,
+      change: `${formatPercentage(salesAnalytics?.this_month_earnings_change_percent || 0)} vs last month`,
       trend: (salesAnalytics?.this_month_earnings_change_percent || 0) >= 0 ? "up" : "down",
       icon: "₹",
       color: "bg-[#16a34a]",
@@ -206,7 +206,7 @@ export function DashboardContent() {
     {
       title: "Orders",
       value: (salesAnalytics?.today_transactions || 0).toString(),
-      change: `${(salesAnalytics?.transactions_change_percent || 0).toFixed(1)}% vs previous month`,
+      change: `${formatPercentage(salesAnalytics?.transactions_change_percent || 0)} vs previous month`,
       trend: (salesAnalytics?.transactions_change_percent || 0) >= 0 ? "up" : "down",
       icon: ShoppingCart,
       color: "bg-[#2563eb]",

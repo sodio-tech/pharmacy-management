@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Wallet } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
+import { formatPercentage } from "@/lib/utils"
 
 interface SalesStatsProps {
   branchId?: string
@@ -57,12 +58,13 @@ export function SalesStats({ branchId }: SalesStatsProps) {
   }, [fetchStats])
 
   const formatChange = (percent: number): { text: string; type: "positive" | "negative" | "neutral" } => {
+    const formatted = formatPercentage(percent)
     if (percent > 0) {
-      return { text: `+${percent}%`, type: "positive" }
+      return { text: `+${formatted}`, type: "positive" }
     } else if (percent < 0) {
-      return { text: `${percent}%`, type: "negative" }
+      return { text: formatted, type: "negative" }
     }
-    return { text: "0%", type: "neutral" }
+    return { text: "0.00%", type: "neutral" }
   }
 
   if (loading) {

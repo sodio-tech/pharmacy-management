@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Truck, FileText, IndianRupee, Clock } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
+import { formatPercentage } from "@/lib/utils"
 
 interface SupplierAnalytics {
   supplier_actvity: {
@@ -165,7 +166,7 @@ export function SupplierStats() {
               <p className="text-3xl font-bold">{formatCurrency(stats.spending_this_month.total)}</p>
               <p className="text-sm text-purple-600">
                 {stats.spending_this_month.percentage_increase_from_prev_month !== null
-                  ? `+${stats.spending_this_month.percentage_increase_from_prev_month}% from last month`
+                  ? `+${formatPercentage(stats.spending_this_month.percentage_increase_from_prev_month)} from last month`
                   : "No previous data"}
               </p>
             </div>
@@ -183,7 +184,7 @@ export function SupplierStats() {
               <p className="text-sm font-medium text-muted-foreground">On-Time Delivery</p>
               <p className="text-3xl font-bold">
                 {stats.on_time_delivery_rate !== null && stats.on_time_delivery_rate !== undefined
-                  ? `${onTimeDeliveryRate.toFixed(1)}%`
+                  ? formatPercentage(onTimeDeliveryRate)
                   : "N/A"}
               </p>
               <p className="text-sm text-green-600">

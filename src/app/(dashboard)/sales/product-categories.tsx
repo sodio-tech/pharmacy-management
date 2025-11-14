@@ -157,10 +157,9 @@ export function ProductCategories({
               className="group relative overflow-hidden py-0 hover:shadow-lg transition-all duration-300"
             >
               <div className="relative aspect-square overflow-hidden bg-muted">
-                <Image
+                <img
                   src={product.image || "/placeholder.svg"}
                   alt={product.product_name}
-                  fill
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 {product.available_stock > 0 && (

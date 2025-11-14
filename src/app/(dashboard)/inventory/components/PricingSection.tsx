@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { formatPercentage } from "@/lib/utils"
 
 interface PricingSectionProps {
   unitPrice: string
@@ -17,7 +18,7 @@ export function PricingSection({
   onSellingPriceChange
 }: PricingSectionProps) {
   const profitMargin = unitPrice && sellingPrice && Number.parseFloat(unitPrice) > 0
-    ? (((Number.parseFloat(sellingPrice) - Number.parseFloat(unitPrice)) / Number.parseFloat(unitPrice)) * 100).toFixed(1)
+    ? formatPercentage(((Number.parseFloat(sellingPrice) - Number.parseFloat(unitPrice)) / Number.parseFloat(unitPrice)) * 100)
     : null
 
   const profitPerUnit = unitPrice && sellingPrice && Number.parseFloat(unitPrice) > 0
@@ -71,7 +72,7 @@ export function PricingSection({
               <div>
                 <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit Margin</p>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
-                  {profitMargin}%
+                  {profitMargin}
                 </p>
               </div>
               <div className="text-right">

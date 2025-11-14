@@ -46,6 +46,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
 
+  // Function to play sound when product is added or quantity is updated
+  const playAddSound = () => {
+    try {
+      const audio = new Audio('/assets/product-add-sound.mp3')
+      audio.volume = 0.5 // Set volume to 50%
+      audio.play().catch((error) => {
+        // Silently handle autoplay restrictions
+        console.debug('Could not play sound:', error)
+      })
+    } catch (error) {
+      // Silently handle audio creation errors
+      console.debug('Could not create audio:', error)
+    }
+  }
+
   const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id)
@@ -75,6 +90,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         return [...prevItems, newItem]
       }
     })
+    // Play sound when product is added to cart
+    playAddSound()
   }
 
   const removeFromCart = (productId: string) => {
@@ -99,6 +116,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           : item
       )
     )
+    // Play sound when quantity is updated
+    playAddSound()
   }
 
   const clearCart = () => {
@@ -111,8 +130,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   const getCartTax = () => {
-    // Assuming 12% GST
-    return getCartSubtotal() * 0.12
+    // No tax applied
+    return 0
   }
 
   const getCartDiscount = () => {
@@ -121,7 +140,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   const getCartTotal = () => {
-    return getCartSubtotal() + getCartTax() - getCartDiscount()
+    // Total equals subtotal (no tax or additional charges)
+    return getCartSubtotal()
   }
 
   const getItemCount = () => {

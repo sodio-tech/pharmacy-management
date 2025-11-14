@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "react-toastify"
 import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
+import { formatPercentage } from "@/lib/utils"
 
 interface AddBatchModalProps {
   productId: string
@@ -462,9 +463,8 @@ export function AddBatchModal({ productId, onClose, onSuccess }: AddBatchModalPr
                           <p className="text-xs text-emerald-700 dark:text-emerald-300">Profit Margin</p>
                           <p className="text-lg font-semibold text-emerald-900 dark:text-emerald-100 mt-1">
                             {formData.sellingPrice > 0
-                              ? (((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100).toFixed(1)
-                              : 0}
-                            %
+                              ? formatPercentage(((formData.sellingPrice - formData.costPrice) / formData.costPrice) * 100)
+                              : "0.00%"}
                           </p>
                         </div>
                         <div>

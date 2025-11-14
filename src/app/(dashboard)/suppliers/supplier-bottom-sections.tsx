@@ -8,6 +8,7 @@ import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
 import { OrderStatus } from "./components/types"
 import { getOrderStatusDisplay, getOrderStatusColor } from "./components/utils"
+import { formatPercentage } from "@/lib/utils"
 
 interface PurchaseOrder {
   id: number
@@ -158,7 +159,7 @@ export function SupplierBottomSections() {
                   <p className="font-medium">{supplier.supplier_name}</p>
                   <p className="text-sm text-muted-foreground">
                     {supplier.percentage !== null
-                      ? `${supplier.percentage.toFixed(1)}% delivery rate`
+                      ? `${formatPercentage(supplier.percentage)} delivery rate`
                       : "N/A - No data available"}
                   </p>
                 </div>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { X, Plus, Minus, User, FileCheck, FileText, Image as ImageIcon } from "lucide-react"
+import { X, Plus, Minus, User, FileText, Image as ImageIcon } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
@@ -13,19 +13,6 @@ import { PrescriptionModal } from "./prescription-modal"
 import type { Customer } from "@/types/sales"
 import { usePaymentModes } from "@/hooks/usePaymentModes"
 import { backendApi } from "@/lib/axios-config"
-
-interface ReviewData {
-  products: Array<{
-    id: string
-    quantity: number
-    pack_size: number
-    price: number
-    gst_rate: number
-  }>
-  total_amt: number
-  total_before_tax: number
-  status: string
-}
 
 interface Prescription {
   prescription?: File
@@ -59,17 +46,14 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
   const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("")
   const [selectedPaymentModeId, setSelectedPaymentModeId] = useState<number | null>(null)
-  const [reviewData, setReviewData] = useState<ReviewData | null>(null)
-  const [isReviewing, setIsReviewing] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
   const [prescriptionImageUrl, setPrescriptionImageUrl] = useState<string | null>(null)
 
   const { paymentMethods, isLoading: isLoadingPaymentModes } = usePaymentModes()
 
-  // Use review data if available, otherwise use local calculation
-  const subtotal = reviewData ? reviewData.total_before_tax : getCartSubtotal()
-  const total = reviewData ? reviewData.total_before_tax : getCartSubtotal()
+  const subtotal = getCartSubtotal()
+  const total = getCartTotal()
   const itemCount = getItemCount()
 
   // Set default payment method when payment modes are loaded
@@ -92,19 +76,6 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
       }
     }
   }, [selectedPaymentMethod, paymentMethods])
-
-  // Clear review data when cart items change (user modified cart after review)
-  useEffect(() => {
-    if (reviewData && cartItems.length > 0) {
-      // Check if cart has changed by comparing item count or IDs
-      const currentCartIds = cartItems.map(item => `${item.id}-${item.quantity}`).sort().join(',')
-      const reviewProductIds = reviewData.products.map(p => `${p.id}-${p.quantity}`).sort().join(',')
-      
-      if (currentCartIds !== reviewProductIds) {
-        setReviewData(null)
-      }
-    }
-  }, [cartItems, reviewData])
 
   // Cleanup image URL on unmount
   useEffect(() => {
@@ -152,67 +123,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
     setIsPrescriptionModalOpen(true)
   }
 
-  const handleReviewSale = async () => {
-    if (!customer || !customer.id) {
-      toast.error("Please add customer information before reviewing the sale")
-      return
-    }
-
-    if (!branchId) {
-      toast.error("Please select a branch")
-      return
-    }
-
-    if (!selectedPaymentModeId) {
-      toast.error("Please select a payment method")
-      return
-    }
-
-    if (cartItems.length === 0) {
-      toast.error("Cart is empty")
-      return
-    }
-
-    setIsReviewing(true)
-    try {
-      const formData = new FormData()
-      formData.append("customer_id", String(customer.id))
-      formData.append("branch_id", branchId)
-      formData.append("payment_mode", String(selectedPaymentModeId))
-      
-      // Format cart items according to API requirements
-      const cartItemsData = cartItems.map(item => ({
-        product_id: Number(item.product.id),
-        quantity: item.quantity,
-      }))
-      formData.append("cart", JSON.stringify(cartItemsData))
-
-      const response = await backendApi.post("/v1/sales/new-sale?action=review", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      })
-
-      const responseData = response.data?.data || response.data
-      if (responseData) {
-        setReviewData(responseData)
-        toast.success("Sale reviewed successfully")
-      }
-    } catch (error: unknown) {
-      console.error("Error reviewing sale:", error)
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
-      toast.error(errorMessage || "Failed to review sale")
-    } finally {
-      setIsReviewing(false)
-    }
-  }
-
   const handleCompleteSale = async () => {
-    if (!customer || !customer.id) {
-      toast.error("Please add customer information before completing the sale")
-      return
-    }
-
     if (!branchId) {
       toast.error("Please select a branch")
       return
@@ -231,10 +142,13 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
     setIsCompleting(true)
     try {
       const formData = new FormData()
-      formData.append("customer_id", String(customer.id))
+      // Add customer_id only if customer exists
+      if (customer?.id) {
+        formData.append("customer_id", String(customer.id))
+      }
       formData.append("branch_id", branchId)
       formData.append("payment_mode", String(selectedPaymentModeId))
-      
+
       // Format cart items according to API requirements
       const cartItemsData = cartItems.map(item => ({
         product_id: Number(item.product.id),
@@ -267,8 +181,10 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
         toast.success("Sale completed successfully!")
         setCustomer(null)
         setPrescription(null)
-        setReviewData(null)
         clearCart()
+        setTimeout(() => {
+          window.location.reload()
+        }, 1300);
       } else {
         toast.error(responseData?.message || "Failed to complete sale")
       }
@@ -297,10 +213,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                 {customer && <p className="text-xs md:text-sm text-teal-600 font-medium">Customer: {customer.patient_name}</p>}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => {
-              clearCart()
-              setReviewData(null)
-            }}>
+            <Button variant="ghost" size="sm" onClick={clearCart}>
               <X className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
@@ -348,7 +261,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                   </div>
                   <div>
                     <p className="text-xs md:text-sm font-medium text-muted-foreground">No customer selected</p>
-                    <p className="text-xs text-muted-foreground">Add customer information for this sale</p>
+                    <p className="text-xs text-muted-foreground">Optional: Add customer information</p>
                   </div>
                   <Button
                     variant="outline"
@@ -436,10 +349,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    clearCart()
-                    setReviewData(null)
-                  }}
+                  onClick={clearCart}
                   className="text-red-600 hover:text-red-700 text-xs h-7"
                 >
                   Clear All
@@ -458,16 +368,32 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                   key={item.id}
                   className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
                 >
-                  <div className="p-2 md:p-3 rounded-lg bg-muted flex-shrink-0">
-                    <span className="text-lg md:text-xl">💊</span>
+                  <div className="p-2 md:p-3 rounded-lg bg-muted flex-shrink-0 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center overflow-hidden relative">
+                    {item.product.image_url ? (
+                      <>
+                        <span className="text-lg md:text-xl absolute inset-0 flex items-center justify-center z-0">💊</span>
+                        <img
+                          src={item.product.image_url}
+                          alt={item.product.name}
+                          className="w-full h-full object-cover rounded-lg relative z-10"
+                          onError={(e) => {
+                            // Hide image if it fails to load, emoji will show as fallback
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <span className="text-lg md:text-xl">💊</span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 w-full">
                     <p className="font-semibold text-xs md:text-sm mb-1 line-clamp-2">{item.product.name}</p>
                     <p className="text-xs text-muted-foreground mb-2 md:mb-3">
                       {item.product.unit_of_measure} • ₹{Number(item.unitPrice).toFixed(2)} each
                     </p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1 md:space-x-2">
+                    <div className="flex items-center w-full justify-between">
+                      <div className="flex items-center w-full space-x-1 md:space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -486,7 +412,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                           <Plus className="h-3 w-3" />
                         </Button>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right pl-4 w-full">
                         <p className="font-bold text-sm md:text-base">₹{Number(item.totalPrice).toFixed(2)}</p>
                       </div>
                     </div>
@@ -506,13 +432,9 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
 
           {/* Bill Summary */}
           <div className="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t-2">
-            <p className="font-semibold text-xs md:text-sm text-muted-foreground uppercase tracking-wide">Summary</p>
+            {/* <p className="font-semibold text-xs md:text-sm text-muted-foreground uppercase tracking-wide">Summary</p> */}
             <div className="space-y-2 md:space-y-3">
-              <div className="flex justify-between text-sm md:text-base">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-semibold">₹{Number(subtotal).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-lg md:text-xl pt-2 md:pt-3 border-t-2">
+              <div className="flex justify-between font-bold text-lg md:text-xl">
                 <span>Total</span>
                 <span className="text-teal-600">₹{Number(total).toFixed(2)}</span>
               </div>
@@ -543,9 +465,9 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                       variant={isActive ? "default" : "outline"}
                       className={`h-16 md:h-20 flex-col space-y-1 md:space-y-2 ${isActive ? "bg-teal-600 hover:bg-teal-700" : ""}`}
                       onClick={() => {
-                      setSelectedPaymentMethod(method.value)
-                      setSelectedPaymentModeId(method.id)
-                    }}
+                        setSelectedPaymentMethod(method.value)
+                        setSelectedPaymentModeId(method.id)
+                      }}
                     >
                       <Icon className="h-5 w-5 md:h-6 md:w-6" />
                       <span className="text-xs md:text-sm font-medium">{method.name}</span>
@@ -558,45 +480,18 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
 
           {/* Action Buttons */}
           <div className="space-y-2 md:space-y-3 pt-2">
-            {reviewData && reviewData.status === "review" ? (
-              <Button
-                className="w-full bg-teal-600 hover:bg-teal-700 h-12 md:h-14 text-base md:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
-                disabled={isCompleting}
-                onClick={handleCompleteSale}
-              >
-                {isCompleting ? "Processing..." : `Complete Sale - ₹${Number(total).toFixed(2)}`}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-12 md:h-14 text-base md:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
-                  disabled={cartItems.length === 0 || isReviewing || !branchId}
-                  onClick={handleReviewSale}
-                >
-                  {isReviewing ? "Reviewing..." : (
-                    <>
-                      <FileCheck className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Review Sale
-                    </>
-                  )}
-                </Button>
-                <Button
-                  className="w-full bg-teal-600 hover:bg-teal-700 h-12 md:h-14 text-base md:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
-                  disabled={cartItems.length === 0 || isCompleting || !branchId}
-                  onClick={handleCompleteSale}
-                >
-                  {isCompleting ? "Processing..." : `Complete Sale - ₹${Number(total).toFixed(2)}`}
-                </Button>
-              </>
-            )}
+            <Button
+              className="w-full bg-teal-600 hover:bg-teal-700 h-12 md:h-14 text-base md:text-lg font-bold shadow-lg hover:shadow-xl transition-all"
+              disabled={cartItems.length === 0 || isCompleting || !branchId}
+              onClick={handleCompleteSale}
+            >
+              {isCompleting ? "Processing..." : `Complete Sale - ₹${Number(total).toFixed(2)}`}
+            </Button>
             <div className="grid grid-cols-1 gap-2 md:gap-3">
               <Button
                 variant="outline"
                 className="h-9 md:h-11 text-sm bg-transparent"
-                onClick={() => {
-                  clearCart()
-                  setReviewData(null)
-                }}
+                onClick={clearCart}
                 disabled={cartItems.length === 0}
               >
                 Clear Cart
