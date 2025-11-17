@@ -13,20 +13,36 @@ interface OrderDetails {
   invoice_id: string
   payment_mode: string
   status: string
-  total_amount: number
+  total_amount: string | number
   created_at: string
   customer: {
-    name: string
-    phone_number: string
-    email?: string
+    id: number | null
+    name: string | null
+    phone_number: string | null
+    email: string | null
   }
   sale_items: Array<{
     price: number
     gst_rate: number
     quantity: number
     product_id: number
-    product: {
-      name: string
+    product?: {
+      id: number
+      product_name: string
+      unit: string
+      generic_name: string | null
+      sku: string
+      brand_name: string | null
+      description: string | null
+      pack_size: number
+      barcode: string | null
+      image: string | null
+      manufacturer: string | null
+      unit_price: string | number
+      selling_price: string | number
+      gst_rate: number
+      product_categories?: string[]
+      stock: string | number
     }
   }>
 }
@@ -53,64 +69,18 @@ export function OrderDetailsSheet({
     }
   }, [open, orderId, branchId])
 
-  const getSampleOrderDetails = (): OrderDetails => {
-    return {
-      id: parseInt(orderId) || 1,
-      invoice_id: orderId || "INV-001",
-      payment_mode: "CASH",
-      status: "PAID",
-      total_amount: 1250.00,
-      created_at: new Date().toISOString(),
-      customer: {
-        name: "John Doe",
-        phone_number: "+91 98765 43210",
-        email: "john.doe@example.com",
-      },
-      sale_items: [
-        {
-          price: 500.00,
-          gst_rate: 5,
-          quantity: 2,
-          product_id: 1,
-          product: {
-            name: "Paracetamol 500mg",
-          },
-        },
-        {
-          price: 150.00,
-          gst_rate: 5,
-          quantity: 1,
-          product_id: 2,
-          product: {
-            name: "Cough Syrup 100ml",
-          },
-        },
-        {
-          price: 50.00,
-          gst_rate: 5,
-          quantity: 1,
-          product_id: 3,
-          product: {
-            name: "Bandage",
-          },
-        },
-      ],
-    }
-  }
-
   const fetchOrderDetails = async () => {
     if (!branchId || !orderId) return
-
     try {
       setLoading(true)
-      const response = await backendApi.get(`/v1/sales/${orderId}?branch_id=${branchId}`)
-      if (response.data?.success) {
-        setOrderDetails(response.data.data)
+      const response = await backendApi.get(`/v1/sales/list/${branchId}?sale_id=${orderId}`)
+      if (response.data?.success && response.data?.data?.sales && response.data.data.sales.length > 0) {
+        // Get the first item from the result array
+        const saleData = response.data.data.sales[0]
+        setOrderDetails(saleData)
       }
     } catch (error) {
       console.error("Error fetching order details:", error)
-      // Use sample data when API is not ready
-      setOrderDetails(getSampleOrderDetails())
     } finally {
       setLoading(false)
     }
@@ -127,16 +97,44 @@ export function OrderDetailsSheet({
     })
   }
 
+  const getUnitPrice = (item: OrderDetails['sale_items'][0]) => {
+    // If product has selling_price, use that as unit price
+    if (item.product?.selling_price) {
+      return typeof item.product.selling_price === 'string'
+        ? parseFloat(item.product.selling_price)
+        : item.product.selling_price
+    }
+    // item.price is the unit price from API
+    return Number(item.price)
+  }
+
+  const getLineTotal = (item: OrderDetails['sale_items'][0]) => {
+    const unitPrice = getUnitPrice(item)
+    return unitPrice * item.quantity
+  }
+
   const calculateSubtotal = () => {
     if (!orderDetails?.sale_items) return 0
     return orderDetails.sale_items.reduce((sum, item) => {
-      return sum + item.price * item.quantity
+      return sum + getLineTotal(item)
     }, 0)
   }
 
-  const calculateTax = (rate: number) => {
-    const subtotal = calculateSubtotal()
-    return (subtotal * rate) / 100
+  const getTotalAmount = () => {
+    if (!orderDetails) return 0
+    return typeof orderDetails.total_amount === 'string'
+      ? parseFloat(orderDetails.total_amount)
+      : orderDetails.total_amount
+  }
+
+  const calculateGST = () => {
+    if (!orderDetails?.sale_items) return 0
+    // Calculate GST from each item's gst_rate
+    return orderDetails.sale_items.reduce((sum, item) => {
+      const lineTotal = getLineTotal(item)
+      const gstAmount = (lineTotal * item.gst_rate) / 100
+      return sum + gstAmount
+    }, 0)
   }
 
   const getStatusColor = (status: string) => {
@@ -165,10 +163,6 @@ export function OrderDetailsSheet({
     }
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
   if (loading) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -190,10 +184,12 @@ export function OrderDetailsSheet({
   if (!orderDetails) {
     return null
   }
+  console.log(orderDetails,"orderDetails")
 
   const subtotal = calculateSubtotal()
-  const sgst = calculateTax(2.5)
-  const cgst = calculateTax(2.5)
+  const gst = calculateGST()
+  // Use API total_amount directly, don't calculate
+  const totalAmount = getTotalAmount()
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -204,7 +200,7 @@ export function OrderDetailsSheet({
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <SheetTitle className="text-xl font-bold">
-                  Order #{orderDetails.invoice_id}
+                  INV #{orderDetails.invoice_id}
                 </SheetTitle>
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
@@ -226,16 +222,26 @@ export function OrderDetailsSheet({
                 Customer Details
               </h3>
               <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{orderDetails.customer.name}</span>
-                </div>
-                <div className="text-sm text-muted-foreground pl-6">
-                  {orderDetails.customer.phone_number}
-                </div>
-                {orderDetails.customer.email && (
-                  <div className="text-sm text-muted-foreground pl-6">
-                    {orderDetails.customer.email}
+                {orderDetails.customer.name ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{orderDetails.customer.name}</span>
+                    </div>
+                    {orderDetails.customer.phone_number && (
+                      <div className="text-sm text-muted-foreground pl-6">
+                        {orderDetails.customer.phone_number}
+                      </div>
+                    )}
+                    {orderDetails.customer.email && (
+                      <div className="text-sm text-muted-foreground pl-6">
+                        {orderDetails.customer.email}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Walk-in Customer
                   </div>
                 )}
               </div>
@@ -269,13 +275,29 @@ export function OrderDetailsSheet({
                   <tbody className="divide-y">
                     {orderDetails.sale_items.map((item, index) => (
                       <tr key={index} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 text-sm font-medium">{item.product.name}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">
+                              {item.product?.product_name || `Product #${item.product_id}`}
+                            </span>
+                            {item.product?.generic_name && (
+                              <span className="text-xs text-muted-foreground mt-0.5">
+                                {item.product.generic_name}
+                              </span>
+                            )}
+                            {item.product?.unit && (
+                              <span className="text-xs text-muted-foreground">
+                                {item.product.unit} • Pack: {item.product.pack_size}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-2 py-3 text-sm text-center">{item.quantity}</td>
                         <td className="px-2 py-3 text-sm text-right">
-                          ₹{item.price.toFixed(2)}
+                          ₹{getUnitPrice(item).toFixed(2)}
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-right">
-                          ₹{(item.price * item.quantity).toFixed(2)}
+                          ₹{getLineTotal(item).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -297,17 +319,13 @@ export function OrderDetailsSheet({
                   <span className="font-medium">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">SGST (2.5%)</span>
-                  <span className="font-medium">₹{sgst.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">CGST (2.5%)</span>
-                  <span className="font-medium">₹{cgst.toFixed(2)}</span>
+                  <span className="text-muted-foreground">GST</span>
+                  <span className="font-medium">₹{gst.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between text-base font-bold">
                   <span>Total</span>
-                  <span className="text-primary">₹{orderDetails.total_amount.toFixed(2)}</span>
+                  <span className="text-primary">₹{totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -322,12 +340,12 @@ export function OrderDetailsSheet({
               <div className="bg-muted/50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Payment Method</span>
-                  <span className="font-semibold">{orderDetails.payment_mode}</span>
+                  <span className="font-semibold">{orderDetails.payment_mode.toUpperCase()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Amount Paid</span>
                   <span className="font-semibold text-green-600">
-                    ₹{orderDetails.total_amount.toFixed(2)}
+                    ₹{totalAmount.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -344,7 +362,6 @@ export function OrderDetailsSheet({
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={handlePrint}
               >
                 <Printer className="h-4 w-4 mr-2" />
                 Print

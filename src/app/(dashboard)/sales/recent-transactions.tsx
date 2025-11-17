@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Receipt, Eye } from 'lucide-react'
 import { backendApi } from "@/lib/axios-config"
 import { OrderDetailsSheet } from "./order-details-sheet"
+import { TransactionsModal } from "./transactions-modal"
 
 interface Transaction {
   id: string
@@ -67,6 +68,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
   const [loading, setLoading] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString)
@@ -157,7 +159,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
       <Card className="mt-3">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
             View All
           </Button>
         </CardHeader>
@@ -226,6 +228,12 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
         orderId={selectedOrderId || ""}
+        branchId={branchId}
+      />
+
+      <TransactionsModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
         branchId={branchId}
       />
     </>

@@ -18,7 +18,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
-  clearCart: () => void
+  clearCart: (silent?: boolean) => void
   getCartTotal: () => number
   getCartSubtotal: () => number
   getCartTax: () => number
@@ -188,9 +188,11 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     playAddSound()
   }
 
-  const clearCart = () => {
+  const clearCart = (silent: boolean = false) => {
     setCartItems([])
-    toast.success('Cart cleared')
+    if (!silent) {
+      toast.success('Cart cleared')
+    }
   }
 
   const getCartSubtotal = () => {

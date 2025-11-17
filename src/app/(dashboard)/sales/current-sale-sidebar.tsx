@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
 import { PrescriptionModal } from "./prescription-modal"
+import { OrderDetailsSheet } from "./order-details-sheet"
 import type { Customer } from "@/types/sales"
 import { usePaymentModes } from "@/hooks/usePaymentModes"
 import { backendApi } from "@/lib/axios-config"
@@ -49,6 +50,8 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
   const [isCompleting, setIsCompleting] = useState(false)
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
   const [prescriptionImageUrl, setPrescriptionImageUrl] = useState<string | null>(null)
+  const [completedSaleId, setCompletedSaleId] = useState<string | null>(null)
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false)
 
   const { paymentMethods, isLoading: isLoadingPaymentModes } = usePaymentModes()
 
@@ -179,17 +182,21 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
       const responseData = response.data
       if (responseData?.success) {
         toast.success("Sale completed successfully!")
+        
+        // Get sale_id from response and open order details sheet
+        const saleId = responseData?.data?.sale_id
+        if (saleId) {
+          setCompletedSaleId(String(saleId))
+          setIsOrderDetailsOpen(true)
+        }
+        
         setCustomer(null)
         setPrescription(null)
-        clearCart()
-        setTimeout(() => {
-          window.location.reload()
-        }, 1300);
+        clearCart(true) 
       } else {
         toast.error(responseData?.message || "Failed to complete sale")
       }
     } catch (error: unknown) {
-      console.error("Error completing sale:", error)
       const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message
       toast.error(errorMessage || "Failed to complete sale")
     } finally {
@@ -213,7 +220,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                 {customer && <p className="text-xs md:text-sm text-teal-600 font-medium">Customer: {customer.patient_name}</p>}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={clearCart}>
+            <Button variant="ghost" size="sm" onClick={() => clearCart()}>
               <X className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
           </div>
@@ -349,7 +356,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearCart}
+                  onClick={() => clearCart()}
                   className="text-red-600 hover:text-red-700 text-xs h-7"
                 >
                   Clear All
@@ -491,7 +498,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
               <Button
                 variant="outline"
                 className="h-9 md:h-11 text-sm bg-transparent"
-                onClick={clearCart}
+                onClick={() => clearCart()}
                 disabled={cartItems.length === 0}
               >
                 Clear Cart
@@ -539,6 +546,16 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Order Details Sheet - Opens when new sale is completed */}
+      {completedSaleId && (
+        <OrderDetailsSheet
+          open={isOrderDetailsOpen}
+          onOpenChange={setIsOrderDetailsOpen}
+          orderId={completedSaleId}
+          branchId={branchId}
+        />
+      )}
     </div>
   )
 }
