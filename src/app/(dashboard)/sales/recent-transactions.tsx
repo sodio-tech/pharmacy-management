@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Receipt } from "lucide-react"
+import { Receipt } from 'lucide-react'
 import { backendApi } from "@/lib/axios-config"
 import { Transaction } from "@/types/sales"
+import { TransactionsModal } from "./transactions-modal"
 
 interface RecentTransactionsProps {
   branchId?: string
@@ -20,13 +21,14 @@ interface ApiSaleItem {
 
 interface ApiSale {
   id: number
+  invoice_id: string
   payment_mode: string
   status: string
   total_amount: number
   created_at: string
   prescription: {
     doctor_name: string | null
-    doctor_contact: string | null
+    doctor_contact: string
     notes: string
     prescription_link: string
   }
@@ -54,6 +56,7 @@ interface ApiResponse {
 export function RecentTransactions({ branchId }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString)
@@ -84,6 +87,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
     }
     return {
       id: `${sale.id}`,
+      invoice_id: sale.invoice_id,
       customer: sale.customer.name || 'Walk-in Customer',
       items: totalItems,
       amount: sale.total_amount,
@@ -135,60 +139,70 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
   }
 
   return (
-    <Card className="mt-3">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-        <Button variant="outline" size="sm">View All</Button>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {loading ? (
-          // Loading skeleton
-          [...Array(3)].map((_, index) => (
-            <div key={index} className="flex items-center justify-between p-4 rounded-lg border animate-pulse">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-full bg-muted">
-                  <div className="h-4 w-4 bg-muted rounded"></div>
+    <>
+      <Card className="mt-3">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
+            View All
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loading ? (
+            // Loading skeleton
+            [...Array(3)].map((_, index) => (
+              <div key={index} className="flex items-center justify-between p-4 rounded-lg border animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-full bg-muted">
+                    <div className="h-4 w-4 bg-muted rounded"></div>
+                  </div>
+                  <div>
+                    <div className="h-4 bg-muted rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-muted rounded w-24"></div>
+                  </div>
                 </div>
-                <div>
-                  <div className="h-4 bg-muted rounded w-32 mb-2"></div>
-                  <div className="h-3 bg-muted rounded w-24"></div>
+                <div className="text-right">
+                  <div className="h-4 bg-muted rounded w-16 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-12"></div>
                 </div>
               </div>
-              <div className="text-right">
-                <div className="h-4 bg-muted rounded w-16 mb-2"></div>
-                <div className="h-3 bg-muted rounded w-12"></div>
-              </div>
+            ))
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No recent transactions</p>
+              <p className="text-xs">Complete a sale to see it here</p>
             </div>
-          ))
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p className="text-sm">No recent transactions</p>
-            <p className="text-xs">Complete a sale to see it here</p>
-          </div>
-        ) : (
-          transactions.map((transaction, index) => (
-            <div key={index} className="flex items-center justify-between p-4 rounded-lg border">
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-full bg-muted ${getStatusColor(transaction.status)}`}>
-                  <Receipt className="h-4 w-4" />
+          ) : (
+            transactions.map((transaction, index) => (
+              <div key={index} className="flex items-center justify-between p-4 rounded-lg border">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 rounded-full bg-muted ${getStatusColor(transaction.status)}`}>
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-medium">INV #{(transaction?.invoice_id)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {transaction.customer} • {transaction.items} items
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">INV #{(index + 1).toString().padStart(2, '0')}</p>
+                <div className="text-right">
+                  <p className="font-semibold">₹{transaction.amount.toLocaleString('en-IN')}</p>
                   <p className="text-sm text-muted-foreground">
-                    {transaction.customer} • {transaction.items} items
+                    {transaction.time}
                   </p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold">₹{transaction.amount.toLocaleString('en-IN')}</p>
-                <p className="text-sm text-muted-foreground">
-                  {transaction.time}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <TransactionsModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        branchId={branchId}
+      />
+    </>
   )
 }

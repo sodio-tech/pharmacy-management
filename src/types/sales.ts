@@ -34,6 +34,7 @@ export interface Customer {
 
 export interface Transaction {
   id: string
+  invoice_id: string
   customer: string
   items: number
   amount: number
