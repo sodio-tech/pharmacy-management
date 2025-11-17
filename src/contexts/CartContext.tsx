@@ -46,20 +46,79 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // Function to play sound when product is added or quantity is updated
-  const playAddSound = () => {
-    try {
-      const audio = new Audio('/assets/product-add-sound.mp3')
-      audio.volume = 0.5 // Set volume to 50%
-      audio.play().catch((error) => {
-        // Silently handle autoplay restrictions
-        console.debug('Could not play sound:', error)
-      })
-    } catch (error) {
-      // Silently handle audio creation errors
-      console.debug('Could not create audio:', error)
+  // Create a singleton audio instance that persists across renders
+  // This ensures the audio is preloaded and ready to play
+  const audioRef = React.useRef<HTMLAudioElement | null>(null)
+
+  // Initialize audio on mount
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && !audioRef.current) {
+      try {
+        const audio = new Audio('/assets/product-add-sound.mp3')
+        audio.volume = 0.5 // Set volume to 50%
+        audio.preload = 'auto' // Preload the audio file
+        
+        // Handle audio loading errors
+        audio.addEventListener('error', (e) => {
+          console.warn('Audio file failed to load:', e)
+        })
+
+        // Try to load the audio
+        audio.load()
+        audioRef.current = audio
+      } catch (error) {
+        console.warn('Could not initialize audio:', error)
+      }
     }
-  }
+
+    // Cleanup on unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current = null
+      }
+    }
+  }, [])
+
+  // Function to play sound when product is added or quantity is updated
+  const playAddSound = React.useCallback(() => {
+    if (typeof window === 'undefined') return
+
+    try {
+      // Use the preloaded audio instance
+      const audio = audioRef.current
+      if (!audio) {
+        // Fallback: create new instance if ref is not available
+        const fallbackAudio = new Audio('/assets/product-add-sound.mp3')
+        fallbackAudio.volume = 0.5
+        fallbackAudio.play().catch(() => {
+          // Silently handle autoplay restrictions
+        })
+        return
+      }
+
+      // Reset audio to start if it's already playing
+      if (!audio.paused) {
+        audio.currentTime = 0
+      }
+
+      // Play the audio
+      const playPromise = audio.play()
+      
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          // Handle autoplay restrictions - this is expected in some browsers
+          // The sound will work after user interaction
+          if (error.name !== 'NotAllowedError') {
+            console.debug('Could not play sound:', error)
+          }
+        })
+      }
+    } catch (error) {
+      // Silently handle audio errors
+      console.debug('Could not play sound:', error)
+    }
+  }, [])
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCartItems(prevItems => {

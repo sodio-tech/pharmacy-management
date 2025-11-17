@@ -103,7 +103,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                   <button
                     onClick={() => handleNavigation(item.href)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors",
+                      "w-full flex items-center cursor-pointer gap-3 px-4 py-3 rounded-lg text-left transition-colors",
                       isActive ? "bg-[#0f766e] text-white" : "text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]",
                     )}
                   >
