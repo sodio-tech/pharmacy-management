@@ -138,7 +138,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
     <Card className="mt-3">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-      
+        <Button variant="outline" size="sm">View All</Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -173,7 +173,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
                   <Receipt className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-medium">Sale ID: {transaction.id}</p>
+                  <p className="font-medium">INV #{(index + 1).toString().padStart(2, '0')}</p>
                   <p className="text-sm text-muted-foreground">
                     {transaction.customer} • {transaction.items} items
                   </p>

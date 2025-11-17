@@ -32,12 +32,10 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
   const { user } = useUser()
   const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
 
-  // Use branchId from props if provided, otherwise use product's branch_id, or undefined
   const branchIdToUse = branchId
     ? branchId.toString()
     : (product?.branch_id?.toString() || undefined)
 
-  // useProductForm hook will automatically fetch product details in edit mode
   const { formData, handleInputChange, resetForm, isLoadingProduct, productImages } = useProductForm(
     mode === "edit" ? product : null,
     branchIdToUse
@@ -50,14 +48,12 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Set branch_id in formData when branchId prop is provided (for edit mode)
   useEffect(() => {
     if (branchIdToUse && mode === "edit" && !formData.branch_id) {
       handleInputChange("branch_id", branchIdToUse)
     }
   }, [branchIdToUse, mode, formData.branch_id, handleInputChange])
 
-  // Set existing image URLs from useProductForm hook
   useEffect(() => {
     if (mode === "edit" && productImages.length > 0) {
       setImageUrls(productImages)
@@ -65,6 +61,12 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       setImageUrls([])
     }
   }, [productImages, mode])
+
+  useEffect(() => {
+    if (mode === "add" && !isLoadingBranches && branches.length > 0 && !formData.branch_id) {
+      handleInputChange("branch_id", branches[0].id.toString())
+    }
+  }, [mode, isLoadingBranches, branches, formData.branch_id, handleInputChange])
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -136,18 +138,27 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
   const validateForm = () => {
     if (!formData.name.trim()) {
       setError("Product name is required")
+      toast.error("Product name is required")
       return false
     }
     if (!formData.branch_id.trim()) {
       setError("Branch selection is required")
+      toast.error("Branch selection is required")
       return false
     }
     if (!formData.unit_price.trim() || Number.parseFloat(formData.unit_price) <= 0) {
       setError("Unit price is required and must be greater than 0")
+      toast.error("Unit price is required and must be greater than 0")
       return false
     }
     if (!formData.selling_price.trim() || Number.parseFloat(formData.selling_price) <= 0) {
       setError("Selling price is required and must be greater than 0")
+      toast.error("Selling price is required and must be greater than 0")
+      return false
+    }
+    if (!formData.gst_percent.trim() || Number.parseFloat(formData.gst_percent) < 0 || Number.parseFloat(formData.gst_percent) > 100) {
+      setError("GST percentage is required and must be between 0 and 100")
+      toast.error("GST percentage is required and must be between 0 and 100")
       return false
     }
     return true
@@ -190,6 +201,7 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
 
     formDataToSend.append('unit_price', formData.unit_price)
     formDataToSend.append('selling_price', formData.selling_price)
+    formDataToSend.append('gst_rate', formData.gst_percent || '0')
     formDataToSend.append('pack_size', validPackSize.toString())
     formDataToSend.append('stock', formData.stock || '0')
     if (formData.branch_id) {
@@ -241,6 +253,7 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       const error = err as { message?: string; response?: { data?: { message?: string } } }
       const errorMessage = error.response?.data?.message || error.message || `Failed to ${mode === "edit" ? 'update' : 'create'} product`
       setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -276,7 +289,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
           className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950 dark:to-cyan-950 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-teal-600 rounded-lg">
@@ -296,16 +308,13 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
             </Button>
           </div>
 
-          {/* Content - Scrollable Area */}
           <div className="flex-1 overflow-y-auto p-6">
-            {/* Error Alert */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                 <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
               </div>
             )}
 
-            {/* Loading State - Show when fetching product details in edit mode */}
             {isLoadingProduct && (
               <div className="mb-6 flex items-center justify-center p-8">
                 <div className="flex flex-col items-center gap-3">
@@ -319,7 +328,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
 
             {!isLoadingProduct && (
               <div className="space-y-6">
-                {/* Basic Information */}
                 <BasicInformationSection
                   formData={{
                     name: formData.name,
@@ -331,7 +339,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
                 />
 
-                {/* Branch Selection */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
@@ -347,7 +354,7 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                         onValueChange={(value) => {
                           handleInputChange("branch_id", value)
                         }}
-                        disabled={isLoadingBranches}
+                        disabled={isLoadingBranches || mode === "edit"}
                       >
                         <SelectTrigger className="mt-1.5 w-full">
                           <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select branch"} />
@@ -367,11 +374,15 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                           )}
                         </SelectContent>
                       </Select>
+                      {mode === "edit" && (
+                        <p className="text-xs text-muted-foreground mt-1.5">
+                          Note: Branch cannot be edited for existing products
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* Category Selection */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CategoryMultiSelect
@@ -381,7 +392,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   </div>
                 </div>
 
-                {/* Product Images */}
                 <ImageUploadSection
                   imagePreviews={imagePreviews}
                   imageUrls={imageUrls}
@@ -391,7 +401,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   isLoading={isLoading}
                 />
 
-                {/* Identification */}
                 <IdentificationSection
                   barcode={formData.barcode}
                   qrCode={formData.qr_code}
@@ -401,15 +410,15 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   onGenerateQRCode={generateQRCode}
                 />
 
-                {/* Pricing */}
                 <PricingSection
                   unitPrice={formData.unit_price}
                   sellingPrice={formData.selling_price}
+                  gstPercent={formData.gst_percent}
                   onUnitPriceChange={(value) => handleInputChange("unit_price", value)}
                   onSellingPriceChange={(value) => handleInputChange("selling_price", value)}
+                  onGstPercentChange={(value) => handleInputChange("gst_percent", value)}
                 />
 
-                {/* Packaging & Stock */}
                 <PackagingStockSection
                   unitId={formData.unit_id}
                   packSize={formData.pack_size}
@@ -422,7 +431,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
             )}
           </div>
 
-          {/* Footer - Fixed at Bottom */}
           <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
             <div className="flex gap-3">
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>

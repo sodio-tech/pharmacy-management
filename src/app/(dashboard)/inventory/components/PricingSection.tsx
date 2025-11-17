@@ -7,23 +7,41 @@ import { formatPercentage } from "@/lib/utils"
 interface PricingSectionProps {
   unitPrice: string
   sellingPrice: string
+  gstPercent: string
   onUnitPriceChange: (value: string) => void
   onSellingPriceChange: (value: string) => void
+  onGstPercentChange: (value: string) => void
 }
 
 export function PricingSection({
   unitPrice,
   sellingPrice,
+  gstPercent,
   onUnitPriceChange,
-  onSellingPriceChange
+  onSellingPriceChange,
+  onGstPercentChange
 }: PricingSectionProps) {
-  const profitMargin = unitPrice && sellingPrice && Number.parseFloat(unitPrice) > 0
-    ? formatPercentage(((Number.parseFloat(sellingPrice) - Number.parseFloat(unitPrice)) / Number.parseFloat(unitPrice)) * 100)
-    : null
-
-  const profitPerUnit = unitPrice && sellingPrice && Number.parseFloat(unitPrice) > 0
-    ? (Number.parseFloat(sellingPrice) - Number.parseFloat(unitPrice)).toFixed(2)
-    : null
+  const unitPriceNum = Number.parseFloat(unitPrice) || 0
+  const sellingPriceNum = Number.parseFloat(sellingPrice) || 0
+  const gstPercentNum = Number.parseFloat(gstPercent) || 0
+  
+  let profitMargin = null
+  let profitPerUnit = null
+  let totalCost = null
+  let gstAmount = null
+  
+  if (unitPriceNum > 0 && sellingPriceNum > 0) {
+    // Calculate GST amount on cost price
+    gstAmount = (unitPriceNum * gstPercentNum) / 100
+    // Total cost including GST
+    totalCost = unitPriceNum + gstAmount
+    // Profit = selling price - total cost
+    profitPerUnit = (sellingPriceNum - totalCost).toFixed(2)
+    // Profit margin = (profit / total cost) * 100
+    if (totalCost > 0) {
+      profitMargin = formatPercentage(((sellingPriceNum - totalCost) / totalCost) * 100)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -31,7 +49,7 @@ export function PricingSection({
         <span className="w-1.5 h-6 bg-emerald-600 rounded-full"></span>
         Pricing
       </h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label htmlFor="unit_price" className="text-sm font-medium">
             Cost Price <span className="text-red-500">*</span>
@@ -43,6 +61,56 @@ export function PricingSection({
             min="0"
             value={unitPrice}
             onChange={(e) => onUnitPriceChange(e.target.value)}
+            placeholder="0.00"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="gst_percent" className="text-sm font-medium">
+            GST % <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="gst_percent"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            value={gstPercent}
+            onChange={(e) => {
+              const value = e.target.value
+              // Allow empty string for clearing
+              if (value === '') {
+                onGstPercentChange('')
+                return
+              }
+              const numValue = Number.parseFloat(value)
+              // Only allow values between 0 and 100
+              if (!Number.isNaN(numValue)) {
+                if (numValue < 0) {
+                  onGstPercentChange('0')
+                } else if (numValue > 100) {
+                  onGstPercentChange('100')
+                } else {
+                  onGstPercentChange(value)
+                }
+              }
+            }}
+            onBlur={(e) => {
+              // Ensure value is within range on blur
+              const value = e.target.value
+              if (value !== '') {
+                const numValue = Number.parseFloat(value)
+                if (!Number.isNaN(numValue)) {
+                  if (numValue < 0) {
+                    onGstPercentChange('0')
+                  } else if (numValue > 100) {
+                    onGstPercentChange('100')
+                  }
+                }
+              }
+            }}
             placeholder="0.00"
             className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
             required
@@ -66,19 +134,33 @@ export function PricingSection({
           />
         </div>
 
-        {profitMargin && profitPerUnit && (
-          <div className="md:col-span-2 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center justify-between">
+        {profitMargin && profitPerUnit && totalCost !== null && (
+          <div className="md:col-span-3 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Cost (with GST)</p>
+                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                  ₹{totalCost.toFixed(2)}
+                </p>
+              </div>
+              {gstAmount !== null && gstAmount > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">GST Amount</p>
+                  <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                    ₹{gstAmount.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit per Unit</p>
+                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                  ₹{profitPerUnit}
+                </p>
+              </div>
               <div>
                 <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit Margin</p>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   {profitMargin}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit per Unit</p>
-                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                  ₹{profitPerUnit}
                 </p>
               </div>
             </div>

@@ -21,6 +21,7 @@ export interface ProductFormData {
   stock: string
   branch_id: string
   requires_prescription: boolean
+  gst_percent: string
 }
 
 const initialFormData: ProductFormData = {
@@ -40,6 +41,7 @@ const initialFormData: ProductFormData = {
   stock: "0",
   branch_id: "",
   requires_prescription: false,
+  gst_percent: "",
 }
 
 interface ApiProductResponse {
@@ -59,8 +61,7 @@ interface ApiProductResponse {
   unit_price: string
   selling_price: string
   is_active: boolean
-  min_stock: number
-  max_stock: number
+  stock: number
   gst_rate?: number
   product_categories?: string[]
   additional_images?: string[]
@@ -126,9 +127,10 @@ export function useProductForm(product?: Product | null, branchId?: string) {
           unit_price: apiProduct.unit_price || "",
           selling_price: apiProduct.selling_price || "",
           pack_size: apiProduct.pack_size?.toString() || "1",
-          stock: apiProduct.min_stock?.toString() || "0",
+          stock: apiProduct.stock?.toString() || "0",
           branch_id: (apiProduct as any).branch_id?.toString() || "",
           requires_prescription: apiProduct.requires_prescription || false,
+          gst_percent: apiProduct.gst_rate?.toString() || "",
         })
 
         // Extract and set product images
@@ -192,6 +194,7 @@ export function useProductForm(product?: Product | null, branchId?: string) {
         stock: product.stock?.toString() || "0",
         branch_id: (product as any).branch_id?.toString() || "",
         requires_prescription: product.requires_prescription || false,
+        gst_percent: (product as any).gst_rate?.toString() || "",
       })
     } 
   }, [product, categories, units])
