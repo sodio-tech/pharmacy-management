@@ -3,10 +3,19 @@
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Receipt } from 'lucide-react'
+import { Receipt, Eye } from 'lucide-react'
 import { backendApi } from "@/lib/axios-config"
-import { Transaction } from "@/types/sales"
-import { TransactionsModal } from "./transactions-modal"
+import { OrderDetailsSheet } from "./order-details-sheet"
+
+interface Transaction {
+  id: string
+  invoice_id: string
+  customer: string
+  items: number
+  amount: number
+  time: string
+  status: string
+}
 
 interface RecentTransactionsProps {
   branchId?: string
@@ -56,7 +65,8 @@ interface ApiResponse {
 export function RecentTransactions({ branchId }: RecentTransactionsProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString)
@@ -80,7 +90,6 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
 
   const mapApiSaleToTransaction = useCallback((sale: ApiSale): Transaction => {
     const totalItems = sale.sale_items.reduce((sum, item) => sum + item.quantity, 0)
-    // Map API status to UI status
     let status = sale.status.toUpperCase()
     if (status === 'PAID') {
       status = 'COMPLETED'
@@ -138,18 +147,22 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
     }
   }
 
+  const handleViewOrder = (orderId: string) => {
+    setSelectedOrderId(orderId)
+    setIsSheetOpen(true)
+  }
+
   return (
     <>
       <Card className="mt-3">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Transactions</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => setIsModalOpen(true)}>
+          <Button variant="outline" size="sm">
             View All
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
-            // Loading skeleton
             [...Array(3)].map((_, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg border animate-pulse">
                 <div className="flex items-center space-x-3">
@@ -180,7 +193,18 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
                     <Receipt className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-medium">INV #{(transaction?.invoice_id)}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">INV #{transaction?.invoice_id}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-3 text-xs bg-teal-50 hover:bg-teal-100 text-teal-700"
+                        onClick={() => handleViewOrder(transaction.id)}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        View
+                      </Button>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {transaction.customer} • {transaction.items} items
                     </p>
@@ -198,9 +222,10 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
         </CardContent>
       </Card>
 
-      <TransactionsModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+      <OrderDetailsSheet
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        orderId={selectedOrderId || ""}
         branchId={branchId}
       />
     </>

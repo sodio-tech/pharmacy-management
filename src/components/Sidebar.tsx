@@ -82,7 +82,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                     </div>
               <div>
                 <h1 className="font-semibold text-[#111827] text-lg">Pharmy</h1>
-                <p className="text-sm text-[#6b7280]">Management System</p>
+                <p className="text-xs text-[#6b7280]">Pharmacy Management System</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={onCloseMobileMenu}>
