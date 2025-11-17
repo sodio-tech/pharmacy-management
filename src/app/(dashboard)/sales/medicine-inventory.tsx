@@ -116,7 +116,7 @@ export function MedicineInventory({
 
   const handleAddToCart = (product: Product) => {
     onAddToCart(product, 1)
-    toast.success(`${product.name} added to cart`)
+    // Toast message is now handled in CartContext - only shows for new items
   }
 
   if (loading) {

@@ -121,6 +121,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }, [])
 
   const addToCart = (product: Product, quantity: number = 1) => {
+    let isNewItem = false
+    
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id)
       
@@ -138,6 +140,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         )
       } else {
         // Add new item to cart
+        isNewItem = true
         const sellingPrice = Number(product.selling_price || product.unit_price || 0)
         const newItem: CartItem = {
           id: String(product.id),
@@ -149,6 +152,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         return [...prevItems, newItem]
       }
     })
+    
+    // Show toast message only when product is added for the first time
+    if (isNewItem) {
+      toast.success(`${product.name} added to cart`)
+    }
+    
     // Play sound when product is added to cart
     playAddSound()
   }

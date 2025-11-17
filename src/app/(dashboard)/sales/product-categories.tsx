@@ -108,7 +108,7 @@ export function ProductCategories({
       requires_prescription: false,
     }
     addToCart(cartProduct, 1)
-    toast.success(`${product.product_name} added to cart`)
+    // Toast message is now handled in CartContext - only shows for new items
   }
 
   return (
