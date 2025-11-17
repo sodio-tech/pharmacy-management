@@ -66,13 +66,20 @@ const Profile = () => {
     image: '',
     role: '',
     subscription_status: '',
-    country: 'IN', // Default to India (INR)
+    country: 'IN',
     currency: 'INR'
   })
 
   // Initialize form data when user loads or image updates
   useEffect(() => {
     if (sessionUser) {
+      // Get currency_code from API response, default to INR if not present
+      const currencyCode = sessionUser.currency_code || 'INR'
+      
+      // Find country based on currency code, default to India (IN)
+      const countryForCurrency = COUNTRIES.find(c => c.currencyCode === currencyCode)
+      const defaultCountry = countryForCurrency?.code || 'IN'
+      
       setFormData({
         id: sessionUser.id,
         fullname: sessionUser.fullname || '',
@@ -82,11 +89,11 @@ const Profile = () => {
         image: sessionUser.image || '',
         role: sessionUser.role || '',
         subscription_status: sessionUser.subscription_status || '',
-        country: (sessionUser as any).country || 'IN', // Default to India
-        currency: (sessionUser as any).currency || 'INR' // Default to INR
+        country: sessionUser.country || defaultCountry,
+        currency: currencyCode
       })
     }
-  }, [sessionUser?.id, sessionUser?.image]) // Update when user ID or image changes
+  }, [sessionUser?.id, sessionUser?.image, sessionUser?.currency_code]) // Update when user ID, image, or currency_code changes
 
   const handleInputChange = (field: keyof UserProfile, value: string) => {
     setFormData(prev => ({
@@ -107,18 +114,12 @@ const Profile = () => {
       formDataToSend.append('new_name', formData.fullname)
       formDataToSend.append('phone_number', formData.phone_number)
       formDataToSend.append('pharmacy_name', formData.pharmacy_name)
-      if (formData.country) {
-        formDataToSend.append('country', formData.country)
-      }
       if (formData.currency) {
-        formDataToSend.append('currency', formData.currency)
+        formDataToSend.append('currency_code', formData.currency)
       }
-      
-      // Add profile photo file if selected
       if (selectedProfilePhoto) {
         formDataToSend.append('profile_photo', selectedProfilePhoto)
       }
-
       await backendApi.put('/v1/update-profile', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -139,6 +140,13 @@ const Profile = () => {
 
   const handleCancel = () => {
     if (sessionUser) {
+      // Get currency_code from API response, default to INR if not present
+      const currencyCode = sessionUser.currency_code || 'INR'
+      
+      // Find country based on currency code, default to India (IN)
+      const countryForCurrency = COUNTRIES.find(c => c.currencyCode === currencyCode)
+      const defaultCountry = countryForCurrency?.code || 'IN'
+      
       setFormData({
         id: sessionUser.id,
         fullname: sessionUser.fullname || '',
@@ -148,8 +156,8 @@ const Profile = () => {
         image: sessionUser.image || '',
         role: sessionUser.role || '',
         subscription_status: sessionUser.subscription_status || '',
-        country: (sessionUser as any).country || 'IN',
-        currency: (sessionUser as any).currency || 'INR'
+        country: sessionUser.country || defaultCountry,
+        currency: currencyCode
       })
       setSelectedProfilePhoto(null)
     }

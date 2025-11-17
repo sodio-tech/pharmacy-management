@@ -32,7 +32,7 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
     patient_name: existingCustomer?.patient_name || "",
     patient_phone: existingCustomer?.patient_phone || "",
     patient_email: existingCustomer?.patient_email || "",
-    age: existingCustomer?.age?.toString() || "",
+    age: existingCustomer?.age !== null && existingCustomer?.age !== undefined ? existingCustomer.age.toString() : "",
     gender: existingCustomer?.gender || "",
   })
 
@@ -45,7 +45,7 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
         patient_name: customerToEdit.patient_name || "",
         patient_phone: customerToEdit.patient_phone || "",
         patient_email: customerToEdit.patient_email || "",
-        age: customerToEdit.age?.toString() || "",
+        age: customerToEdit.age !== null && customerToEdit.age !== undefined ? customerToEdit.age.toString() : "",
         gender: customerToEdit.gender || "",
       })
     } else if (!isOpen) {
@@ -126,7 +126,7 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       patient_name: customer.patient_name || "",
       patient_phone: customer.patient_phone || "",
       patient_email: customer.patient_email || "",
-      age: customer.age?.toString() || "",
+      age: customer.age !== null && customer.age !== undefined ? customer.age.toString() : "",
       gender: customer.gender || "",
     })
     setEditingCustomer(customer)
@@ -150,11 +150,13 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
     setIsLoading(true)
 
     try {
+      const customerToUpdate = existingCustomer || editingCustomer
+      
       const payload: {
         name?: string
         phone_number?: string
         email?: string
-        age?: number
+        age?: number | null
         gender?: string
       } = {}
 
@@ -167,6 +169,7 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       if (formData.patient_email.trim()) {
         payload.email = formData.patient_email.trim()
       }
+      // Handle age field - allow empty/null or valid number
       if (formData.age.trim()) {
         const ageNum = Number.parseInt(formData.age.trim(), 10)
         if (!isNaN(ageNum) && ageNum >= 12 && ageNum <= 100) {
@@ -176,6 +179,9 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
           setIsLoading(false)
           return
         }
+      } else if (customerToUpdate && customerToUpdate.id && customerToUpdate.age !== null && customerToUpdate.age !== undefined) {
+        // If updating and age field is cleared, send null to clear the age
+        payload.age = null
       }
       if (formData.gender) {
         payload.gender = formData.gender
@@ -183,7 +189,6 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
 
       let response
       let customerData: Customer
-      const customerToUpdate = existingCustomer || editingCustomer
 
       if (customerToUpdate && customerToUpdate.id) {
         // Update existing customer
@@ -412,16 +417,19 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
                     value={formData.age}
                     onChange={(e) => {
                       const value = e.target.value
-                      if (value === "" || (Number.parseInt(value, 10) >= 12 && Number.parseInt(value, 10) <= 100)) {
+                      // Allow empty string or any numeric input (validation happens on blur)
+                      if (value === "" || /^\d*$/.test(value)) {
                         handleInputChange("age", value)
                       }
                     }}
                     onBlur={(e) => {
-                      const value = e.target.value
-                      const ageNum = Number.parseInt(value, 10)
-                      if (value && (isNaN(ageNum) || ageNum < 12 || ageNum > 100)) {
-                        toast.error("Enter your age between 12 and 100 years")
-                        setFormData((prev) => ({ ...prev, age: "" }))
+                      const value = e.target.value.trim()
+                      if (value) {
+                        const ageNum = Number.parseInt(value, 10)
+                        if (isNaN(ageNum) || ageNum < 12 || ageNum > 100) {
+                          toast.error("Enter your age between 12 and 100 years")
+                          setFormData((prev) => ({ ...prev, age: "" }))
+                        }
                       }
                     }}
                     placeholder="Enter age"

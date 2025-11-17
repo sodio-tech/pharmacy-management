@@ -21,6 +21,8 @@ export interface User {
   profile_image?: string | null // API response field
   last_login?: string | null
   image?: string | null // Mapped from profile_image for UI compatibility
+  currency_code?: string // API response field
+  country?: string // Country code (e.g., 'IN', 'US')
 }
 
 interface UserContextType {
