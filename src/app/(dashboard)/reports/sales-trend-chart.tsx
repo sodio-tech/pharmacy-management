@@ -15,11 +15,15 @@ const salesData = [
   { day: "Sun", thisWeek: 72, lastWeek: 65 },
 ]
 
-export function SalesTrendChart() {
+interface SalesTrendChartProps {
+  branchId: number | null
+}
+
+export function SalesTrendChart({ branchId }: SalesTrendChartProps) {
   const [activeTab, setActiveTab] = useState("Daily")
 
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Sales Trend</CardTitle>
         <div className="flex space-x-2">

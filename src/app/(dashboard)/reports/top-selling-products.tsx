@@ -12,9 +12,13 @@ const productsData = [
   { name: "Pain Relief", units: 250 },
 ]
 
-export function TopSellingProducts() {
+interface TopSellingProductsProps {
+  branchId: number | null
+}
+
+export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
   return (
-    <Card className="mb-8">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Top Selling Products</CardTitle>
         <Button variant="outline" size="sm">
