@@ -25,7 +25,6 @@ type LoginFormValues = z.infer<typeof loginSchema>
 const LoginForm = () => {
     const [isLoading, setIsLoading] = useState(false)
     const [isVerifying, setIsVerifying] = useState(false)
-    const [rememberMe, setRememberMe] = useState(true)
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -72,7 +71,7 @@ const LoginForm = () => {
                 const { access_token } = response.data.data
 
                 // Set authentication cookies
-                setAuthCookies({ access_token }, rememberMe)
+                setAuthCookies({ access_token })
 
                 toast.success("Login successful!")
                 window.location.href = DEFAULT_REDIRECT_PATH
@@ -157,17 +156,8 @@ const LoginForm = () => {
                 </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between pt-2">
-                <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        className="h-4 w-4 border-gray-300 rounded accent-teal-600"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                    <span>Remember me</span>
-                </label>
+            {/* Forgot Password */}
+            <div className="flex items-center justify-end pt-2">
                 <Link href="/forgot-password" className="text-sm text-teal-600 hover:text-teal-700 font-medium">
                     Forgot password?
                 </Link>
