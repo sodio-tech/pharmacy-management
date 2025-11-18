@@ -24,12 +24,12 @@ export function PricingSection({
   const unitPriceNum = Number.parseFloat(unitPrice) || 0
   const sellingPriceNum = Number.parseFloat(sellingPrice) || 0
   const gstPercentNum = Number.parseFloat(gstPercent) || 0
-  
+
   let profitMargin = null
   let profitPerUnit = null
   let totalCost = null
   let gstAmount = null
-  
+
   if (unitPriceNum > 0 && sellingPriceNum > 0) {
     // Calculate GST amount on cost price
     gstAmount = (unitPriceNum * gstPercentNum) / 100
@@ -61,6 +61,23 @@ export function PricingSection({
             min="0"
             value={unitPrice}
             onChange={(e) => onUnitPriceChange(e.target.value)}
+            placeholder="0.00"
+            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="selling_price" className="text-sm font-medium">
+            Selling Price <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="selling_price"
+            type="number"
+            step="0.01"
+            min="0"
+            value={sellingPrice}
+            onChange={(e) => onSellingPriceChange(e.target.value)}
             placeholder="0.00"
             className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
             required
@@ -111,23 +128,6 @@ export function PricingSection({
                 }
               }
             }}
-            placeholder="0.00"
-            className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="selling_price" className="text-sm font-medium">
-            Selling Price <span className="text-red-500">*</span>
-          </Label>
-          <Input
-            id="selling_price"
-            type="number"
-            step="0.01"
-            min="0"
-            value={sellingPrice}
-            onChange={(e) => onSellingPriceChange(e.target.value)}
             placeholder="0.00"
             className="mt-1.5 [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden [-moz-appearance:textfield]"
             required
