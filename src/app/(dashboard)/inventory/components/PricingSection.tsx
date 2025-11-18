@@ -26,20 +26,16 @@ export function PricingSection({
   const gstPercentNum = Number.parseFloat(gstPercent) || 0
 
   let profitMargin = null
-  let profitPerUnit = null
-  let totalCost = null
+  let totalSellingPrice = null
   let gstAmount = null
 
   if (unitPriceNum > 0 && sellingPriceNum > 0) {
-    // Calculate GST amount on cost price
-    gstAmount = (unitPriceNum * gstPercentNum) / 100
-    // Total cost including GST
-    totalCost = unitPriceNum + gstAmount
-    // Profit = selling price - total cost
-    profitPerUnit = (sellingPriceNum - totalCost).toFixed(2)
-    // Profit margin = (profit / total cost) * 100
-    if (totalCost > 0) {
-      profitMargin = formatPercentage(((sellingPriceNum - totalCost) / totalCost) * 100)
+    gstAmount = (sellingPriceNum * gstPercentNum) / 100
+    // Total selling price including GST (what customer pays)
+    totalSellingPrice = sellingPriceNum + gstAmount
+    // Profit margin = (profit / cost price) * 100
+    if (unitPriceNum > 0) {
+      profitMargin = formatPercentage(((sellingPriceNum - unitPriceNum) / unitPriceNum) * 100)
     }
   }
 
@@ -134,15 +130,9 @@ export function PricingSection({
           />
         </div>
 
-        {profitMargin && profitPerUnit && totalCost !== null && (
+        {profitMargin && totalSellingPrice !== null && (
           <div className="md:col-span-3 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Cost (with GST)</p>
-                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                  ₹{totalCost.toFixed(2)}
-                </p>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {gstAmount !== null && gstAmount > 0 && (
                 <div>
                   <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">GST Amount</p>
@@ -152,9 +142,9 @@ export function PricingSection({
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit per Unit</p>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Price (with GST)</p>
                 <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                  ₹{profitPerUnit}
+                  ₹{totalSellingPrice.toFixed(2)}
                 </p>
               </div>
               <div>
@@ -170,4 +160,3 @@ export function PricingSection({
     </div>
   )
 }
-
