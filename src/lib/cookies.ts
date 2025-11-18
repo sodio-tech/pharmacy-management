@@ -11,14 +11,12 @@ export interface UserCookieData {
  */
 export const setAuthCookies = (
   data: UserCookieData,
-  rememberMe: boolean = true
 ) => {
-  const expiryDays = rememberMe ? 30 : 1; // 30 days if remember me, else 1 day
+  const expiryHours = 23; // Cookie validity for 23 hours
   const expiryDate = new Date();
-  expiryDate.setTime(expiryDate.getTime() + expiryDays * 24 * 60 * 60 * 1000);
-
+  expiryDate.setTime(expiryDate.getTime() + expiryHours * 60 * 60 * 1000);
+  
   const cookieOptions = `expires=${expiryDate.toUTCString()}; path=/; SameSite=Strict`;
-
   document.cookie = `access_token=${data.access_token}; ${cookieOptions}`;
 };
 
