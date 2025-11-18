@@ -9,6 +9,7 @@ export interface CartItem {
   id: string
   product: Product
   quantity: number
+  packSize: number
   unitPrice: number
   totalPrice: number
 }
@@ -18,6 +19,7 @@ interface CartContextType {
   addToCart: (product: Product, quantity?: number) => void
   removeFromCart: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
+  updatePackSize: (productId: string, packSize: number) => void
   clearCart: (silent?: boolean) => void
   getCartTotal: () => number
   getCartSubtotal: () => number
@@ -134,7 +136,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             ? {
                 ...item,
                 quantity: newQuantity,
-                totalPrice: newQuantity * Number(item.unitPrice || 0)
+                totalPrice: newQuantity * item.packSize * Number(item.unitPrice || 0)
               }
             : item
         )
@@ -142,12 +144,14 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         // Add new item to cart
         isNewItem = true
         const sellingPrice = Number(product.selling_price || product.unit_price || 0)
+        const defaultPackSize = product.pack_size && product.pack_size > 0 ? product.pack_size : 1
         const newItem: CartItem = {
           id: String(product.id),
           product,
           quantity,
+          packSize: defaultPackSize,
           unitPrice: sellingPrice,
-          totalPrice: quantity * sellingPrice
+          totalPrice: quantity * defaultPackSize * sellingPrice
         }
         return [...prevItems, newItem]
       }
@@ -179,13 +183,31 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           ? {
               ...item,
               quantity,
-              totalPrice: quantity * Number(item.unitPrice || 0)
+              totalPrice: quantity * item.packSize * Number(item.unitPrice || 0)
             }
           : item
       )
     )
     // Play sound when quantity is updated
     playAddSound()
+  }
+
+  const updatePackSize = (productId: string, packSize: number) => {
+    if (packSize < 1) {
+      packSize = 1
+    }
+
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === productId
+          ? {
+              ...item,
+              packSize,
+              totalPrice: item.quantity * packSize * Number(item.unitPrice || 0)
+            }
+          : item
+      )
+    )
   }
 
   const clearCart = (silent: boolean = false) => {
@@ -259,6 +281,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     addToCart,
     removeFromCart,
     updateQuantity,
+    updatePackSize,
     clearCart,
     getCartTotal,
     getCartSubtotal,

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { X, Plus, Minus, User, FileText, Image as ImageIcon } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
@@ -31,6 +32,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
     cartItems,
     removeFromCart,
     updateQuantity,
+    updatePackSize,
     clearCart,
     getCartTotal,
     getCartSubtotal,
@@ -156,6 +158,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
       const cartItemsData = cartItems.map(item => ({
         product_id: Number(item.product.id),
         quantity: item.quantity,
+        pack_size: item.packSize,
       }))
       formData.append("cart", JSON.stringify(cartItemsData))
 
@@ -399,28 +402,46 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                     <p className="text-xs text-muted-foreground mb-2 md:mb-3">
                       {item.product.unit_of_measure} • ₹{Number(item.unitPrice).toFixed(2)} each
                     </p>
-                    <div className="flex items-center w-full justify-between">
-                      <div className="flex items-center w-full space-x-1 md:space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 md:h-8 md:w-8 p-0 bg-transparent"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-xs md:text-sm font-semibold w-6 md:w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 w-7 md:h-8 md:w-8 p-0 bg-transparent"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                    <div className="space-y-2 md:space-y-3">
+                      <div className="flex items-center w-full justify-between">
+                        <div className="flex items-center w-full space-x-1 md:space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0 bg-transparent"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="text-xs md:text-sm font-semibold w-6 md:w-8 text-center">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0 bg-transparent"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="text-right pl-4 w-full">
+                          <p className="font-bold text-sm md:text-base">₹{Number(item.totalPrice).toFixed(2)}</p>
+                        </div>
                       </div>
-                      <div className="text-right pl-4 w-full">
-                        <p className="font-bold text-sm md:text-base">₹{Number(item.totalPrice).toFixed(2)}</p>
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs text-muted-foreground whitespace-nowrap">Pack Size:</label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max={item.product.pack_size && item.product.pack_size > 0 ? item.product.pack_size : 1}
+                          value={item.packSize}
+                          onChange={(e) => {
+                            const defaultPackSize = item.product.pack_size && item.product.pack_size > 0 ? item.product.pack_size : 1
+                            const inputValue = parseInt(e.target.value) || 1
+                            const newPackSize = Math.max(1, Math.min(inputValue, defaultPackSize))
+                            updatePackSize(item.id, newPackSize)
+                          }}
+                          className="h-7 w-20 text-xs"
+                        />
                       </div>
                     </div>
                   </div>

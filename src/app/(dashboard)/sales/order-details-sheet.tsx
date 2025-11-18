@@ -25,6 +25,7 @@ interface OrderDetails {
     price: number
     gst_rate: number
     quantity: number
+    pack_size?: number
     product_id: number
     product?: {
       id: number
@@ -110,7 +111,8 @@ export function OrderDetailsSheet({
 
   const getLineTotal = (item: OrderDetails['sale_items'][0]) => {
     const unitPrice = getUnitPrice(item)
-    return unitPrice * item.quantity
+    const packSize = item.pack_size || item.product?.pack_size || 1
+    return unitPrice * item.quantity * packSize
   }
 
   const calculateSubtotal = () => {
@@ -264,6 +266,9 @@ export function OrderDetailsSheet({
                       <th className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-3">
                         Qty
                       </th>
+                      <th className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-3">
+                        Pack Size
+                      </th>
                       <th className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-3">
                         Price
                       </th>
@@ -287,12 +292,13 @@ export function OrderDetailsSheet({
                             )}
                             {item.product?.unit && (
                               <span className="text-xs text-muted-foreground">
-                                {item.product.unit} • Pack: {item.product.pack_size}
+                                {item.product.unit} • Pack: {item.pack_size || item.product.pack_size || 1}
                               </span>
                             )}
                           </div>
                         </td>
                         <td className="px-2 py-3 text-sm text-center">{item.quantity}</td>
+                        <td className="px-2 py-3 text-sm text-center">{item.pack_size || item?.product?.pack_size || 1}</td>
                         <td className="px-2 py-3 text-sm text-right">
                           ₹{getUnitPrice(item).toFixed(2)}
                         </td>
