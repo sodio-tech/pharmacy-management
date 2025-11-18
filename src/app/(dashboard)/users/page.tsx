@@ -5,9 +5,8 @@ import DynamicHeader from "@/components/DynamicHeader"
 import { UserStats } from "./user-stats"
 import { UserTable } from "./user-table"
 import { RoleManagement } from "./role-management"
-import { Button } from "@/components/ui/button"
-import { Users } from "lucide-react"
-import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
+// import { Users } from "lucide-react"
+// import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 
 function UserManagementContent() {
   return (
@@ -23,14 +22,14 @@ function UserManagementContent() {
 }
 
 export default function UserManagement() {
-  const userActions: HeaderAction[] = [
-    {
-      label: "Add User",
-      icon: Users,
-      onClick: () => {},
-      variant: 'primary'
-    }
-  ]
+  // const userActions: HeaderAction[] = [
+  //   {
+  //     label: "Add User",
+  //     icon: Users,
+  //     onClick: () => {},
+  //     variant: 'primary'
+  //   }
+  // ]
 
   return (
     <LayoutSkeleton
@@ -38,7 +37,7 @@ export default function UserManagement() {
         <DynamicHeader
           maintext="User Management"
           para="Manage user accounts, roles, and permissions across the system"
-          children={<HeaderActions actions={userActions} />}
+          // children={<HeaderActions actions={userActions} />}
         />
       }
     >
