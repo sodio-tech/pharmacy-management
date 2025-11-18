@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { useUser } from '@/contexts/UserContext'
 import { backendApi } from '@/lib/axios-config'
-import countries from 'world-countries'
 
 interface UserProfile {
   id: number
@@ -18,45 +17,19 @@ interface UserProfile {
   image?: string
   role: string
   subscription_status?: string
-  country?: string
   currency?: string
 }
 
-interface Country {
+interface Currency {
   code: string
-  name: string
-  currency: string
-  currencyCode: string
 }
-
-// Get countries from world-countries library and map to our format
-const getCountriesWithCurrencies = (): Country[] => {
-  return countries
-    .filter((country) => country.cca2 && country.currencies) // Filter countries with currency data
-    .map((country) => {
-      // Get first currency (most countries have one primary currency)
-      const currencyCode = Object.keys(country.currencies || {})[0] || ''
-      const currencyInfo = country.currencies?.[currencyCode]
-      const currencyName = currencyInfo?.name || currencyCode
-      
-      return {
-        code: country.cca2, // ISO 3166-1 alpha-2 code (e.g., 'IN', 'US')
-        name: country.name.common, // Common name
-        currency: currencyName,
-        currencyCode: currencyCode
-      }
-    })
-    .filter((country) => country.currencyCode) // Only include countries with valid currency
-    .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically by name
-}
-
-// Memoize countries list for performance
-const COUNTRIES = getCountriesWithCurrencies()
 
 const Profile = () => {
   const { user: sessionUser, isLoading: isPending, refetch } = useUser()
   const [isUpdating, setIsUpdating] = useState(false)
   const [selectedProfilePhoto, setSelectedProfilePhoto] = useState<File | null>(null)
+  const [currencies, setCurrencies] = useState<Currency[]>([])
+  const [isLoadingCurrencies, setIsLoadingCurrencies] = useState(false)
   const [formData, setFormData] = useState<UserProfile>({
     id: 0,
     fullname: '',
@@ -66,19 +39,33 @@ const Profile = () => {
     image: '',
     role: '',
     subscription_status: '',
-    country: 'IN',
     currency: 'INR'
   })
+
+  // Fetch currencies from API
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      setIsLoadingCurrencies(true)
+      try {
+        const response = await backendApi.get('/v1/org/currencies')
+        if (response.data.success && response.data.data?.currencies) {
+          setCurrencies(response.data.data.currencies)
+        }
+      } catch (error) {
+        console.error('Error fetching currencies:', error)
+        toast.error('Failed to load currencies')
+      } finally {
+        setIsLoadingCurrencies(false)
+      }
+    }
+    fetchCurrencies()
+  }, [])
 
   // Initialize form data when user loads or image updates
   useEffect(() => {
     if (sessionUser) {
       // Get currency_code from API response, default to INR if not present
       const currencyCode = sessionUser.currency_code || 'INR'
-      
-      // Find country based on currency code, default to India (IN)
-      const countryForCurrency = COUNTRIES.find(c => c.currencyCode === currencyCode)
-      const defaultCountry = countryForCurrency?.code || 'IN'
       
       setFormData({
         id: sessionUser.id,
@@ -89,7 +76,6 @@ const Profile = () => {
         image: sessionUser.image || '',
         role: sessionUser.role || '',
         subscription_status: sessionUser.subscription_status || '',
-        country: sessionUser.country || defaultCountry,
         currency: currencyCode
       })
     }
@@ -143,10 +129,6 @@ const Profile = () => {
       // Get currency_code from API response, default to INR if not present
       const currencyCode = sessionUser.currency_code || 'INR'
       
-      // Find country based on currency code, default to India (IN)
-      const countryForCurrency = COUNTRIES.find(c => c.currencyCode === currencyCode)
-      const defaultCountry = countryForCurrency?.code || 'IN'
-      
       setFormData({
         id: sessionUser.id,
         fullname: sessionUser.fullname || '',
@@ -156,7 +138,6 @@ const Profile = () => {
         image: sessionUser.image || '',
         role: sessionUser.role || '',
         subscription_status: sessionUser.subscription_status || '',
-        country: sessionUser.country || defaultCountry,
         currency: currencyCode
       })
       setSelectedProfilePhoto(null)
@@ -259,34 +240,26 @@ const Profile = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="country" className="text-[#374151] font-medium">
+            <Label htmlFor="currency" className="text-[#374151] font-medium">
               Your Currency
             </Label>
             <Select
-              value={formData.country || 'IN'}
+              value={formData.currency || 'INR'}
               onValueChange={(value) => {
-                const selectedCountry = COUNTRIES.find(c => c.code === value)
-                if (selectedCountry) {
-                  setFormData(prev => ({
-                    ...prev,
-                    country: selectedCountry.code,
-                    currency: selectedCountry.currencyCode
-                  }))
-                }
+                setFormData(prev => ({
+                  ...prev,
+                  currency: value
+                }))
               }}
+              disabled={isLoadingCurrencies}
             >
               <SelectTrigger className="w-full bg-white border-[#e5e7eb]">
-                <SelectValue placeholder="Select country" />
+                <SelectValue placeholder={isLoadingCurrencies ? "Loading currencies..." : "Select currency"} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
-                {COUNTRIES.map((country) => (
-                  <SelectItem key={country.code} value={country.code}>
-                    <div className="flex items-center justify-between w-full gap-2">
-                      <span className="flex-1">{country.name}</span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {country.currencyCode}
-                      </span>
-                    </div>
+                {currencies.map((currency) => (
+                  <SelectItem key={currency.code} value={currency.code}>
+                    {currency.code}
                   </SelectItem>
                 ))}
               </SelectContent>
