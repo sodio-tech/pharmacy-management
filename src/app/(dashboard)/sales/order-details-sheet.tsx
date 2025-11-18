@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Printer, X, Clock, User, Package, CheckCircle, AlertCircle } from 'lucide-react'
 import { backendApi } from "@/lib/axios-config"
+import { toast } from "react-toastify"
 
 interface OrderDetails {
   id: number
@@ -63,6 +64,7 @@ export function OrderDetailsSheet({
 }: OrderDetailsSheetProps) {
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null)
   const [loading, setLoading] = useState(false)
+  const [printing, setPrinting] = useState(false)
 
   useEffect(() => {
     if (open && orderId && branchId) {
@@ -165,6 +167,45 @@ export function OrderDetailsSheet({
     }
   }
 
+  const handlePrint = async () => {
+    if (!orderId) {
+      return
+    }
+
+    try {
+      setPrinting(true)
+      const response = await backendApi.get(
+        `/v1/sales/generate-reciept/${orderId}?branch_id=${branchId}`,
+        {
+          responseType: 'blob',
+        }
+      )
+
+      // Create blob from response data
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      
+      // Create download link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `invoice-${orderDetails?.invoice_id || orderId}.pdf`)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      // Clean up the URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+      }, 100)
+      
+    } catch (error) {
+      toast.error("Receipt generate failed")
+    } finally {
+      setPrinting(false)
+    }
+  }
+
   if (loading) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -186,11 +227,9 @@ export function OrderDetailsSheet({
   if (!orderDetails) {
     return null
   }
-  console.log(orderDetails,"orderDetails")
 
   const subtotal = calculateSubtotal()
   const gst = calculateGST()
-  // Use API total_amount directly, don't calculate
   const totalAmount = getTotalAmount()
 
   return (
@@ -368,9 +407,11 @@ export function OrderDetailsSheet({
               <Button
                 variant="outline"
                 className="flex-1"
+                onClick={handlePrint}
+                disabled={printing || !orderId}
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Print
+                {printing ? "Generating..." : "Print"}
               </Button>
               <Button
                 variant="outline"
