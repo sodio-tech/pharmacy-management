@@ -100,13 +100,10 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
         }))
         setCustomers(mappedCustomers)
         setFilteredCustomers(mappedCustomers)
-      } else {
-        toast.error("Failed to fetch customers")
       }
     } catch (error: unknown) {
       console.error("[v0] Error fetching customers:", error)
       const err = error as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(err?.response?.data?.message || "Error connecting to the server")
     } finally {
       setIsLoading(false)
     }

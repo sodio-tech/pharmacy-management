@@ -73,7 +73,6 @@ export function usePaymentModes(): UsePaymentModesReturn {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message
       setError(errorMessage || "Failed to fetch payment modes")
       setPaymentMethods([])
-      toast.error("Failed to fetch payment modes")
     } finally {
       setIsLoading(false)
     }

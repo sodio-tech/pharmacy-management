@@ -79,7 +79,6 @@ export function InventoryStats() {
         }
       } catch (error) {
         console.error("Failed to fetch analytics:", error)
-        toast.error("Failed to load analytics")
         setRealTimeUpdates(false)
       } finally {
         setLoading(false)

@@ -36,12 +36,9 @@ export function ReportsStats({ branchId }: ReportsStatsProps) {
 
       if (response.data?.success && response.data?.data) {
         setAnalyticsData(response.data.data)
-      } else {
-        toast.error("Failed to fetch analytics data")
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || "Failed to fetch analytics data")
       setAnalyticsData(null)
     } finally {
       setIsLoading(false)

@@ -75,7 +75,6 @@ export function ProductCategories({
     } catch (error: unknown) {
       console.error('Error fetching branch stock:', error)
       const err = error as { response?: { data?: { message?: string } }; message?: string }
-      toast.error(err?.response?.data?.message || 'Failed to fetch branch stock')
       setProducts([])
     } finally {
       setLoading(false)

@@ -25,12 +25,9 @@ export function UserStats() {
 
       if (response.data?.success && response.data?.data) {
         setUserData(response.data.data)
-      } else {
-        toast.error("Failed to fetch user management data")
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || "Failed to fetch user management data")
       setUserData(null)
     } finally {
       setIsLoading(false)

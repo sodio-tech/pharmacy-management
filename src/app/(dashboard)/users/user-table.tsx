@@ -105,12 +105,10 @@ export function UserTable() {
         const mappedUsers = response.data.data.employees.map(mapApiResponseToUser)
         setUsers(mappedUsers)
       } else {
-        toast.error("Failed to fetch users")
         setUsers([])
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || "Failed to fetch users")
       setUsers([])
     } finally {
       setLoading(false)
