@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table"
 import { Calendar, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { backendApi } from "@/lib/axios-config"
+import { toast } from "react-toastify"
 
 interface TransactionsModalProps {
   open: boolean
@@ -65,6 +66,7 @@ interface ApiResponse {
 export function TransactionsModal({ open, onOpenChange, branchId }: TransactionsModalProps) {
   const [transactions, setTransactions] = useState<ApiSale[]>([])
   const [loading, setLoading] = useState(false)
+  const [printing, setPrinting] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [startDate, setStartDate] = useState("")
@@ -108,23 +110,44 @@ export function TransactionsModal({ open, onOpenChange, branchId }: Transactions
     }
   }, [open, branchId, currentPage, startDate, endDate])
 
-  // const handleDownloadInvoice = async (saleId: number) => {
-  //   try {
-  //     const response = await backendApi.get(`/v1/sales/invoice/${saleId}`, {
-  //       responseType: 'blob',
-  //     })
+  const handleDownloadInvoice = async (saleId: number, invoiceId?: string) => {
+    if (!saleId) {
+      return
+    }
+
+    try {
+      setPrinting(true)
+      const response = await backendApi.get(
+        `/v1/sales/generate-reciept/${saleId}?branch_id=${branchId}`,
+        {
+          responseType: 'blob',
+        }
+      )
+
+      // Create blob from response data
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
       
-  //     const url = window.URL.createObjectURL(new Blob([response.data]))
-  //     const link = document.createElement('a')
-  //     link.href = url
-  //     link.setAttribute('download', `invoice-${saleId}.pdf`)
-  //     document.body.appendChild(link)
-  //     link.click()
-  //     link.remove()
-  //   } catch (error) {
-  //     console.error('Error downloading invoice:', error)
-  //   }
-  // }
+      // Create download link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `invoice-${invoiceId || saleId}.pdf`)
+      link.style.display = 'none'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      
+      // Clean up the URL
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+      }, 100)
+      
+    } catch (error) {
+      toast.error("Receipt generate failed")
+    } finally {
+      setPrinting(false)
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -268,7 +291,8 @@ export function TransactionsModal({ open, onOpenChange, branchId }: Transactions
                       <Button
                         variant="ghost"
                         size="sm"
-                        // onClick={() => handleDownloadInvoice(transaction.id)}
+                        onClick={() => handleDownloadInvoice(transaction.id, transaction.invoice_id)}
+                        disabled={printing}
                         title="Download Invoice"
                       >
                         <Download className="h-4 w-4" />
