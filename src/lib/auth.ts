@@ -6,10 +6,19 @@ import { clearAuthCookies, isAuthenticated } from "./cookies";
 import { backendApi } from "./axios-config";
 
 /**
- * Logout user - clear cookies and redirect to login
+ * Logout user - clear cookies, localStorage, and redirect to login
  */
 export const logout = () => {
   clearAuthCookies();
+  
+  // Clear access_token from localStorage (Redux persistence)
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("access_token");
+    } catch (error) {
+      console.error("Failed to clear access token from localStorage:", error);
+    }
+  }
   
   if (typeof window !== "undefined") {
     window.location.href = "/login";

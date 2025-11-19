@@ -14,6 +14,8 @@ import axios from "axios"
 import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
 import { setAuthCookies } from "@/lib/cookies"
 import { resendVerificationEmail } from "@/lib/auth"
+import { useAppDispatch } from "@/store/hooks"
+import { setAccessToken } from "@/store/slices/authSlice"
 
 const loginSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
@@ -28,6 +30,7 @@ const LoginForm = () => {
     const [showPassword, setShowPassword] = useState(false)
     const router = useRouter()
     const searchParams = useSearchParams()
+    const dispatch = useAppDispatch()
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -68,10 +71,13 @@ const LoginForm = () => {
 
             const response = await axios.post(`${API}/api/v1/auth/sign-in`, userData)
             if (response.status === 200 && response.data.success) {
-                const { access_token } = response.data.data
+                const { access_token, refresh_token } = response.data.data
 
-                // Set authentication cookies
-                setAuthCookies({ access_token })
+                // Store refresh_token in cookie
+                setAuthCookies({ refresh_token })
+
+                // Store access_token in Redux state (with persistence)
+                dispatch(setAccessToken(access_token))
 
                 toast.success("Login successful!")
                 window.location.href = DEFAULT_REDIRECT_PATH

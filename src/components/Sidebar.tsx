@@ -21,7 +21,10 @@ import { logout } from "@/lib/auth"
 import { useState, useEffect } from "react"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { setSelectedBranch } from "@/store/slices/branchSlice"
+import { setAccessToken, clearAuth } from "@/store/slices/authSlice"
 import { useBranchSync } from "@/hooks/useBranchSync"
+import { backendApi } from "@/lib/axios-config"
+import { toast } from "react-toastify"
 
 const sidebarItems = [
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
@@ -70,6 +73,27 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
   const handleNavigation = (href: string) => {
     router.push(href)
     onCloseMobileMenu?.()
+  }
+
+  const handleBranchChange = async (branchId: string) => {
+    try {
+      const response = await backendApi.patch(`/v1/switch-branch?branch_id=${branchId}`)
+      
+      if (response.data?.success && response.data?.data) {
+        const { access_token } = response.data.data
+        
+        // Update access_token in Redux state
+        dispatch(setAccessToken(access_token))
+        
+        // Update selected branch in Redux state
+        dispatch(setSelectedBranch(Number(branchId)))
+      }
+    } catch (error: any) {
+      console.error("Error switching branch:", error)
+      toast.error(
+        error.response?.data?.message || "Failed to switch branch. Please try again."
+      )
+    }
   }
 
   return (
@@ -132,7 +156,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
             <div className="mb-4">
               <Select
                 value={selectedBranchId?.toString() || ""}
-                onValueChange={(value) => dispatch(setSelectedBranch(Number(value)))}
+                onValueChange={handleBranchChange}
                 disabled={isLoadingBranches || branches.length === 0}
               >
                 <SelectTrigger className="w-full">
@@ -201,6 +225,8 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                 size="sm"
                 className="w-full justify-start gap-2 text-[#6b7280] hover:text-[#111827] hover:bg-white"
                 onClick={() => {
+                  // Clear Redux auth state
+                  dispatch(clearAuth())
                   logout()
                 }}
               >

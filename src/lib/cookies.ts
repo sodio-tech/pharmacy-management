@@ -3,7 +3,7 @@
  */
 
 export interface UserCookieData {
-  access_token: string;
+  refresh_token?: string;
 }
 
 /**
@@ -21,8 +21,13 @@ export const setAuthCookies = (
   const isProduction = hostname.includes("sodio.tech");
   const domainOption = isProduction ? `domain=.sodio.tech;` : "";
   
-  const cookieOptions = `expires=${expiryDate.toUTCString()}; path=/; ${domainOption}SameSite=Strict`;
-  document.cookie = `access_token=${data.access_token}; ${cookieOptions}`;
+  // Set refresh_token in cookie (longer expiry - 7 days)
+  if (data.refresh_token) {
+    const refreshExpiryDate = new Date();
+    refreshExpiryDate.setTime(refreshExpiryDate.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const refreshCookieOptions = `expires=${refreshExpiryDate.toUTCString()}; path=/; ${domainOption}SameSite=Strict`;
+    document.cookie = `refresh_token=${data.refresh_token}; ${refreshCookieOptions}`;
+  }
 };
 
 /**
@@ -42,22 +47,32 @@ export const getCookie = (name: string): string | null => {
 };
 
 /**
- * Get access token from cookie
+ * Get access token from cookie (deprecated - use Redux state instead)
+ * This function is kept for backward compatibility but always returns null
+ * Use Redux state to get access_token instead
  */
 export const getAccessToken = (): string | null => {
-  return getCookie("access_token");
+  return null; // access_token is no longer stored in cookies
+};
+
+/**
+ * Get refresh token from cookie
+ */
+export const getRefreshToken = (): string | null => {
+  return getCookie("refresh_token");
 };
 
 /**
  * Get user data from cookies
+ * Note: access_token is no longer stored in cookies, only refresh_token
  */
 export const getUserFromCookies = (): UserCookieData | null => {
-  const access_token = getCookie("access_token");
+  const refresh_token = getCookie("refresh_token");
 
-  if (!access_token) return null;
+  if (!refresh_token) return null;
 
   return {
-    access_token,
+    refresh_token,
   };
 };
 
@@ -74,13 +89,16 @@ export const clearAuthCookies = () => {
   
   const cookieOptions = `expires=${pastDate}; path=/; ${domainOption}SameSite=Strict`;
 
-  document.cookie = `access_token=; ${cookieOptions}`;
+  // Clear refresh_token cookie
+  document.cookie = `refresh_token=; ${cookieOptions}`;
 };
 
 /**
- * Check if user is authenticated
+ * Check if user is authenticated (deprecated - use Redux state instead)
+ * This checks for refresh_token in cookies as a fallback
+ * For proper authentication check, use Redux state access_token
  */
 export const isAuthenticated = (): boolean => {
-  return !!getAccessToken();
+  return !!getRefreshToken();
 };
 

@@ -1,8 +1,10 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { backendApi } from '@/lib/axios-config'
-import { getAccessToken, clearAuthCookies } from '@/lib/cookies'
+import { clearAuthCookies } from '@/lib/cookies'
+import { useAppSelector, useAppDispatch } from '@/store/hooks'
+import { clearAuth } from '@/store/slices/authSlice'
 
 // User Interface (matches API response exactly)
 export interface User {
@@ -42,9 +44,12 @@ export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const accessToken = useAppSelector((state) => state.auth.access_token)
+  const dispatch = useAppDispatch()
 
-  const fetchUserData = async () => {
-    const token = getAccessToken()
+  const fetchUserData = useCallback(async () => {
+    // Get access_token from Redux state (persisted in localStorage)
+    const token = accessToken || (typeof window !== "undefined" ? localStorage.getItem("access_token") : null)
     
     if (!token) {
       setUser(null)
@@ -76,9 +81,10 @@ export function UserProvider({ children }: UserProviderProps) {
       
       const error = err as { response?: { status?: number; data?: { message?: string } } }
       
-      // If unauthorized, clear cookies and redirect to login
+      // If unauthorized, clear cookies, Redux state, and redirect to login
       if (error.response?.status === 401) {
         clearAuthCookies()
+        dispatch(clearAuth())
         setUser(null)
       } else {
         setError(error.response?.data?.message || 'Failed to fetch user data')
@@ -86,11 +92,11 @@ export function UserProvider({ children }: UserProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [accessToken, dispatch])
 
   useEffect(() => {
     fetchUserData()
-  }, [])
+  }, [fetchUserData])
 
   return (
     <UserContext.Provider value={{ user, isLoading, error, refetch: fetchUserData }}>

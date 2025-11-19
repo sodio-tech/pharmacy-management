@@ -29,6 +29,7 @@ interface ReportsStatsProps {
 export function ReportsStats({ branchId }: ReportsStatsProps) {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
   const fetchAnalytics = useCallback(async (branchId: number) => {
     try {
@@ -44,6 +45,11 @@ export function ReportsStats({ branchId }: ReportsStatsProps) {
     } finally {
       setIsLoading(false)
     }
+  }, [])
+
+  // Set mounted flag to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true)
   }, [])
 
   // Fetch analytics data when branch is selected
@@ -165,7 +171,9 @@ export function ReportsStats({ branchId }: ReportsStatsProps) {
       ) : (
         <Card>
           <CardContent className="p-6 text-center text-muted-foreground">
-            {branchId
+            {!isMounted
+              ? "Select a branch to view analytics"
+              : branchId
               ? "Loading analytics data..."
               : "Select a branch to view analytics"}
           </CardContent>

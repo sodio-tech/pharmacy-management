@@ -7,16 +7,14 @@ import {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get("access_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
 
-  // 🧠 If already on a restricted path like /login or /signup and not logged in, allow access
   if (RESTRICTED_PATHS.includes(pathname)) {
-    if (!accessToken) return NextResponse.next(); // allow access
-    return NextResponse.redirect(new URL(DEFAULT_REDIRECT_PATH, request.url)); // already logged in
+    if (!refreshToken) return NextResponse.next();
+    return NextResponse.redirect(new URL(DEFAULT_REDIRECT_PATH, request.url));
   }
 
-  // 🧠 For all other paths, redirect to login if not authenticated
-  if (!accessToken) {
+  if (!refreshToken) {
     return NextResponse.redirect(new URL(DEFAULT_RESTRICTED_REDIRECT_PATH, request.url));
   }
 
