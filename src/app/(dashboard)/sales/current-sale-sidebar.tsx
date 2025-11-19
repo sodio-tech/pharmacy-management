@@ -24,7 +24,7 @@ interface Prescription {
 }
 
 interface CurrentSaleSidebarProps {
-  branchId?: string
+  branchId?: number | string | null
 }
 
 export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
@@ -151,7 +151,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
       if (customer?.id) {
         formData.append("customer_id", String(customer.id))
       }
-      formData.append("branch_id", branchId)
+      formData.append("branch_id", branchId.toString())
       formData.append("payment_mode", String(selectedPaymentModeId))
 
       // Format cart items according to API requirements

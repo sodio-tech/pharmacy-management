@@ -2,10 +2,10 @@
 
 import { UserProvider, useUser } from "@/contexts/UserContext"
 import { ToastContainer } from "react-toastify"
+import { ReduxProvider } from "@/store/ReduxProvider"
 
 function AppLoadingOverlay({ children }: { children: React.ReactNode }) {
   const { isLoading } = useUser()
-
   return (
     <>
       {isLoading && (
@@ -23,10 +23,12 @@ function AppLoadingOverlay({ children }: { children: React.ReactNode }) {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <UserProvider>
-      <ToastContainer />
-      <AppLoadingOverlay>{children}</AppLoadingOverlay>
-    </UserProvider>
+    <ReduxProvider>
+      <UserProvider>
+        <ToastContainer />
+        <AppLoadingOverlay>{children}</AppLoadingOverlay>
+      </UserProvider>
+    </ReduxProvider>
   )
 }
 

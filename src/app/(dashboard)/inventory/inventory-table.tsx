@@ -13,12 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Product } from "@/types/sales"
 import { backendApi } from "@/lib/axios-config"
 import { useProductCategories } from "@/hooks/useProductCategories"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
 import { useUser } from "@/contexts/UserContext"
+import { useBranchSync } from "@/hooks/useBranchSync"
 
 interface InventoryTableProps {
   onAddProduct: () => void
-  onEditProduct: (product: Product, branchId?: string) => void
+  onEditProduct: (product: Product, branchId?: number | string | null) => void
   canAddProducts?: boolean
   refreshTrigger?: number
 }
@@ -34,7 +35,6 @@ export function InventoryTable({
   const [searchTerm, setSearchTerm] = useState("")
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [selectedBranch, setSelectedBranch] = useState("")
   // const [activeFilter, setActiveFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -49,14 +49,10 @@ export function InventoryTable({
   // Fetch categories and branches from API
   const { categories } = useProductCategories()
   const { user } = useUser()
-  const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
-
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranch) {
-      setSelectedBranch(branches[0].id.toString())
-    }
-  }, [branches, selectedBranch])
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
 
   // Filter categories based on search term
   const filteredCategories = categories.filter((category) =>
@@ -81,10 +77,10 @@ export function InventoryTable({
     }
   }, [searchTerm])
 
-  // Reset page when category, branch or filter changes
+  // Reset page when category or branch changes
   useEffect(() => {
     setPage(1)
-  }, [selectedCategory, selectedBranch])
+  }, [selectedCategory, selectedBranchId])
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -101,8 +97,8 @@ export function InventoryTable({
         params.append('product_category_id', selectedCategory)
       }
       
-      if (selectedBranch) {
-        params.append('branch_id', selectedBranch)
+      if (selectedBranchId) {
+        params.append('branch_id', selectedBranchId.toString())
       }
       
       // if (activeFilter === "lowStock") {
@@ -148,7 +144,7 @@ export function InventoryTable({
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearchTerm, selectedCategory, selectedBranch])
+  }, [page, debouncedSearchTerm, selectedCategory, selectedBranchId])
 
   useEffect(() => {
     fetchProducts()
@@ -171,13 +167,16 @@ export function InventoryTable({
 
     try {
       setIsDeleting(true)
-      await backendApi.delete(`/products/${productToDelete.id}`)
+      await backendApi.patch(`/v1/products/make-inactive/${productToDelete.id}`)
       toast.success("Product deleted successfully")
       fetchProducts()
       setDeleteModalOpen(false)
       setProductToDelete(null)
     } catch (error: unknown) {
-      console.error("Failed to delete product:", error)
+      console.error("Failed to make product inactive:", error)
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to make product inactive"
+      toast.error(errorMessage)
     } finally {
       setIsDeleting(false)
     }
@@ -294,29 +293,6 @@ export function InventoryTable({
               </SelectContent>
             </Select>
 
-            <Select 
-              value={selectedBranch} 
-              onValueChange={setSelectedBranch} 
-              disabled={isLoadingBranches || branches.length === 0}
-            >
-              <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
-                <SelectValue placeholder={isLoadingBranches ? "Loading..." : branches.length === 0 ? "No branches" : "Select branch"} />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.length > 0 ? (
-                  branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id.toString()}>
-                      {branch.branch_name}
-                      {branch.branch_location && ` - ${branch.branch_location}`}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-branches" disabled>
-                    {isLoadingBranches ? "Loading branches..." : "No branches available"}
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
 
             {/* <Select value={activeFilter} onValueChange={setActiveFilter} defaultValue="all">
               <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
@@ -454,7 +430,7 @@ export function InventoryTable({
                               className="p-1 h-7 w-7 md:h-8 md:w-8"
                               onClick={() => {
                                 // Pass selected branch_id from filter to edit product
-                                onEditProduct?.(product, selectedBranch || undefined)
+                                onEditProduct?.(product, selectedBranchId || undefined)
                               }}
                               title="Edit Product"
                             >

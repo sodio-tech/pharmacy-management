@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Package, Calendar, TrendingUp, AlertTriangle, Clock } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector, useAppDispatch } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
+import { setSelectedBranch } from "@/store/slices/branchSlice"
 import {
   Select,
   SelectContent,
@@ -43,20 +45,19 @@ interface ProductWithBatches {
 
 export function BatchTracking() {
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const dispatch = useAppDispatch()
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const branches = useAppSelector((state) => state.branch.branches)
+  const loadingBranches = useAppSelector((state) => state.branch.isLoading)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
+  
   const [allProducts, setAllProducts] = useState<ProductWithBatches[]>([])
   const [products, setProducts] = useState<ProductWithBatches[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [expiryFilter, setExpiryFilter] = useState("all")
-
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id.toString())
-    }
-  }, [branches, selectedBranchId])
 
   const fetchBatches = useCallback(async () => {
     if (!selectedBranchId) return
@@ -74,7 +75,7 @@ export function BatchTracking() {
       // "all" and "expired" don't need query params
       
       const queryString = params.toString()
-      const url = `/v1/inventory/batches/${selectedBranchId}${queryString ? `?${queryString}` : ''}`
+      const url = `/v1/inventory/batches/${selectedBranchId.toString()}${queryString ? `?${queryString}` : ''}`
       
       const response = await backendApi.get(url)
       const data = response.data?.data || response.data
@@ -181,8 +182,8 @@ export function BatchTracking() {
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Select Branch:</label>
           <Select
-            value={selectedBranchId}
-            onValueChange={setSelectedBranchId}
+            value={selectedBranchId?.toString() || ""}
+            onValueChange={(value) => dispatch(setSelectedBranch(value ? Number(value) : null))}
             disabled={loadingBranches || branches.length === 0}
           >
             <SelectTrigger className="w-[200px]">

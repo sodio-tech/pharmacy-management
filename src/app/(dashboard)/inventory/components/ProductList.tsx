@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Edit, Eye, Plus, Trash2, AlertTriangle, Package } from "lucide-react";
 import { toast } from "react-toastify";
+import { backendApi } from "@/lib/axios-config";
 
 interface Product {
   id: string;
@@ -81,22 +82,19 @@ export function ProductList({
   };
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
-    if (!confirm(`Are you sure you want to delete "${productName}"?`)) {
+    if (!confirm(`Are you sure you want to make "${productName}" inactive?`)) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        toast.success("Product deleted successfully");
-        fetchProducts();
-        onStatsUpdate();
-      }
+      await backendApi.patch(`/v1/products/make-inactive/${productId}`);
+      toast.success("Product made inactive successfully");
+      fetchProducts();
+      onStatsUpdate();
     } catch (error: any) {
-      console.error("Error deleting product:", error);
+      console.error("Error making product inactive:", error);
+      const errorMessage = error?.response?.data?.message || error?.message || "Failed to make product inactive";
+      toast.error(errorMessage);
     }
   };
 

@@ -3,23 +3,25 @@ import {
   Package,
   FileText,
   ShoppingCart,
-  Users,
   BarChart3,
   Shield,
   LogOut,
-  CreditCard,
   UserCheck,
   User,
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "./ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { usePathname, useRouter } from "next/navigation"
 import Image from "next/image"
 import logo from "../../public/logo.png"
 import { useUser } from "@/contexts/UserContext"
 import { logout } from "@/lib/auth"
 import { useState, useEffect } from "react"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { setSelectedBranch } from "@/store/slices/branchSlice"
+import { useBranchSync } from "@/hooks/useBranchSync"
 
 const sidebarItems = [
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
@@ -44,8 +46,16 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
   const pathname = usePathname()
   const router = useRouter()
   const [imageError, setImageError] = useState(false)
+  const dispatch = useAppDispatch()
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const branches = useAppSelector((state) => state.branch.branches)
+  const isLoadingBranches = useAppSelector((state) => state.branch.isLoading)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
 
   const isPharmacist = user?.role === "PHARMACIST"
+  const isAdminOrSuperAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
 
   // Reset image error when user changes
   useEffect(() => {
@@ -117,6 +127,37 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
         </nav>
 
         <div className="p-4 border-t border-[#e5e7eb] flex-shrink-0 bg-white/50">
+          {/* Branch Selector - Only visible to Admin and Super Admin */}
+          {isAdminOrSuperAdmin && user && branches.length > 0 && (
+            <div className="mb-4">
+              <Select
+                value={selectedBranchId?.toString() || ""}
+                onValueChange={(value) => dispatch(setSelectedBranch(Number(value)))}
+                disabled={isLoadingBranches || branches.length === 0}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue 
+                    placeholder={
+                      isLoadingBranches 
+                        ? "Loading..." 
+                        : branches.length === 0 
+                          ? "No branches" 
+                          : "Select branch"
+                    } 
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {branch.branch_name}
+                      {branch.branch_location && ` - ${branch.branch_location}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {isPending ? (
             <p className="text-sm text-[#6b7280]">Loading...</p>
           ) : user ? (

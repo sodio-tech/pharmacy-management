@@ -53,7 +53,7 @@ interface OrderDetailsSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   orderId: string
-  branchId?: string
+  branchId?: number | string | null
 }
 
 export function OrderDetailsSheet({
@@ -76,7 +76,7 @@ export function OrderDetailsSheet({
     if (!branchId || !orderId) return
     try {
       setLoading(true)
-      const response = await backendApi.get(`/v1/sales/list/${branchId}?sale_id=${orderId}`)
+      const response = await backendApi.get(`/v1/sales/list/${branchId.toString()}?sale_id=${orderId}`)
       if (response.data?.success && response.data?.data?.sales && response.data.data.sales.length > 0) {
         // Get the first item from the result array
         const saleData = response.data.data.sales[0]
@@ -168,14 +168,14 @@ export function OrderDetailsSheet({
   }
 
   const handlePrint = async () => {
-    if (!orderId) {
+    if (!orderId || !branchId) {
       return
     }
 
     try {
       setPrinting(true)
       const response = await backendApi.get(
-        `/v1/sales/generate-reciept/${orderId}?branch_id=${branchId}`,
+        `/v1/sales/generate-reciept/${orderId}?branch_id=${branchId.toString()}`,
         {
           responseType: 'blob',
         }

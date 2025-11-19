@@ -7,7 +7,7 @@ import { backendApi } from "@/lib/axios-config"
 import { formatPercentage } from "@/lib/utils"
 
 interface SalesStatsProps {
-  branchId?: string
+  branchId?: number | string | null
 }
 
 interface ApiAnalyticsResponse {
@@ -37,7 +37,7 @@ export function SalesStats({ branchId }: SalesStatsProps) {
 
     try {
       setLoading(true)
-      const response = await backendApi.get<ApiAnalyticsResponse>(`/v1/sales/general-analytics/${branchId}`)
+      const response = await backendApi.get<ApiAnalyticsResponse>(`/v1/sales/general-analytics/${branchId?.toString()}`)
       const data = response.data?.data
 
       if (data) {

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, ShoppingCart, DollarSign, Percent } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
-import { toast } from "react-toastify"
 
 interface AnalyticsData {
   today_earnings: number
@@ -19,6 +18,8 @@ interface AnalyticsData {
   this_month_transactions_change_percent: number
   this_month_avg_earnings: number
   this_month_avg_earnings_change_percent: number
+  this_month_profit_margin: number
+  profit_margin_percent_change: number
 }
 
 interface ReportsStatsProps {
@@ -108,8 +109,11 @@ export function ReportsStats({ branchId }: ReportsStatsProps) {
       },
       {
         title: "Profit Margin",
-        value: "24.8%",
-        change: "+2.3% from last month",
+        value: `${analyticsData.this_month_profit_margin.toFixed(2)}%`,
+        change: formatChange(
+          analyticsData.profit_margin_percent_change,
+          "from last month"
+        ),
         changeType: "positive" as const,
         icon: Percent,
         color: "text-orange-600",

@@ -19,7 +19,7 @@ interface Transaction {
 }
 
 interface RecentTransactionsProps {
-  branchId?: string
+  branchId?: number | string | null
 }
 
 interface ApiSaleItem {
@@ -115,7 +115,7 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
 
     try {
       setLoading(true)
-      const response = await backendApi.get<ApiResponse>(`/v1/sales/list/${branchId}?page=1&limit=2`)
+      const response = await backendApi.get<ApiResponse>(`/v1/sales/list/${branchId?.toString()}?page=1&limit=2`)
       const data = response.data?.data
 
       if (data?.sales) {

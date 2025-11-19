@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
 import { backendApi } from "@/lib/axios-config"
-import { toast } from "react-toastify"
 
 export interface Branch {
   id: number

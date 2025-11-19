@@ -31,7 +31,8 @@ import { ChevronsUpDownIcon, CheckIcon, SearchIcon, PlusIcon, XIcon } from "luci
 import { cn } from "@/lib/utils"
 import { backendApi } from "@/lib/axios-config"
 import { useProductCategories } from "@/hooks/useProductCategories"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
 import { useUser } from "@/contexts/UserContext"
 
 interface Supplier {
@@ -88,7 +89,11 @@ export function NewPODialog({ open, onOpenChange }: NewPODialogProps) {
   const [isLoadingData, setIsLoadingData] = useState(false)
   const { categories } = useProductCategories()
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
+  const branches = useAppSelector((state) => state.branch.branches)
+  const loadingBranches = useAppSelector((state) => state.branch.isLoading)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
   const [supplierOpen, setSupplierOpen] = useState(false)
   const [supplierSearch, setSupplierSearch] = useState("")
   const [debouncedSupplierSearch, setDebouncedSupplierSearch] = useState("")

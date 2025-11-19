@@ -14,7 +14,7 @@ interface ProductCategoriesProps {
   onCategorySelect: (category: string) => void
   onSearchChange: (searchTerm: string) => void
   selectedCategory: string
-  selectedBranchId: string
+  selectedBranchId: number | string | null
   onProductsLoad?: (products: any[]) => void
 }
 
@@ -56,12 +56,12 @@ export function ProductCategories({
     )
   }, [products, searchTerm])
 
-  const fetchBranchStock = useCallback(async (branchId: string) => {
+  const fetchBranchStock = useCallback(async (branchId: number | string | null) => {
     if (!branchId) return
 
     try {
       setLoading(true)
-      const response = await backendApi.get(`/v1/inventory/branch-stock/${branchId}`)
+      const response = await backendApi.get(`/v1/inventory/branch-stock/${branchId.toString()}`)
       const data = response.data?.data
 
       if (data?.branch_stock) {

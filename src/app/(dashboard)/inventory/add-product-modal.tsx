@@ -15,7 +15,8 @@ import { IdentificationSection } from "./components/IdentificationSection"
 import { PricingSection } from "./components/PricingSection"
 import { PackagingStockSection } from "./components/PackagingStockSection"
 import { useUser } from "@/contexts/UserContext"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
@@ -30,7 +31,11 @@ interface AddProductModalProps {
 export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess }: AddProductModalProps) {
   const mode = product?.id ? "edit" : "add"
   const { user } = useUser()
-  const { branches, isLoading: isLoadingBranches } = useBranches(user?.pharmacy_id)
+  const branches = useAppSelector((state) => state.branch.branches)
+  const isLoadingBranches = useAppSelector((state) => state.branch.isLoading)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
 
   const branchIdToUse = branchId
     ? branchId.toString()

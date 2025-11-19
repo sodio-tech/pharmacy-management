@@ -12,6 +12,7 @@ import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { useState } from "react"
 import { useUser } from "@/contexts/UserContext"
+import { useAppSelector } from "@/store/hooks"
 
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
@@ -26,15 +27,13 @@ function InventoryContent({
 }: InventoryContentProps) {
   const [activeTab, setActiveTab] = useState("inventory")
   const [selectedProduct, setSelectedProduct] = useState(null)
-  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null)
   const [isAddBatchModalOpen, setIsAddBatchModalOpen] = useState(false)
   const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
 
-  const handleEditProduct = (product: any, branchId?: string) => {
+  const handleEditProduct = (product: any, branchId?: number | string | null) => {
     setSelectedProduct(product)
-    // Use branchId from inventory-table filter, fallback to product's branch_id
-    setSelectedBranchId(branchId || product?.branch_id?.toString() || null)
     setIsAddProductModalOpen(true)
   }
 
@@ -125,13 +124,11 @@ function InventoryContent({
         onClose={() => {
           setIsAddProductModalOpen(false)
           setSelectedProduct(null)
-          setSelectedBranchId(null)
         }}
         onSuccess={(product) => {
           // Trigger table refresh when product is added/updated
           setRefreshTrigger((prev) => prev + 1)
           setSelectedProduct(null)
-          setSelectedBranchId(null)
         }}
       />
 

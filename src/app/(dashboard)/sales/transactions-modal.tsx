@@ -19,7 +19,7 @@ import { toast } from "react-toastify"
 interface TransactionsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  branchId?: string
+  branchId?: number | string | null
 }
 
 interface ApiSaleItem {
@@ -78,7 +78,7 @@ export function TransactionsModal({ open, onOpenChange, branchId }: Transactions
 
     try {
       setLoading(true)
-      let url = `/v1/sales/list/${branchId}?page=${page}&limit=${itemsPerPage}`
+      let url = `/v1/sales/list/${branchId.toString()}?page=${page}&limit=${itemsPerPage}`
       
       if (startDate) {
         url += `&start_date=${startDate}`
@@ -111,14 +111,14 @@ export function TransactionsModal({ open, onOpenChange, branchId }: Transactions
   }, [open, branchId, currentPage, startDate, endDate])
 
   const handleDownloadInvoice = async (saleId: number, invoiceId?: string) => {
-    if (!saleId) {
+    if (!saleId || !branchId) {
       return
     }
 
     try {
       setPrinting(true)
       const response = await backendApi.get(
-        `/v1/sales/generate-reciept/${saleId}?branch_id=${branchId}`,
+        `/v1/sales/generate-reciept/${saleId}?branch_id=${branchId.toString()}`,
         {
           responseType: 'blob',
         }

@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { AlertTriangle, Clock, Package, TrendingDown, RefreshCw, X } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
 import { AddProductModal } from "./add-product-modal"
 import { Product } from "@/types/sales"
 import {
@@ -41,21 +42,17 @@ interface ExpiringProduct {
 
 export function StockAlerts() {
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
+  
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
   // const [expiringProducts, setExpiringProducts] = useState<ExpiringProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>("lowStock")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id.toString())
-    }
-  }, [branches, selectedBranchId])
 
   const fetchAlerts = useCallback(async () => {
     if (!selectedBranchId) return
@@ -98,7 +95,7 @@ export function StockAlerts() {
       name: product.product_name,
       generic_name: product.generic_name,
       image_url: product.image || null,
-      branch_id: selectedBranchId ? parseInt(selectedBranchId) : undefined,
+      branch_id: selectedBranchId || undefined,
     }
     setSelectedProduct(productForModal)
     setIsModalOpen(true)
@@ -157,25 +154,6 @@ export function StockAlerts() {
           <p className="text-xs sm:text-sm text-gray-600">Monitor low stock and expiring products</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Select Branch:</label>
-            <Select
-              value={selectedBranchId}
-              onValueChange={setSelectedBranchId}
-              disabled={loadingBranches || branches.length === 0}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={loadingBranches ? "Loading..." : branches.length === 0 ? "No branches" : "Select branch"} />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id.toString()}>
-                    {branch.branch_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
           <Button
             onClick={handleRefresh}
             variant="outline"
@@ -324,7 +302,7 @@ export function StockAlerts() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         product={selectedProduct}
-        branchId={selectedBranchId ? parseInt(selectedBranchId) : null}
+        branchId={selectedBranchId || undefined}
         onSuccess={handleModalSuccess}
       />
     </div>

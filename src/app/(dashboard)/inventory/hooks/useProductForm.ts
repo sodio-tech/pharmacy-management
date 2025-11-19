@@ -67,7 +67,7 @@ interface ApiProductResponse {
   additional_images?: string[]
 }
 
-export function useProductForm(product?: Product | null, branchId?: string) {
+export function useProductForm(product?: Product | null, branchId?: number | string | null) {
   const [formData, setFormData] = useState<ProductFormData>(initialFormData)
   const [isLoadingProduct, setIsLoadingProduct] = useState(false)
   const [productImages, setProductImages] = useState<string[]>([])
@@ -85,7 +85,7 @@ export function useProductForm(product?: Product | null, branchId?: string) {
         const params = new URLSearchParams()
         params.append('product_id', product.id.toString())
         if (branchId) {
-          params.append('branch_id', branchId)
+          params.append('branch_id', branchId.toString())
         }
         const response = await backendApi.get(`/v1/products/details?${params.toString()}`)
         const apiProduct: ApiProductResponse = response.data?.data?.products?.[0]

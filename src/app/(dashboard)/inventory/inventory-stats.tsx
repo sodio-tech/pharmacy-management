@@ -3,14 +3,8 @@ import { useState, useEffect } from "react"
 import { toast } from "react-toastify"
 import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
-import { useBranches } from "@/hooks/useBranches"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { useAppSelector } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
 
 interface InventoryAnalytics {
   active_products: number
@@ -33,8 +27,11 @@ interface InventorySummary {
 
 export function InventoryStats() {
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
+  
   const [stats, setStats] = useState<InventorySummary>({
     totalProducts: 0,
     lowStockCount: 0,
@@ -46,13 +43,6 @@ export function InventoryStats() {
   })
   const [loading, setLoading] = useState(true)
   const [realTimeUpdates, setRealTimeUpdates] = useState(false)
-
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id.toString())
-    }
-  }, [branches, selectedBranchId])
 
   // Fetch analytics when branch is selected
   useEffect(() => {
@@ -138,28 +128,6 @@ export function InventoryStats() {
 
   return (
     <div className="mb-6 w-full">
-      {/* Branch Selector */}
-      <div className="mb-6 flex w-full items-center justify-end">
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">Select Branch:</label>
-          <Select
-            value={selectedBranchId}
-            onValueChange={setSelectedBranchId}
-            disabled={loadingBranches || branches.length === 0}
-          >
-            <SelectTrigger className="w-[250px]">
-              <SelectValue placeholder={loadingBranches ? "Loading..." : branches.length === 0 ? "No branches available" : "Select branch"} />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((branch) => (
-                <SelectItem key={branch.id} value={branch.id.toString()}>
-                  {branch.branch_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

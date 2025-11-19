@@ -1,7 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ReportsStats } from "./reports-stats"
 import { SalesTrendChart } from "./sales-trend-chart"
 import { TopSellingProducts } from "./top-selling-products"
@@ -9,41 +7,19 @@ import { TopSellingProducts } from "./top-selling-products"
 // import { RecentReportsTable } from "./recent-reports-table"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
 import { useUser } from "@/contexts/UserContext"
+import { useBranchSync } from "@/hooks/useBranchSync"
 
 function ReportsContent() {
   const { user } = useUser()
-  const { branches, isLoading: branchesLoading } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null)
-
-  // Set first branch as default when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id)
-    }
-  }, [branches, selectedBranchId])
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
 
   return (
     <div className="bg-[#f9fafb]">
-      <div className="mb-4 flex items-center justify-end">
-        <Select
-          value={selectedBranchId?.toString() || ""}
-          onValueChange={(value) => setSelectedBranchId(Number(value))}
-          disabled={branchesLoading || branches.length === 0}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select Branch" />
-          </SelectTrigger>
-          <SelectContent>
-            {branches.map((branch) => (
-              <SelectItem key={branch.id} value={branch.id.toString()}>
-                {branch.branch_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
       <ReportsStats branchId={selectedBranchId} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <SalesTrendChart branchId={selectedBranchId} />

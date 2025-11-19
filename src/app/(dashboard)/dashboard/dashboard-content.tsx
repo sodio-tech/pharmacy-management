@@ -12,7 +12,8 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
-import { useBranches } from "@/hooks/useBranches"
+import { useAppSelector } from "@/store/hooks"
+import { useBranchSync } from "@/hooks/useBranchSync"
 
 type PrescriptionStatus = "UPLOADED" | "PENDING_VALIDATION" | "VALIDATED" | "REJECTED"
 
@@ -55,22 +56,18 @@ interface ExpiringProduct {
 export function DashboardContent() {
   const router = useRouter()
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
+  
   const [dashboardData, setDashboardData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
   const [lowStockItems, setLowStockItems] = useState<LowStockProduct[]>([])
   const [expiringItems, setExpiringItems] = useState<ExpiringProduct[]>([])
   const [recentPrescriptions, setRecentPrescriptions] = useState<DashboardPrescription[]>([])
   const [salesAnalytics, setSalesAnalytics] = useState<{ today_transactions: number; transactions_change_percent: number; this_month_earnings: number; this_month_earnings_change_percent: number } | null>(null)
   // const [supplierAnalytics, setSupplierAnalytics] = useState<{ this_month_orders: number; orders_percentage_change: number } | null>(null)
-
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id.toString())
-    }
-  }, [branches, selectedBranchId])
 
   const fetchStockAlerts = useCallback(async () => {
     if (!selectedBranchId) return
@@ -231,43 +228,6 @@ export function DashboardContent() {
 
   return (
     <>
-      {/* Branch Selector */}
-      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827]">Dashboard</h1>
-          <p className="text-sm text-[#6b7280] mt-1">Overview of your pharmacy operations</p>
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Label htmlFor="branch" className="text-sm font-medium text-[#374151] whitespace-nowrap">
-            Select Branch:
-          </Label>
-          <Select
-            value={selectedBranchId}
-            onValueChange={setSelectedBranchId}
-            disabled={loadingBranches || branches.length === 0}
-          >
-            <SelectTrigger className="w-full sm:w-[250px]">
-              <SelectValue 
-                placeholder={
-                  loadingBranches 
-                    ? "Loading branches..." 
-                    : branches.length === 0 
-                      ? "No branches available" 
-                      : "Select branch"
-                } 
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((branch) => (
-                <SelectItem key={branch.id} value={branch.id.toString()}>
-                  {branch.branch_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {kpiCards.map((card, index) => (
           <Card key={index} className="bg-white border-[#e5e7eb] py-0">

@@ -13,45 +13,23 @@ import LayoutSkeleton from "@/components/layout-skeleton";
 import DynamicHeader from "@/components/DynamicHeader";
 import { MedicineInventory } from "./medicine-inventory";
 import { CartProvider, useCart } from "@/contexts/CartContext";
-import { useBranches } from "@/hooks/useBranches";
+import { useAppSelector } from "@/store/hooks";
 import { useUser } from "@/contexts/UserContext";
+import { useBranchSync } from "@/hooks/useBranchSync";
 
 function SalesContent() {
   const { user } = useUser()
-  const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("")
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  
+  // Sync branches to Redux
+  useBranchSync(user?.pharmacy_id)
+  
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const { addToCart } = useCart()
 
-  // Auto-select first branch when branches are loaded
-  useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id.toString())
-    }
-  }, [branches, selectedBranchId])
-
   return (
     <>
-      {/* Branch Selection */}
-      <div className="flex gap-3 items-center mt-4 mb-4">
-        <Label htmlFor="branch">Select Branch:</Label>
-        <div className="flex-1">
-          <Select value={selectedBranchId} onValueChange={setSelectedBranchId} disabled={loadingBranches || !branches.length}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={loadingBranches ? "Loading branches..." : "Select branch"} />
-            </SelectTrigger>
-            <SelectContent>
-              {branches.map((branch) => (
-                <SelectItem key={branch.id} value={branch.id.toString()}>
-                  {branch.branch_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 w-full">
         {/* Main Content */}
 

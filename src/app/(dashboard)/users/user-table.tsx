@@ -148,7 +148,7 @@ export function UserTable() {
             </SelectContent>
           </Select>
 
-          <Select defaultValue="all-status">
+          {/* <Select defaultValue="all-status">
             <SelectTrigger className="w-40 border-[#d1d5db]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
@@ -158,7 +158,7 @@ export function UserTable() {
               <SelectItem value="away">Away</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
 
         </div>
       </div>
