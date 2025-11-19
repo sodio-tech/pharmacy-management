@@ -12,11 +12,16 @@ export interface UserCookieData {
 export const setAuthCookies = (
   data: UserCookieData,
 ) => {
-  const expiryHours = 11; // Cookie validity for 23 hours
+  const expiryHours = 11; 
   const expiryDate = new Date();
   expiryDate.setTime(expiryDate.getTime() + expiryHours * 60 * 60 * 1000);
   
-  const cookieOptions = `expires=${expiryDate.toUTCString()}; path=/; SameSite=Strict`;
+  // Set domain for production (.sodio.tech) or leave empty for localhost
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const isProduction = hostname.includes("sodio.tech");
+  const domainOption = isProduction ? `domain=.sodio.tech;` : "";
+  
+  const cookieOptions = `expires=${expiryDate.toUTCString()}; path=/; ${domainOption}SameSite=Strict`;
   document.cookie = `access_token=${data.access_token}; ${cookieOptions}`;
 };
 
@@ -61,7 +66,13 @@ export const getUserFromCookies = (): UserCookieData | null => {
  */
 export const clearAuthCookies = () => {
   const pastDate = new Date(0).toUTCString();
-  const cookieOptions = `expires=${pastDate}; path=/; SameSite=Strict`;
+  
+  // Set domain for production (.sodio.tech) or leave empty for localhost
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+  const isProduction = hostname.includes("sodio.tech");
+  const domainOption = isProduction ? `domain=.sodio.tech;` : "";
+  
+  const cookieOptions = `expires=${pastDate}; path=/; ${domainOption}SameSite=Strict`;
 
   document.cookie = `access_token=; ${cookieOptions}`;
 };
