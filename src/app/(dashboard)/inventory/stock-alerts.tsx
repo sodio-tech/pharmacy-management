@@ -8,6 +8,8 @@ import { AlertTriangle, Clock, Package, TrendingDown, RefreshCw, X } from "lucid
 import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
 import { useBranches } from "@/hooks/useBranches"
+import { AddProductModal } from "./add-product-modal"
+import { Product } from "@/types/sales"
 import {
   Select,
   SelectContent,
@@ -15,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { toast } from "react-toastify"
-import { TabNavigation } from "./tab-navigation"
+// import { toast } from "react-toastify"
+// import { TabNavigation } from "./tab-navigation"
 import { TabType } from "./tab-navigation"
 
 interface LowStockProduct {
@@ -42,9 +44,11 @@ export function StockAlerts() {
   const { branches, isLoading: loadingBranches } = useBranches(user?.pharmacy_id)
   const [selectedBranchId, setSelectedBranchId] = useState<string>("")
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([])
-  const [expiringProducts, setExpiringProducts] = useState<ExpiringProduct[]>([])
+  // const [expiringProducts, setExpiringProducts] = useState<ExpiringProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType>("lowStock")
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   // Auto-select first branch when branches are loaded
   useEffect(() => {
@@ -63,11 +67,12 @@ export function StockAlerts() {
         const response = await backendApi.get(`/v1/inventory/stock-alerts/${selectedBranchId}`)
         const data = response.data?.data || response.data
         setLowStockProducts(data?.alerts || [])
-      } else {
-        const response = await backendApi.get(`/v1/inventory/expiring-stock/${selectedBranchId}`)
-        const data = response.data?.data || response.data
-        setExpiringProducts(data?.expiring_within_30_days || [])
-      }
+      } 
+      // else {
+      //   const response = await backendApi.get(`/v1/inventory/expiring-stock/${selectedBranchId}`)
+      //   const data = response.data?.data || response.data
+      //   setExpiringProducts(data?.expiring_within_30_days || [])
+      // }
     } catch (error: unknown) {
       console.error("Failed to load stock alerts:", error)
     } finally {
@@ -86,6 +91,30 @@ export function StockAlerts() {
     fetchAlerts()
   }
 
+  const handleRestock = (product: LowStockProduct) => {
+    // Convert LowStockProduct to Product format for the modal
+    const productForModal: Product = {
+      id: product.product_id,
+      name: product.product_name,
+      generic_name: product.generic_name,
+      image_url: product.image || null,
+      branch_id: selectedBranchId ? parseInt(selectedBranchId) : undefined,
+    }
+    setSelectedProduct(productForModal)
+    setIsModalOpen(true)
+  }
+
+  const handleModalClose = () => {
+    setIsModalOpen(false)
+    setSelectedProduct(null)
+  }
+
+  const handleModalSuccess = () => {
+    // Refresh the alerts after successful product update
+    fetchAlerts()
+    handleModalClose()
+  }
+
   const getSeverityColor = (product: LowStockProduct) => {
     const stockRatio = product.available_stock / product.min_stock
     if (stockRatio === 0) return "destructive"
@@ -94,21 +123,21 @@ export function StockAlerts() {
     return "default"
   }
 
-  const getExpiryColor = (daysUntilExpiry: number) => {
-    if (daysUntilExpiry <= 7) return "destructive"
-    if (daysUntilExpiry <= 15) return "secondary"
-    return "default"
-  }
+  // const getExpiryColor = (daysUntilExpiry: number) => {
+  //   if (daysUntilExpiry <= 7) return "destructive"
+  //   if (daysUntilExpiry <= 15) return "secondary"
+  //   return "default"
+  // }
 
-  const calculateDaysUntilExpiry = (expiryDate: string): number => {
-    const expiry = new Date(expiryDate)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    expiry.setHours(0, 0, 0, 0)
-    const diffTime = expiry.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+  // const calculateDaysUntilExpiry = (expiryDate: string): number => {
+  //   const expiry = new Date(expiryDate)
+  //   const today = new Date()
+  //   today.setHours(0, 0, 0, 0)
+  //   expiry.setHours(0, 0, 0, 0)
+  //   const diffTime = expiry.getTime() - today.getTime()
+  //   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  //   return diffDays
+  // }
 
   if (loading) {
     return (
@@ -161,7 +190,7 @@ export function StockAlerts() {
       </div>
 
       <Card className="p-3 sm:p-4 md:p-6">
-        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        {/* <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} /> */}
 
         <div className="mt-4 sm:mt-6">
           {activeTab === "lowStock" && (
@@ -209,7 +238,12 @@ export function StockAlerts() {
                         <Badge variant={getSeverityColor(product)} className="text-xs">
                           {product.available_stock === 0 ? "Out of Stock" : "Low Stock"}
                         </Badge>
-                        <Button size="sm" variant="outline" className="text-xs h-8 bg-transparent">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-xs h-8 bg-transparent"
+                          onClick={() => handleRestock(product)}
+                        >
                           Restock
                         </Button>
                       </div>
@@ -220,7 +254,7 @@ export function StockAlerts() {
             </div>
           )}
 
-          {activeTab === "expiring" && (
+          {/* {activeTab === "expiring" && (
             <div>
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                 <div className="p-1.5 sm:p-2 bg-orange-100 rounded-lg">
@@ -282,9 +316,17 @@ export function StockAlerts() {
                 </div>
               )}
             </div>
-          )}
+          )} */}
         </div>
       </Card>
+
+      <AddProductModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        product={selectedProduct}
+        branchId={selectedBranchId ? parseInt(selectedBranchId) : null}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }
