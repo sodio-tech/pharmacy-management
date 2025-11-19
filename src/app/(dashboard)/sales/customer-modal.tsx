@@ -36,10 +36,20 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
     gender: existingCustomer?.gender || "",
   })
 
+  // Reset form data function
+  const resetFormData = () => {
+    setFormData({
+      patient_name: "",
+      patient_phone: "",
+      patient_email: "",
+      age: "",
+      gender: "",
+    })
+  }
+
   // Update form data when existingCustomer or editingCustomer changes
   useEffect(() => {
-    // Priority: editingCustomer > existingCustomer
-    const customerToEdit = editingCustomer || existingCustomer
+    const customerToEdit = editingCustomer || (mode === "create" ? null : existingCustomer)
     if (customerToEdit) {
       setFormData({
         patient_name: customerToEdit.patient_name || "",
@@ -50,16 +60,10 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
       })
     } else if (!isOpen) {
       // Reset form when modal closes
-      setFormData({
-        patient_name: "",
-        patient_phone: "",
-        patient_email: "",
-        age: "",
-        gender: "",
-      })
+      resetFormData()
       setEditingCustomer(null)
     }
-  }, [existingCustomer, editingCustomer, isOpen])
+  }, [existingCustomer, editingCustomer, isOpen, mode])
 
   useEffect(() => {
     if (isOpen && mode === "list") {
@@ -242,10 +246,18 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
     }
   }
 
+  const handleCreateNewCustomer = () => {
+    // Reset all state before creating new customer
+    setEditingCustomer(null)
+    resetFormData()
+    setMode("create")
+  }
+
   const handleClose = () => {
     setMode("list")
     setSearchQuery("")
     setEditingCustomer(null)
+    resetFormData()
     onClose()
   }
 
@@ -281,7 +293,7 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
               <Button
                 variant="outline"
                 className="w-full border-dashed border-2 bg-transparent"
-                onClick={() => setMode("create")}
+                onClick={handleCreateNewCustomer}
               >
                 <User className="h-4 w-4 mr-2" />
                 Create New Customer
@@ -458,6 +470,10 @@ export function CustomerModal({ isOpen, onClose, onSave, existingCustomer }: Cus
                   onClick={() => {
                     setMode("list")
                     setEditingCustomer(null)
+                    // Reset form when going back to list if not editing
+                    if (!existingCustomer && !editingCustomer) {
+                      resetFormData()
+                    }
                   }}
                 >
                   Back to List
