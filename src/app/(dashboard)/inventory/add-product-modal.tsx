@@ -68,8 +68,7 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
     }
   }, [mode, isLoadingBranches, branches, formData.branch_id, handleInputChange])
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
+  const processFiles = (files: File[]) => {
     if (!files || files.length === 0) return
 
     const fileArray = Array.from(files)
@@ -112,6 +111,16 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       setImageFiles(prev => [...prev, ...validFiles])
       setImagePreviews(prev => [...prev, ...previews])
     })
+  }
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+    processFiles(Array.from(files))
+  }
+
+  const handleFilesDrop = (files: File[]) => {
+    processFiles(files)
   }
 
   const handleRemoveImage = (index: number) => {
@@ -396,6 +405,7 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   imagePreviews={imagePreviews}
                   imageUrls={imageUrls}
                   onImageChange={handleImageChange}
+                  onFilesDrop={handleFilesDrop}
                   onRemoveImage={handleRemoveImage}
                   onRemoveExistingImage={handleRemoveExistingImage}
                   isLoading={isLoading}
