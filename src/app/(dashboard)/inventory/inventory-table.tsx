@@ -35,7 +35,7 @@ export function InventoryTable({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedBranch, setSelectedBranch] = useState("")
-  const [activeFilter, setActiveFilter] = useState("all")
+  // const [activeFilter, setActiveFilter] = useState("all")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -84,7 +84,7 @@ export function InventoryTable({
   // Reset page when category, branch or filter changes
   useEffect(() => {
     setPage(1)
-  }, [selectedCategory, selectedBranch, activeFilter])
+  }, [selectedCategory, selectedBranch])
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -105,13 +105,13 @@ export function InventoryTable({
         params.append('branch_id', selectedBranch)
       }
       
-      if (activeFilter === "lowStock") {
-        params.append('lowStock', 'true')
-      }
+      // if (activeFilter === "lowStock") {
+      //   params.append('lowStock', 'true')
+      // }
       
-      if (activeFilter === "expiringSoon") {
-        params.append('expiringSoon', 'true')
-      }
+      // if (activeFilter === "expiringSoon") {
+      //   params.append('expiringSoon', 'true')
+      // }
 
       const response = await backendApi.get(`/v1/products/catalogue?${params.toString()}`)
       const data = response.data?.data || response.data
@@ -148,7 +148,7 @@ export function InventoryTable({
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearchTerm, selectedCategory, selectedBranch, activeFilter])
+  }, [page, debouncedSearchTerm, selectedCategory, selectedBranch])
 
   useEffect(() => {
     fetchProducts()
@@ -318,7 +318,7 @@ export function InventoryTable({
               </SelectContent>
             </Select>
 
-            <Select value={activeFilter} onValueChange={setActiveFilter} defaultValue="all">
+            {/* <Select value={activeFilter} onValueChange={setActiveFilter} defaultValue="all">
               <SelectTrigger className="w-full sm:w-[140px] md:w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -328,7 +328,7 @@ export function InventoryTable({
                 <SelectItem value="outOfStock">Out of Stock</SelectItem>
                 <SelectItem value="expiringSoon">Expiring Soon</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             {/* <Button variant="outline" className="gap-2 bg-transparent hidden sm:flex">
               <Filter className="w-4 h-4" />
