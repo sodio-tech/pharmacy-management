@@ -12,7 +12,7 @@ export interface UserCookieData {
 export const setAuthCookies = (
   data: UserCookieData,
 ) => {
-  const expiryHours = 23; // Cookie validity for 23 hours
+  const expiryHours = 11; // Cookie validity for 23 hours
   const expiryDate = new Date();
   expiryDate.setTime(expiryDate.getTime() + expiryHours * 60 * 60 * 1000);
   
