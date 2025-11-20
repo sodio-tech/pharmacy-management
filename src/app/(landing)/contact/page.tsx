@@ -1,4 +1,4 @@
-import { FaqCta } from '@/components/landing/contactus/faq-cta'
+// import { FaqCta } from '@/components/landing/contactus/faq-cta'
 import { DemoCta } from '@/components/landing/contactus/demo-cta'
 import { ContactCards } from '@/components/landing/contactus/contact-cards'
 import React from 'react'
@@ -19,7 +19,7 @@ const page = () => {
                 <ContactForm />
                 <OfficeInfo />
                 <SocialMedia />
-                <FaqCta />
+                {/* <FaqCta /> */}
                 <DemoCta />
             </main>
             <Footer />

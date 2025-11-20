@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { BookDemoModal } from "./book-demo-modal"
 import { cn } from "@/lib/utils"
-import type { ButtonProps } from "@/components/ui/button"
 
 interface BookDemoButtonProps {
   className?: string
-  variant?: ButtonProps["variant"]
+  variant?: "outline" | "link" | "default" | "destructive" | "secondary" | "ghost" | null | undefined
 }
 
 export function BookDemoButton({ className, variant = "outline" }: BookDemoButtonProps) {

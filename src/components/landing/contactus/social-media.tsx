@@ -12,25 +12,33 @@ export function SocialMedia() {
 
         <div className="flex justify-center gap-4">
           <Link
-            href="#"
+            href="https://www.linkedin.com/company/13215828/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#0f766e] text-white hover:bg-[#0f766e]/90 transition-colors"
           >
             <Linkedin className="h-5 w-5" />
           </Link>
           <Link
-            href="#"
+            href="https://x.com/sodiotech"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#3b82f6] text-white hover:bg-[#3b82f6]/90 transition-colors"
           >
             <Twitter className="h-5 w-5" />
           </Link>
           <Link
-            href="#"
+            href="https://www.instagram.com/sodio.tech/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#ec4899] text-white hover:bg-[#ec4899]/90 transition-colors"
           >
             <Instagram className="h-5 w-5" />
           </Link>
           <Link
-            href="#"
+            href="https://www.facebook.com/sodio.tech/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#2563eb]/90 transition-colors"
           >
             <Facebook className="h-5 w-5" />
