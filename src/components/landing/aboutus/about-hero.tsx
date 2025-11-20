@@ -1,6 +1,7 @@
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import pharmacy from "../../../../public/assets/about-landing.png"
+import { GetStartedFreeButton } from "../get-started-free-button"
+import { BookDemoButton } from "../book-demo-button"
 
 export function AboutHero() {
   return (
@@ -17,13 +18,8 @@ export function AboutHero() {
               through technology.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button className="bg-[#0f766e] text-white hover:bg-[#0f766e]/90 px-6">Get Started Free</Button>
-              <Button
-                variant="outline"
-                className="border-[#0f766e] text-[#0f766e] hover:bg-[#0f766e]/5 px-6 bg-transparent"
-              >
-                Book a Demo
-              </Button>
+              <GetStartedFreeButton />
+              <BookDemoButton />
             </div>
           </div>
 

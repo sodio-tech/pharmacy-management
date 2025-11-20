@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import logo from "../../../public/logo.png"
 import Image from "next/image"
+import { BookDemoButton } from "./book-demo-button"
 
 export function Header() {
   const pathname = usePathname()
@@ -55,7 +56,7 @@ export function Header() {
               <Link href="/login">  Sign In</Link>
 
             </Button>
-            <Button className="bg-[#0f766e] text-white hover:bg-[#0f766e]/90">Book Demo</Button>
+            <BookDemoButton variant="default" className="bg-[#0f766e] text-white hover:bg-[#0f766e]/90 px-4 py-2 text-sm border-0" />
           </div>
         </div>
       </div>

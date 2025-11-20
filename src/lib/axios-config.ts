@@ -1,9 +1,10 @@
 import { API } from '@/app/utils/constants';
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { store } from '@/store/store';
-import { setAccessToken, clearAuth } from '@/store/slices/authSlice';
-import { getRefreshToken } from './cookies';
-import { clearAuthCookies } from './cookies';
+// import { InternalAxiosRequestConfig } from 'axios'; // Commented out - not used (refresh token logic is disabled)
+// import { setAccessToken, clearAuth } from '@/store/slices/authSlice'; // Commented out - not used (refresh token logic is disabled)
+// import { getRefreshToken } from './cookies'; // Commented out - not used (refresh token logic is disabled)
+// import { clearAuthCookies } from './cookies'; // Commented out - not used (refresh token logic is disabled)
 
 // Backend API base URL
 const BACKEND_API_BASE = `${API}/api`;

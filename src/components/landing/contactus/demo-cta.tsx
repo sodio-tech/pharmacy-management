@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import { BookDemoButton } from "../book-demo-button"
 
 export function DemoCta() {
   return (
@@ -8,7 +8,7 @@ export function DemoCta() {
         <p className="text-base text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
           Schedule a personalized demo and discover how Pharmy can transform your pharmacy operations
         </p>
-        <Button className="bg-white text-[#0f766e] hover:bg-white/90 h-12 px-8 font-medium">Book a Demo</Button>
+        <BookDemoButton variant="default" className="bg-white text-[#0f766e] hover:bg-white/90 h-12 px-8 font-medium border-0" />
       </div>
     </section>
   )

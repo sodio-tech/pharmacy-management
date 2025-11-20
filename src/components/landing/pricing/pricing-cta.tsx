@@ -1,4 +1,5 @@
-import Link from "next/link"
+import { GetStartedFreeButton } from "../get-started-free-button"
+import { BookDemoButton } from "../book-demo-button"
 
 export function PricingCta() {
   return (
@@ -11,18 +12,8 @@ export function PricingCta() {
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link
-            href="#"
-            className="px-8 py-3 bg-[#ffffff] text-[#0f766e] rounded-lg font-semibold hover:bg-[#f9fafb] transition-colors"
-          >
-            Start Free Trial
-          </Link>
-          <Link
-            href="#"
-            className="px-8 py-3 bg-transparent text-[#ffffff] border-2 border-[#ffffff] rounded-lg font-semibold hover:bg-[#ffffff]/10 transition-colors"
-          >
-            Book a Demo
-          </Link>
+          <GetStartedFreeButton className="bg-[#ffffff] text-[#0f766e] hover:bg-[#f9fafb] font-semibold px-8 py-3 text-base rounded-lg" />
+          <BookDemoButton className="bg-transparent text-[#ffffff] border-2 border-[#ffffff] hover:bg-[#ffffff]/10 font-semibold px-8 py-3 text-base rounded-lg" />
         </div>
       </div>
     </section>

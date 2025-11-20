@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button"
+import { GetStartedFreeButton } from "../get-started-free-button"
 
 export function FeaturesCta() {
   return (
@@ -8,9 +8,7 @@ export function FeaturesCta() {
         <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
           Join thousands of pharmacies already using Pharmy to streamline their operations and boost efficiency
         </p>
-        <Button size="lg" className="bg-white text-[#0f766e] hover:bg-white/90 font-semibold">
-          Get Started Free
-        </Button>
+        <GetStartedFreeButton className="bg-white text-[#0f766e] hover:bg-white/90 font-semibold px-6 py-6 text-base" />
       </div>
     </section>
   )

@@ -1,6 +1,7 @@
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import dashboardimage from "../../../../public/assets/pharmacy-dashboard-interface-with-metrics-and-char.jpg"
+import { GetStartedFreeButton } from "../get-started-free-button"
+import { BookDemoButton } from "../book-demo-button"
 
 export function LandingHero() {
   return (
@@ -16,27 +17,20 @@ export function LandingHero() {
               one powerful app.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button className="bg-[#0f766e] hover:bg-[#0f766e]/90 text-white px-6 py-6 text-base">
-                Get Started Free
-              </Button>
-              <Button
-                variant="outline"
-                className="border-[#0f766e] text-[#0f766e] hover:bg-[#0f766e]/5 px-6 py-6 text-base bg-transparent"
-              >
-                Book a Demo
-              </Button>
+              <GetStartedFreeButton />
+              <BookDemoButton />
             </div>
           </div>
           <div className="relative">
-          
-              <Image
-                src={dashboardimage}
-                alt="Pharmacy Dashboard"
-                width={700}
-                height={500}
-                className=" w-full"
-              />
-           
+
+            <Image
+              src={dashboardimage}
+              alt="Pharmacy Dashboard"
+              width={700}
+              height={500}
+              className=" w-full"
+            />
+
           </div>
         </div>
       </div>
