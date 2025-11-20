@@ -1,7 +1,7 @@
 import { Header } from "@/components/landing/header"
 import { Footer } from "@/components/landing/footer"
 import { PricingHero } from "@/components/landing/pricing/pricing-hero"
-import { PricingPlans } from "@/components/landing/pricing/pricing-plans"
+import { PricingSection } from "@/components/landing/pricing/pricing-plans"
 import { PricingComparison } from "@/components/landing/pricing/pricing-comparison"
 import { PricingTestimonial } from "@/components/landing/pricing/pricing-testimonial"
 import { PricingFaq } from "@/components/landing/pricing/pricing-faq"
@@ -13,7 +13,7 @@ export default function PricingPage() {
       <Header />
       <main>
         <PricingHero />
-        <PricingPlans />
+        <PricingSection />
         <PricingComparison />
         <PricingTestimonial />
         <PricingFaq />
