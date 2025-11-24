@@ -60,6 +60,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
   const { paymentMethods, isLoading: isLoadingPaymentModes } = usePaymentModes()
 
   const subtotal = getCartSubtotal()
+  const tax = getCartTax()
   const total = getCartTotal()
   const itemCount = getItemCount()
 
@@ -429,7 +430,23 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                           </Button>
                         </div>
                         <div className="text-right pl-4 w-full">
-                          <p className="font-bold text-sm md:text-base">₹{Number(item.totalPrice).toFixed(2)}</p>
+                          <p className="font-bold text-sm md:text-base">
+                            ₹{(() => {
+                              // Calculate total price without GST for this item
+                              // listPrice is unit price without GST, so multiply by quantity and packSize
+                              if (item.listPrice !== undefined && item.listPrice > 0) {
+                                const totalWithoutGst = item.listPrice * item.quantity * item.packSize
+                                return Number(totalWithoutGst).toFixed(2)
+                              }
+                              // If API price is available, calculate price without GST
+                              if (item.apiPrice !== undefined && item.gstRate !== undefined) {
+                                const priceWithoutGst = item.apiPrice / (1 + item.gstRate / 100)
+                                return Number(priceWithoutGst).toFixed(2)
+                              }
+                              // Fallback to totalPrice if API price not loaded yet
+                              return Number(item.totalPrice || 0).toFixed(2)
+                            })()}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -465,18 +482,34 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
 
           {/* Bill Summary */}
           <div className="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t-2">
-            {/* <p className="font-semibold text-xs md:text-sm text-muted-foreground uppercase tracking-wide">Summary</p> */}
+            <p className="font-semibold text-xs md:text-sm text-muted-foreground uppercase tracking-wide">Bill Summary</p>
             <div className="space-y-2 md:space-y-3">
               {isCalculatingPrices && (
                 <div className="text-xs text-muted-foreground text-center">
                   Calculating prices...
                 </div>
               )}
-              <div className="flex justify-between font-bold text-lg md:text-xl">
-                <span>Total</span>
-                <span className="text-teal-600">
-                  {isCalculatingPrices ? "..." : `₹${Number(total).toFixed(2)}`}
-                </span>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm md:text-base">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="font-medium">
+                    {isCalculatingPrices ? "..." : `₹${Number(subtotal).toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm md:text-base">
+                  <span className="text-muted-foreground">GST</span>
+                  <span className="font-medium">
+                    {isCalculatingPrices ? "..." : `₹${Number(tax).toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between font-bold text-lg md:text-xl">
+                    <span>Total</span>
+                    <span className="text-teal-600">
+                      {isCalculatingPrices ? "..." : `₹${Number(total).toFixed(2)}`}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
