@@ -24,7 +24,7 @@ export default function Organization() {
 
   const handleEmployeeSuccess = () => {
     setSelectedBranchId(null)
-        fetchBranches()
+    fetchBranches()
   }
 
   const handleAddEmployee = (branchId: number) => {

@@ -3,6 +3,11 @@ export interface Branch {
   branch_name: string
   branch_location: string
   drug_license_number: string
+  drug_license_expiry?: string
+  trade_license_number?: string
+  trade_license_expiry?: string
+  fire_certificate_number?: string
+  fire_certificate_expiry?: string
 }
 
 export interface BranchForm {

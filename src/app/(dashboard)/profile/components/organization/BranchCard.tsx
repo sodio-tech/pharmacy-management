@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Building2, UserPlus } from "lucide-react"
+import { Building2, UserPlus, Pencil } from "lucide-react"
 import type { Branch } from "../organization.types"
+import EditBranchDialog from "./EditBranchDialog"
 
 interface BranchCardProps {
   branch: Branch
@@ -12,12 +14,11 @@ interface BranchCardProps {
 
 export default function BranchCard({ branch, index, onAddEmployee }: BranchCardProps) {
   const isPrimary = index === 0
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   return (
     <div
-      className={`p-4 rounded-lg border ${
-        isPrimary ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"
-      }`}
+      className={`p-4 rounded-lg border ${isPrimary ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
     >
       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
         <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -35,6 +36,14 @@ export default function BranchCard({ branch, index, onAddEmployee }: BranchCardP
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap lg:flex-nowrap">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-gray-300 hover:bg-gray-100 bg-transparent"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <Pencil className="w-4 h-4" />
+          </Button>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
@@ -48,7 +57,11 @@ export default function BranchCard({ branch, index, onAddEmployee }: BranchCardP
           </div>
         </div>
       </div>
+      <EditBranchDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        branch={branch}
+      />
     </div>
   )
 }
-

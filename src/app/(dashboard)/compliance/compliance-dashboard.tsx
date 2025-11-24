@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+// import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CheckCircle, AlertTriangle, FileText, User, Shield, Download, Eye, Plus } from "lucide-react"
+// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { CheckCircle, AlertTriangle, FileText } from "lucide-react"
 
 export function ComplianceDashboard() {
   return (
