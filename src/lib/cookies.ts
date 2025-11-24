@@ -9,17 +9,14 @@ export interface UserCookieData {
 }
 
 /**
- * Get cookie options based on environment
+ * Cookie options with basic security
  */
 const getCookieOptions = (expires?: number | Date): Cookies.CookieAttributes => {
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-  const isProduction = hostname.includes("sodio.tech");
-  
   return {
     expires: expires || 7, // Default 7 days
     path: "/",
     sameSite: "strict",
-    ...(isProduction && { domain: ".sodio.tech" }),
+    secure: true, // HTTPS only
   };
 };
 
@@ -69,13 +66,10 @@ export const getUserFromCookies = (): UserCookieData | null => {
  * Clear all authentication cookies (logout)
  */
 export const clearAuthCookies = () => {
-  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
-  const isProduction = hostname.includes("sodio.tech");
-  
   const cookieOptions: Cookies.CookieAttributes = {
     path: "/",
     sameSite: "strict",
-    ...(isProduction && { domain: ".sodio.tech" }),
+    secure: true,
   };
 
   // Clear refresh_token cookie

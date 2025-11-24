@@ -2,9 +2,11 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { backendApi } from '@/lib/axios-config'
-import { clearAuthCookies } from '@/lib/cookies'
+import { clearAuthCookies, getRefreshToken } from '@/lib/cookies'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { clearAuth } from '@/store/slices/authSlice'
+import { clearAuth, setAccessToken } from '@/store/slices/authSlice'
+import axios from 'axios'
+import { API } from '@/app/utils/constants'
 
 // User Interface (matches API response exactly)
 export interface User {
@@ -20,11 +22,11 @@ export interface User {
   two_fa_enabled: boolean
   pharmacy_id: number
   pharmacy_branch_id?: number
-  profile_image?: string | null // API response field
+  profile_image?: string | null
   last_login?: string | null
-  image?: string | null // Mapped from profile_image for UI compatibility
-  currency_code?: string // API response field
-  country?: string // Country code (e.g., 'IN', 'US')
+  image?: string | null 
+  currency_code?: string
+  country?: string 
 }
 
 interface UserContextType {
@@ -46,6 +48,47 @@ export function UserProvider({ children }: UserProviderProps) {
   const [error, setError] = useState<string | null>(null)
   const accessToken = useAppSelector((state) => state.auth.access_token)
   const dispatch = useAppDispatch()
+
+  // Refresh access token using refresh token
+  const refreshAccessToken = useCallback(async (): Promise<string | null> => {
+    try {
+      const refreshToken = getRefreshToken();
+      
+      if (!refreshToken) {
+        throw new Error('No refresh token available');
+      }
+
+      const response = await axios.get(`${API}/api/v1/auth/refresh-token`, {
+        headers: {
+          'Authorization': `Bearer ${refreshToken}`,
+        },
+      });
+
+      if (response.data && response.data.success) {
+        const newAccessToken = response.data.data?.access_token;
+        
+        if (newAccessToken) {
+          // Update Redux state and localStorage
+          dispatch(setAccessToken(newAccessToken));
+          return newAccessToken;
+        }
+      }
+      
+      throw new Error('Failed to refresh token');
+    } catch (error) {
+      // Refresh failed - clear auth and logout
+      dispatch(clearAuth());
+      clearAuthCookies();
+      setUser(null);
+      
+      // Redirect to login if in browser
+      if (typeof window !== "undefined") {
+        window.location.href = '/login';
+      }
+      
+      return null;
+    }
+  }, [dispatch]);
 
   const fetchUserData = useCallback(async () => {
     // Get access_token from Redux state (persisted in localStorage)
@@ -81,18 +124,47 @@ export function UserProvider({ children }: UserProviderProps) {
       
       const error = err as { response?: { status?: number; data?: { message?: string } } }
       
-      // If unauthorized, clear cookies, Redux state, and redirect to login
+      // If unauthorized, try to refresh token first
       if (error.response?.status === 401) {
-        clearAuthCookies()
-        dispatch(clearAuth())
-        setUser(null)
+        const newToken = await refreshAccessToken();
+        
+        if (newToken) {
+          // Retry the request with new token
+          try {
+            const retryResponse = await backendApi.get('/v1/profile');
+            
+            let userData: User;
+            if (retryResponse.data && retryResponse.data.success) {
+              userData = retryResponse.data.data;
+            } else {
+              userData = retryResponse.data;
+            }
+            
+            if (userData.profile_image) {
+              userData.image = userData.profile_image;
+            }
+            
+            setUser(userData);
+            setError(null);
+          } catch (retryErr) {
+            // If retry also fails, clear auth
+            clearAuthCookies();
+            dispatch(clearAuth());
+            setUser(null);
+          }
+        } else {
+          // Refresh token failed, already handled in refreshAccessToken
+          clearAuthCookies();
+          dispatch(clearAuth());
+          setUser(null);
+        }
       } else {
         setError(error.response?.data?.message || 'Failed to fetch user data')
       }
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken, dispatch])
+  }, [accessToken, dispatch, refreshAccessToken])
 
   useEffect(() => {
     fetchUserData()
