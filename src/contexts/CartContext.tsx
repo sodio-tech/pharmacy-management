@@ -1,9 +1,10 @@
 "use client"
 
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useRef, useCallback, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { Product, Customer } from '@/types/sales'
 import { backendApi } from '@/lib/axios-config'
+import { useAppSelector } from '@/store/hooks'
 
 export interface CartItem {
   id: string
@@ -12,6 +13,23 @@ export interface CartItem {
   packSize: number
   unitPrice: number
   totalPrice: number
+  // API से आए actual prices
+  apiPrice?: number
+  gstRate?: number
+  listPrice?: number
+}
+
+interface CartPricingData {
+  total_amt: number
+  total_before_tax: number
+  products: Array<{
+    id: string
+    quantity: number
+    pack_size: number
+    price: number
+    gst_rate: number
+    list_price: number
+  }>
 }
 
 interface CartContextType {
@@ -28,6 +46,9 @@ interface CartContextType {
   getItemCount: () => number
   processCheckout: (customer: Customer, paymentMethod: string, notes?: string) => Promise<void>
   isProcessing: boolean
+  isCalculatingPrices: boolean
+  cartPricing: CartPricingData | null
+  setCustomerId: (customerId: number | string | null) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -47,6 +68,12 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isCalculatingPrices, setIsCalculatingPrices] = useState(false)
+  const [cartPricing, setCartPricing] = useState<CartPricingData | null>(null)
+  const [customerId, setCustomerIdState] = useState<number | string | null>(null)
+  
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Create a singleton audio instance that persists across renders
   // This ensures the audio is preloaded and ready to play
@@ -122,6 +149,88 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   }, [])
 
+  // Debounced function to fetch prices from API
+  const fetchCartPrices = useCallback(async (items: CartItem[], branchId: number | null, customerIdParam?: number | string | null) => {
+    if (!branchId || items.length === 0) {
+      setCartPricing(null)
+      return
+    }
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Set new debounced timer (500ms delay)
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        setIsCalculatingPrices(true)
+        
+        const formData = new FormData()
+        formData.append("branch_id", branchId.toString())
+        
+        // Format cart items according to API requirements
+        const cartItemsData = items.map(item => ({
+          product_id: Number(item.product.id),
+          quantity: item.quantity,
+          pack_size: item.packSize,
+        }))
+        formData.append("cart", JSON.stringify(cartItemsData))
+        
+        // Add customer_id if available (use parameter or state)
+        const finalCustomerId = customerIdParam !== undefined ? customerIdParam : customerId
+        if (finalCustomerId) {
+          formData.append("customer_id", String(finalCustomerId))
+        }
+
+        const response = await backendApi.post("/v1/sales/new-sale?action=review", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        })
+
+        const responseData = response.data
+        if (responseData?.success && responseData?.data) {
+          const pricingData = responseData.data
+          setCartPricing(pricingData)
+          
+          // Update cart items with API prices
+          setCartItems(prevItems => {
+            return prevItems.map(item => {
+              const apiProduct = pricingData.products.find(
+                (p: { id: string }) => String(p.id) === String(item.product.id)
+              )
+              if (apiProduct) {
+                return {
+                  ...item,
+                  apiPrice: apiProduct.price,
+                  gstRate: apiProduct.gst_rate,
+                  listPrice: apiProduct.list_price,
+                  totalPrice: apiProduct.price, // Use API price as total
+                }
+              }
+              return item
+            })
+          })
+        }
+      } catch (error: unknown) {
+        console.error("Error fetching cart prices:", error)
+        // Don't show error toast for background API calls
+      } finally {
+        setIsCalculatingPrices(false)
+      }
+    }, 500) // 500ms debounce delay
+  }, [])
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
+
   const addToCart = (product: Product, quantity: number = 1) => {
     let isNewItem = false
     
@@ -131,15 +240,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       if (existingItem) {
         // Update quantity if item already exists
         const newQuantity = existingItem.quantity + quantity
-        return prevItems.map(item =>
+        const updatedItems = prevItems.map(item =>
           item.id === product.id
             ? {
                 ...item,
                 quantity: newQuantity,
-                totalPrice: newQuantity * item.packSize * Number(item.unitPrice || 0)
+                // Don't calculate price here, API will provide it
+                totalPrice: item.apiPrice || item.totalPrice
               }
             : item
         )
+        // Trigger debounced API call to fetch prices
+        setTimeout(() => fetchCartPrices(updatedItems, selectedBranchId, customerId), 0)
+        return updatedItems
       } else {
         // Add new item to cart
         isNewItem = true
@@ -151,9 +264,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
           quantity,
           packSize: defaultPackSize,
           unitPrice: sellingPrice,
-          totalPrice: quantity * defaultPackSize * sellingPrice
+          totalPrice: 0 // Will be updated by API
         }
-        return [...prevItems, newItem]
+        const updatedItems = [...prevItems, newItem]
+        // Trigger debounced API call to fetch prices
+        setTimeout(() => fetchCartPrices(updatedItems, selectedBranchId, customerId), 0)
+        return updatedItems
       }
     })
     
@@ -167,7 +283,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   const removeFromCart = (productId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId))
+    setCartItems(prevItems => {
+      const updatedItems = prevItems.filter(item => item.id !== productId)
+      // Trigger debounced API call to fetch prices
+      fetchCartPrices(updatedItems, selectedBranchId, customerId)
+      return updatedItems
+    })
     toast.success('Item removed from cart')
   }
 
@@ -177,17 +298,21 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       return
     }
 
-    setCartItems(prevItems =>
-      prevItems.map(item =>
+    setCartItems(prevItems => {
+      const updatedItems = prevItems.map(item =>
         item.id === productId
           ? {
               ...item,
               quantity,
-              totalPrice: quantity * item.packSize * Number(item.unitPrice || 0)
+              // Don't calculate price here, API will provide it
+              totalPrice: item.apiPrice || item.totalPrice
             }
           : item
       )
-    )
+      // Trigger debounced API call to fetch prices
+      fetchCartPrices(updatedItems, selectedBranchId, customerId)
+      return updatedItems
+    })
     // Play sound when quantity is updated
     playAddSound()
   }
@@ -197,32 +322,56 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       packSize = 1
     }
 
-    setCartItems(prevItems =>
-      prevItems.map(item =>
+    setCartItems(prevItems => {
+      const updatedItems = prevItems.map(item =>
         item.id === productId
           ? {
               ...item,
               packSize,
-              totalPrice: item.quantity * packSize * Number(item.unitPrice || 0)
+              // Don't calculate price here, API will provide it
+              totalPrice: item.apiPrice || item.totalPrice
             }
           : item
       )
-    )
+      // Trigger debounced API call to fetch prices
+      fetchCartPrices(updatedItems, selectedBranchId, customerId)
+      return updatedItems
+    })
   }
+
+  const setCustomerId = useCallback((id: number | string | null) => {
+    setCustomerIdState(id)
+    // Trigger API call when customer changes
+    if (cartItems.length > 0 && selectedBranchId) {
+      fetchCartPrices(cartItems, selectedBranchId, id)
+    }
+  }, [cartItems, selectedBranchId, fetchCartPrices])
 
   const clearCart = (silent: boolean = false) => {
     setCartItems([])
+    setCartPricing(null)
+    // Clear debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
     if (!silent) {
       toast.success('Cart cleared')
     }
   }
 
   const getCartSubtotal = () => {
-    return cartItems.reduce((total, item) => total + item.totalPrice, 0)
+    // Use API pricing if available, otherwise fallback to cart items
+    if (cartPricing) {
+      return cartPricing.total_before_tax || 0
+    }
+    return cartItems.reduce((total, item) => total + (item.apiPrice || item.totalPrice || 0), 0)
   }
 
   const getCartTax = () => {
-    // No tax applied
+    // Calculate tax from API data
+    if (cartPricing) {
+      return (cartPricing.total_amt || 0) - (cartPricing.total_before_tax || 0)
+    }
     return 0
   }
 
@@ -232,8 +381,12 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   const getCartTotal = () => {
-    // Total equals subtotal (no tax or additional charges)
-    return getCartSubtotal()
+    // Use API total if available
+    if (cartPricing) {
+      return cartPricing.total_amt || 0
+    }
+    // Fallback to cart items calculation
+    return cartItems.reduce((total, item) => total + (item.apiPrice || item.totalPrice || 0), 0)
   }
 
   const getItemCount = () => {
@@ -289,7 +442,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     getCartDiscount,
     getItemCount,
     processCheckout,
-    isProcessing
+    isProcessing,
+    isCalculatingPrices,
+    cartPricing,
+    setCustomerId
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
