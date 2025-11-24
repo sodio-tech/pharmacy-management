@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { PrescriptionTableProps, Prescription } from "./types"
 import { backendApi } from "@/lib/axios-config"
+import { useAppSelector } from "@/store/hooks"
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,9 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null)
   const [isImageModalOpen, setIsImageModalOpen] = useState<boolean>(false)
+  
+  // Get selected branch from Redux to refetch when branch changes
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
 
   // Debounce search term
   useEffect(() => {
@@ -174,6 +178,14 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
   useEffect(() => {
     setCurrentPage(1)
   }, [statusFilter, dateFilter])
+
+  // Refetch prescriptions when branch changes
+  useEffect(() => {
+    if (selectedBranchId) {
+      setCurrentPage(1) // Reset to first page when branch changes
+      fetchPrescriptions()
+    }
+  }, [selectedBranchId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatDate = (iso?: string) => {
     if (!iso) return '-'
