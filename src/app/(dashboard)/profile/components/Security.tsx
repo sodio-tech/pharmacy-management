@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 import TwoFactorAuth from "./TwoFactorAuth"
 import { useUser } from "@/contexts/UserContext"
-import { getAccessToken } from "@/lib/cookies"
+// import { getAccessToken } from "@/lib/cookies"
 
 export default function Security() {
     const { user } = useUser()
@@ -325,16 +325,13 @@ export default function Security() {
                                     const deviceInfo = getDeviceInfo(sessionItem.userAgent || '')
                                     const Icon = deviceInfo.icon
                                     // Check if this session is the current one by comparing with the current session token
-                                    const currentToken = getAccessToken()
-                                    const isCurrentSession = sessionItem.token === currentToken
+                                    // const currentToken = getAccessToken()
+                                    // const isCurrentSession = sessionItem.token === currentToken
 
                                     return (
                                         <div
                                             key={sessionItem.id || index}
-                                            className={`flex items-center justify-between rounded-lg border p-4 ${isCurrentSession
-                                                    ? "border-[#dcfce7] bg-[#f0fdf4]"
-                                                    : "border-[#e5e7eb] bg-white"
-                                                }`}
+                                            className={`flex items-center justify-between rounded-lg border p-4`}
                                         >
                                             <div className="flex items-center gap-4">
                                                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#f3f4f6]">
@@ -354,7 +351,7 @@ export default function Security() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="text-right">
-                                                    {isCurrentSession ? (
+                                                    {/* {isCurrentSession ? (
                                                         <>
                                                             <Badge className="bg-[#dcfce7] text-[#166534] hover:bg-[#dcfce7]">
                                                                 Current Session
@@ -370,9 +367,9 @@ export default function Security() {
                                                                 {getTimeAgo(sessionItem.updatedAt || sessionItem.createdAt)}
                                                             </p>
                                                         </>
-                                                    )}
+                                                    )} */}
                                                 </div>
-                                                {!isCurrentSession && (
+                                                {/* {!isCurrentSession && (
                                                     <div className="flex gap-1">
                                                         <Button
                                                             size="sm"
@@ -388,7 +385,7 @@ export default function Security() {
                                                             )}
                                                         </Button>
                                                     </div>
-                                                )}
+                                                )} */}
                                             </div>
                                         </div>
                                     )
