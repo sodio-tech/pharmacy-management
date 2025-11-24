@@ -11,13 +11,6 @@ import AddBranchDialog from "./organization/AddBranchDialog"
 import AddEmployeeDialog from "./organization/AddEmployeeDialog"
 import type { Branch } from "./organization.types"
 
-const DEFAULT_STATS = {
-  teamMembers: 4,
-  branches: 0,
-  admins: 1,
-  pharmacists: 2,
-}
-
 export default function Organization() {
   const { user: sessionUser } = useUser()
   const { branches, isLoading, fetchBranches } = useBranches(sessionUser?.pharmacy_id)
@@ -39,17 +32,12 @@ export default function Organization() {
     setIsAddEmployeeOpen(true)
   }
 
-  const stats = {
-    ...DEFAULT_STATS,
-    branches: branches.length,
-  }
-
   return (
     <div className="space-y-6 mt-6">
       {/* Organization Details and Overview */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <OrganizationDetails />
-        <OrganizationOverview stats={stats} branchesCount={branches.length} />
+        <OrganizationOverview />
       </div>
 
       <RolePermissions />

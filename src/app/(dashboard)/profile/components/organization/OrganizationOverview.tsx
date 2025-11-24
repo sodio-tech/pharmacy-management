@@ -1,14 +1,60 @@
 "use client"
 
-import { Building2, Users, UserCog, UserCheck } from "lucide-react"
-import type { OrganizationStats } from "../organization.types"
+import { useState, useEffect } from "react"
+import { Building2, Users, UserCog, UserCheck, Loader2 } from "lucide-react"
+import { backendApi } from "@/lib/axios-config"
+import { toast } from "react-toastify"
 
-interface OrganizationOverviewProps {
-  stats: OrganizationStats
-  branchesCount: number
+interface UserManagementData {
+  total_users: number
+  branch_count: number
+  admin_count: number
+  pharmacist_count: number
+  active_users: number
+  newusers: number
 }
 
-export default function OrganizationOverview({ stats, branchesCount }: OrganizationOverviewProps) {
+interface ApiResponse {
+  success: boolean
+  message: string
+  data: UserManagementData
+}
+
+export default function OrganizationOverview() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState({
+    teamMembers: 0,
+    branches: 0,
+    admins: 0,
+    pharmacists: 0,
+  })
+
+  useEffect(() => {
+    const fetchUserManagement = async () => {
+      setIsLoading(true)
+      try {
+        const response = await backendApi.get<ApiResponse>("/v1/org/user-management")
+        
+        if (response.data.success && response.data.data) {
+          const data = response.data.data
+          setStats({
+            teamMembers: data.total_users || 0,
+            branches: data.branch_count || 0,
+            admins: data.admin_count || 0,
+            pharmacists: data.pharmacist_count || 0,
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching user management data:", error)
+        toast.error("Failed to load organization overview")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchUserManagement()
+  }, [])
+
   const overviewItems = [
     {
       icon: Users,
@@ -24,7 +70,7 @@ export default function OrganizationOverview({ stats, branchesCount }: Organizat
       iconColor: "text-green-600",
       title: "Branches",
       subtitle: "Active locations",
-      value: branchesCount,
+      value: stats.branches,
     },
     {
       icon: UserCog,
@@ -47,25 +93,31 @@ export default function OrganizationOverview({ stats, branchesCount }: Organizat
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-6">Organization Overview</h2>
-      <div className="space-y-4">
-        {overviewItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <div key={item.title} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
-                  <Icon className={`w-5 h-5 ${item.iconColor}`} />
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {overviewItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.title} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg ${item.iconBg} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 ${item.iconColor}`} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                    <div className="text-xs text-gray-500">{item.subtitle}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{item.title}</div>
-                  <div className="text-xs text-gray-500">{item.subtitle}</div>
-                </div>
+                <div className="text-2xl font-bold text-gray-900">{item.value}</div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">{item.value}</div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
