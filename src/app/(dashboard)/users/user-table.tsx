@@ -187,9 +187,9 @@ export function UserTable() {
                 <th className="text-left py-3 px-6 text-xs font-medium text-[#6b7280] uppercase tracking-wider">
                   Branch
                 </th>
-                <th className="text-left py-3 px-6 text-xs font-medium text-[#6b7280] uppercase tracking-wider">
+                {/* <th className="text-left py-3 px-6 text-xs font-medium text-[#6b7280] uppercase tracking-wider">
                   Actions
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5e7eb]">
@@ -250,7 +250,7 @@ export function UserTable() {
                   </td>
                   <td className="py-4 px-6 text-sm text-[#6b7280]">{user.lastLogin}</td>
                   <td className="py-4 px-6 text-sm text-[#6b7280]">{user.branch}</td>
-                  <td className="py-4 px-6">
+                  {/* <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
@@ -277,7 +277,7 @@ export function UserTable() {
                         </Button>
                       )}
                     </div>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </tbody>
