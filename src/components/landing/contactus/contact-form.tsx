@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
@@ -85,21 +84,14 @@ export function ContactForm() {
                 <Label htmlFor="subject" className="text-[#111827]">
                   Subject <span className="text-[#ec4899]">*</span>
                 </Label>
-                <Select
+                <Input
+                  id="subject"
+                  placeholder="Enter subject"
                   value={formData.subject}
-                  onValueChange={(value) => setFormData({ ...formData, subject: value })}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   required
-                >
-                  <SelectTrigger id="subject" className="border-[#e5e7eb]">
-                    <SelectValue placeholder="Select a subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sales">Sales Inquiry</SelectItem>
-                    <SelectItem value="support">Technical Support</SelectItem>
-                    <SelectItem value="general">General Question</SelectItem>
-                    <SelectItem value="feedback">Feedback</SelectItem>
-                  </SelectContent>
-                </Select>
+                  className="border-[#e5e7eb]"
+                />
               </div>
             </div>
 
