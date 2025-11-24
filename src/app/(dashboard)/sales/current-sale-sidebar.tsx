@@ -41,6 +41,8 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
     getItemCount,
     processCheckout,
     isProcessing,
+    isCalculatingPrices,
+    setCustomerId,
   } = useCart()
 
   const [customer, setCustomer] = useState<Customer | null>(null)
@@ -93,6 +95,8 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
 
   const handleSaveCustomer = (customerData: Customer) => {
     setCustomer(customerData)
+    // Update customer ID in cart context for pricing API
+    setCustomerId(customerData.id || null)
   }
 
   const handleEditCustomer = () => {
@@ -195,6 +199,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
         
         setCustomer(null)
         setPrescription(null)
+        setCustomerId(null)
         clearCart(true) 
       } else {
         toast.error(responseData?.message || "Failed to complete sale")
@@ -462,9 +467,16 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
           <div className="space-y-3 md:space-y-4 pt-3 md:pt-4 border-t-2">
             {/* <p className="font-semibold text-xs md:text-sm text-muted-foreground uppercase tracking-wide">Summary</p> */}
             <div className="space-y-2 md:space-y-3">
+              {isCalculatingPrices && (
+                <div className="text-xs text-muted-foreground text-center">
+                  Calculating prices...
+                </div>
+              )}
               <div className="flex justify-between font-bold text-lg md:text-xl">
                 <span>Total</span>
-                <span className="text-teal-600">₹{Number(total).toFixed(2)}</span>
+                <span className="text-teal-600">
+                  {isCalculatingPrices ? "..." : `₹${Number(total).toFixed(2)}`}
+                </span>
               </div>
             </div>
           </div>
