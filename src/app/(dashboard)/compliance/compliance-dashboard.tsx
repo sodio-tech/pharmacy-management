@@ -8,7 +8,7 @@ export function ComplianceDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -39,7 +39,7 @@ export function ComplianceDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-[#e5e7eb] py-0">
+        {/* <Card className="border-[#e5e7eb] py-0">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -67,7 +67,7 @@ export function ComplianceDashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
 
@@ -196,7 +196,7 @@ export function ComplianceDashboard() {
       </div>
 
       {/* Controlled Substances Tracking */}
-      <Card className="border-[#e5e7eb]">
+      {/* <Card className="border-[#e5e7eb]">
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -357,11 +357,11 @@ export function ComplianceDashboard() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
+      {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
         {/* Recent Audit Trail */}
-        <Card className="border-[#e5e7eb]">
+        {/* <Card className="border-[#e5e7eb]">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-lg font-semibold text-[#111827]">Recent Audit Trail</CardTitle>
@@ -418,7 +418,7 @@ export function ComplianceDashboard() {
         </Card>
 
         {/* Compliance Reports */}
-        <Card className="border-[#e5e7eb]">
+        {/* <Card className="border-[#e5e7eb]">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-lg font-semibold text-[#111827]">Compliance Reports</CardTitle>
@@ -484,7 +484,7 @@ export function ComplianceDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   )
 }

@@ -5,7 +5,7 @@ import { Users, Shield, User, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { backendApi } from "@/lib/axios-config"
-import { toast } from "react-toastify"
+// import { toast } from "react-toastify"
 
 interface UserManagementData {
   total_users: number
@@ -132,12 +132,12 @@ export function RoleManagement() {
       <div className="bg-white rounded-lg border border-[#e5e7eb] p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <h3 className="text-lg font-semibold text-[#111827]">Permission Matrix</h3>
-          <Button
+          {/* <Button
             variant="outline"
             className="text-[#0f766e] border-[#0f766e] hover:bg-[#ccfbf1] bg-transparent w-full sm:w-auto"
           >
             Edit Permissions
-          </Button>
+          </Button> */}
         </div>
 
         <div className="space-y-4">

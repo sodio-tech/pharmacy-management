@@ -1,7 +1,7 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Shield } from "lucide-react"
+// import { Button } from "@/components/ui/button"
+// import { Shield } from "lucide-react"
 
 interface Role {
   name: string
@@ -51,13 +51,13 @@ export default function RolePermissions() {
           </div>
         ))}
 
-        <Button
+        {/* <Button
           variant="outline"
           className="w-full text-[#0f766e] border-[#0f766e] hover:bg-[#0f766e]/5 bg-transparent"
         >
           <Shield className="w-4 h-4 mr-2" />
           Manage Permissions
-        </Button>
+        </Button> */}
       </div>
     </div>
   )
