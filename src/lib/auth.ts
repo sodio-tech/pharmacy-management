@@ -11,12 +11,12 @@ import { backendApi } from "./axios-config";
 export const logout = () => {
   clearAuthCookies();
   
-  // Clear access_token from localStorage (Redux persistence)
+  // Clear entire localStorage
   if (typeof window !== "undefined") {
     try {
-      localStorage.removeItem("access_token");
+      localStorage.clear();
     } catch (error) {
-      console.error("Failed to clear access token from localStorage:", error);
+      console.error("Failed to clear localStorage:", error);
     }
   }
   

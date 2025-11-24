@@ -81,8 +81,13 @@ export function UserProvider({ children }: UserProviderProps) {
       clearAuthCookies();
       setUser(null);
       
-      // Redirect to login if in browser
+      // Clear entire localStorage and redirect to login
       if (typeof window !== "undefined") {
+        try {
+          localStorage.clear();
+        } catch (err) {
+          console.error("Failed to clear localStorage:", err);
+        }
         window.location.href = '/login';
       }
       
@@ -151,12 +156,28 @@ export function UserProvider({ children }: UserProviderProps) {
             clearAuthCookies();
             dispatch(clearAuth());
             setUser(null);
+            // Clear entire localStorage
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.clear();
+              } catch (err) {
+                console.error("Failed to clear localStorage:", err);
+              }
+            }
           }
         } else {
           // Refresh token failed, already handled in refreshAccessToken
           clearAuthCookies();
           dispatch(clearAuth());
           setUser(null);
+          // Clear entire localStorage
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.clear();
+            } catch (err) {
+              console.error("Failed to clear localStorage:", err);
+            }
+          }
         }
       } else {
         setError(error.response?.data?.message || 'Failed to fetch user data')

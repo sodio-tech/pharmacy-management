@@ -31,8 +31,6 @@ const getAccessTokenFromStorage = (): string | null => {
   if (typeof window === "undefined") return null;
   
   try {
-    // Always get fresh state from Redux store (no caching)
-    // This ensures we get the latest token after refresh or branch switch
     const state = store.getState();
     const tokenFromRedux = state.auth?.access_token;
     
@@ -78,8 +76,13 @@ const refreshAccessToken = async (): Promise<string | null> => {
     store.dispatch(clearAuth());
     clearAuthCookies();
     
-    // Redirect to login if in browser
+    // Clear entire localStorage
     if (typeof window !== "undefined") {
+      try {
+        localStorage.clear();
+      } catch (err) {
+        console.error("Failed to clear localStorage:", err);
+      }
       window.location.href = '/login';
     }
     
