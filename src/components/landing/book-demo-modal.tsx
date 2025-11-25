@@ -14,6 +14,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import axios from "axios"
+import { toast } from "react-toastify"
+import { API } from "@/app/utils/constants"
 
 interface BookDemoModalProps {
   children: React.ReactNode
@@ -23,15 +26,51 @@ export function BookDemoModal({ children }: BookDemoModalProps) {
   const [name, setName] = useState("")
   const [contactNumber, setContactNumber] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Add your form submission logic here
-    console.log("Demo booking submitted:", { name, contactNumber })
-    // Reset form and close modal
-    setName("")
-    setContactNumber("")
-    setIsOpen(false)
+    
+    setIsLoading(true)
+    
+    try {
+      const payload = {
+        name: name,
+        phone_number: contactNumber,
+      }
+
+      const response = await axios.post(`${API}/api/v1/admin/book-demo`, payload)
+      
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Details submitted successfully! We'll get back to you shortly.")
+        
+        // Reset form and close modal
+        setName("")
+        setContactNumber("")
+        setIsOpen(false)
+      }
+    } catch (err: unknown) {
+      console.error("Error submitting demo booking:", err)
+      const error = err as { 
+        response?: { 
+          data?: { 
+            message?: string
+            error?: string
+          } 
+        }
+        message?: string
+      }
+      
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.response?.data?.error || 
+        error?.message || 
+        "Failed to submit demo booking. Please try again."
+      
+      toast.error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -72,8 +111,12 @@ export function BookDemoModal({ children }: BookDemoModalProps) {
               className="border-[#e5e7eb]"
             />
           </div>
-          <Button type="submit" className="w-full bg-[#0f766e] hover:bg-[#0f766e]/90 text-white">
-            Submit
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full bg-[#0f766e] hover:bg-[#0f766e]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "Submitting..." : "Submit"}
           </Button>
         </form>
       </DialogContent>

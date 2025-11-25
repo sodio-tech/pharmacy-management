@@ -25,7 +25,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ReduxProvider>
       <UserProvider>
-        <ToastContainer />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
         <AppLoadingOverlay>{children}</AppLoadingOverlay>
       </UserProvider>
     </ReduxProvider>
