@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { toast } from 'react-toastify';
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
@@ -16,6 +16,7 @@ import {
   DispensePrescriptionRequest 
 } from './types'
 import { backendApi } from "@/lib/axios-config"
+import { LoadingFallback } from "@/components/loading-fallback"
 
 const page = () => {
     const [currentView, setCurrentView] = useState<'list' | 'upload' | 'validate' | 'dispense'>('list');
@@ -204,11 +205,13 @@ const page = () => {
                         <p className="text-red-600">{error}</p>
                     </div>
                 )}
-                <PrescriptionUpload
-                    onUpload={handleUploadPrescription}
-                    onCancel={() => setCurrentView('list')}
-                    loading={loading}
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                    <PrescriptionUpload
+                        onUpload={handleUploadPrescription}
+                        onCancel={() => setCurrentView('list')}
+                        loading={loading}
+                    />
+                </Suspense>
             </LayoutSkeleton>
         );
     }
@@ -239,13 +242,15 @@ const page = () => {
                         <p className="text-red-600">{error}</p>
                     </div>
                 )}
-                <PrescriptionValidation
-                    prescription={selectedPrescription}
-                    onValidate={handleValidatePrescription}
-                    onReject={handleRejectPrescription}
-                    onCancel={() => setCurrentView('list')}
-                    loading={loading}
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                    <PrescriptionValidation
+                        prescription={selectedPrescription}
+                        onValidate={handleValidatePrescription}
+                        onReject={handleRejectPrescription}
+                        onCancel={() => setCurrentView('list')}
+                        loading={loading}
+                    />
+                </Suspense>
             </LayoutSkeleton>
         );
     }
@@ -276,12 +281,14 @@ const page = () => {
                         <p className="text-red-600">{error}</p>
                     </div>
                 )}
-                <PrescriptionDispense
-                    prescription={selectedPrescription}
-                    onDispense={handleDispensePrescription}
-                    onCancel={() => setCurrentView('list')}
-                    loading={loading}
-                />
+                <Suspense fallback={<LoadingFallback />}>
+                    <PrescriptionDispense
+                        prescription={selectedPrescription}
+                        onDispense={handleDispensePrescription}
+                        onCancel={() => setCurrentView('list')}
+                        loading={loading}
+                    />
+                </Suspense>
             </LayoutSkeleton>
         );
     }
@@ -317,9 +324,11 @@ const page = () => {
                 />
             }
         >
-            <PrescriptionContent 
-                onViewPrescription={handleViewPrescription}
-            />
+            <Suspense fallback={<LoadingFallback />}>
+                <PrescriptionContent 
+                    onViewPrescription={handleViewPrescription}
+                />
+            </Suspense>
         </LayoutSkeleton>
     )
 }

@@ -9,6 +9,7 @@ import Security from "./Security"
 import Organization from "./Organization"
 import Subscription from "./Subscription"
 import { cn } from "@/lib/utils"
+import { LoadingFallback } from "@/components/loading-fallback"
 
 type TabType = "profile" | "security" | "subscription" | "organization"
 
@@ -68,15 +69,15 @@ export default function ProfileContent() {
 
       {/* Profile Content */}
       {activeTab === "profile" &&
-          <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}> 
+          <Suspense fallback={<LoadingFallback />}> 
           <div className={cn("mt-6", isPharmacist && "mt-0")}>
             <Profile />
           </div>
         </Suspense>
       }
-      {!isPharmacist && activeTab === "security" && <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}> <Security /> </Suspense>}
-      {!isPharmacist && activeTab === "subscription" && <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}> <Subscription /> </Suspense>}
-      {!isPharmacist && activeTab === "organization" && <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}> <Organization /> </Suspense>}
+      {!isPharmacist && activeTab === "security" && <Suspense fallback={<LoadingFallback />}> <Security /> </Suspense>}
+      {!isPharmacist && activeTab === "subscription" && <Suspense fallback={<LoadingFallback />}> <Subscription /> </Suspense>}
+      {!isPharmacist && activeTab === "organization" && <Suspense fallback={<LoadingFallback />}> <Organization /> </Suspense>}
     </div>
   )
 }

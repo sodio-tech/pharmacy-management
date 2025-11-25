@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { ReportsStats } from "./reports-stats"
 import { SalesTrendChart } from "./sales-trend-chart"
 import { TopSellingProducts } from "./top-selling-products"
@@ -10,6 +11,7 @@ import DynamicHeader from "@/components/DynamicHeader"
 import { useAppSelector } from "@/store/hooks"
 import { useUser } from "@/contexts/UserContext"
 import { useBranchSync } from "@/hooks/useBranchSync"
+import { LoadingFallback } from "@/components/loading-fallback"
 
 function ReportsContent() {
   const { user } = useUser()
@@ -63,7 +65,9 @@ export default function ReportsAnalytics() {
         />
       }
     >
-      <ReportsContent />
+      <Suspense fallback={<LoadingFallback />}>
+        <ReportsContent />
+      </Suspense>
     </LayoutSkeleton>
   )
 }

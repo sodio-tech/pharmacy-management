@@ -1,9 +1,10 @@
 "use client"
 import type React from "react"
 import Sidebar from "@/components/Sidebar"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
+import { LoadingFallback } from "@/components/loading-fallback"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -26,7 +27,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <Menu className="w-5 h-5" />
           </Button>
         </div>
-        {children}
+        <Suspense fallback={<LoadingFallback fullHeight />}>
+          {children}
+        </Suspense>
       </div>
     </div>
   )

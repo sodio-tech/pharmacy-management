@@ -10,9 +10,10 @@ import { BatchTracking } from "./batch-tracking"
 import { AddBatchModal } from "./components/AddBatchModal"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useUser } from "@/contexts/UserContext"
 import { useAppSelector } from "@/store/hooks"
+import { LoadingFallback } from "@/components/loading-fallback"
 
 type InventoryContentProps = {
   isAddProductModalOpen: boolean
@@ -171,11 +172,13 @@ export default function InventoryManagement() {
         />
       }
     >
-      <InventoryContent
-        isAddProductModalOpen={isAddProductModalOpen}
-        setIsAddProductModalOpen={setIsAddProductModalOpen}
-        canAddProducts={canAddProducts}
-      />
+      <Suspense fallback={<LoadingFallback />}>
+        <InventoryContent
+          isAddProductModalOpen={isAddProductModalOpen}
+          setIsAddProductModalOpen={setIsAddProductModalOpen}
+          canAddProducts={canAddProducts}
+        />
+      </Suspense>
     </LayoutSkeleton>
   )
 }

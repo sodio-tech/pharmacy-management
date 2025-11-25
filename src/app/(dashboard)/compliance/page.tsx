@@ -1,16 +1,19 @@
 "use client"
 
+import { Suspense } from "react"
 import { ComplianceDashboard } from '@/app/(dashboard)/compliance/compliance-dashboard'
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
+import { LoadingFallback } from '@/components/loading-fallback'
 // import { FileText } from 'lucide-react'
-import React from 'react'
 
 const page = () => {
     return (
         <LayoutSkeleton
             children={
-                <ComplianceDashboard />
+                <Suspense fallback={<LoadingFallback />}>
+                    <ComplianceDashboard />
+                </Suspense>
             }
 
             header={<DynamicHeader

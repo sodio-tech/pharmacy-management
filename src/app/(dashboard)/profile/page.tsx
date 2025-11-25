@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import LayoutSkeleton from "@/components/layout-skeleton";
 import DynamicHeader from "@/components/DynamicHeader";
+import { LoadingFallback } from "@/components/loading-fallback";
 // import { Button } from "@/components/ui/button";
 // import {
 //     Bell,
@@ -31,7 +32,7 @@ export default function AdminProfilePage() {
                 />
             }
         >
-            <Suspense fallback={<div className="flex items-center justify-center h-64">Loading...</div>}>
+            <Suspense fallback={<LoadingFallback />}>
                 <ProfileContent />
             </Suspense>
         </LayoutSkeleton>

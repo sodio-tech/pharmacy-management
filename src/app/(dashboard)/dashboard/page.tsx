@@ -1,6 +1,8 @@
+import { Suspense } from "react"
 import { DashboardContent } from "@/app/(dashboard)/dashboard/dashboard-content"
 import DynamicHeader from "@/components/DynamicHeader"
 import LayoutSkeleton from "@/components/layout-skeleton"
+import { LoadingFallback } from "@/components/loading-fallback"
 // import { Button } from "@/components/ui/button"
 // import { Input } from "@/components/ui/input"
 // import { Bell, ChevronDown, Search } from "lucide-react"
@@ -8,7 +10,11 @@ import LayoutSkeleton from "@/components/layout-skeleton"
 const page = () => {
   return (
     <LayoutSkeleton
-      children={<DashboardContent />}
+      children={
+        <Suspense fallback={<LoadingFallback />}>
+          <DashboardContent />
+        </Suspense>
+      }
       header={
         <DynamicHeader
           maintext="Pharmacy Dashboard"

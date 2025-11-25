@@ -1,10 +1,12 @@
 "use client"
 
+import { Suspense } from "react"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
 import { UserStats } from "./user-stats"
 import { UserTable } from "./user-table"
 import { RoleManagement } from "./role-management"
+import { LoadingFallback } from "@/components/loading-fallback"
 // import { Users } from "lucide-react"
 // import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 
@@ -41,7 +43,9 @@ export default function UserManagement() {
         />
       }
     >
-      <UserManagementContent />
+      <Suspense fallback={<LoadingFallback />}>
+        <UserManagementContent />
+      </Suspense>
     </LayoutSkeleton>
   )
 }
