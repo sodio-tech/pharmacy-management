@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 // import { Plus, Scan, BarChart3 } from "lucide-react";
@@ -16,6 +16,7 @@ import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useAppSelector } from "@/store/hooks";
 import { useUser } from "@/contexts/UserContext";
 import { useBranchSync } from "@/hooks/useBranchSync";
+import { LoadingFallback } from "@/components/loading-fallback";
 
 function SalesContent() {
   const { user } = useUser()
@@ -99,7 +100,9 @@ export default function SalesAndPOS() {
           />
         }
       >
-        <SalesContent />
+        <Suspense fallback={<LoadingFallback />}>
+          <SalesContent />
+        </Suspense>
       </LayoutSkeleton>
     </CartProvider>
   );
