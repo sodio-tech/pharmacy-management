@@ -16,9 +16,6 @@ import { PricingSection } from "./components/PricingSection"
 import { PackagingStockSection } from "./components/PackagingStockSection"
 import { useUser } from "@/contexts/UserContext"
 import { useAppSelector } from "@/store/hooks"
-import { useBranchSync } from "@/hooks/useBranchSync"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 
 interface AddProductModalProps {
   isOpen: boolean
@@ -31,15 +28,12 @@ interface AddProductModalProps {
 export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess }: AddProductModalProps) {
   const mode = product?.id ? "edit" : "add"
   const { user } = useUser()
-  const branches = useAppSelector((state) => state.branch.branches)
-  const isLoadingBranches = useAppSelector((state) => state.branch.isLoading)
-  
-  // Sync branches to Redux
-  useBranchSync(user?.pharmacy_id)
+  const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
 
-  const branchIdToUse = branchId
-    ? branchId.toString()
-    : (product?.branch_id?.toString() || undefined)
+  // For edit mode, use product's branch_id, otherwise use globally selected branch
+  const branchIdToUse = mode === "edit" && product?.branch_id
+    ? product.branch_id.toString()
+    : (selectedBranchId?.toString() || undefined)
 
   const { formData, handleInputChange, resetForm, isLoadingProduct, productImages } = useProductForm(
     mode === "edit" ? product : null,
@@ -66,12 +60,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       setImageUrls([])
     }
   }, [productImages, mode])
-
-  useEffect(() => {
-    if (mode === "add" && !isLoadingBranches && branches.length > 0 && !formData.branch_id) {
-      handleInputChange("branch_id", branches[0].id.toString())
-    }
-  }, [mode, isLoadingBranches, branches, formData.branch_id, handleInputChange])
 
   const processFiles = (files: File[]) => {
     if (!files || files.length === 0) return
@@ -155,9 +143,10 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       toast.error("Product name is required")
       return false
     }
-    if (!formData.branch_id.trim()) {
+    const branchIdToValidate = mode === "edit" ? formData.branch_id : selectedBranchId?.toString()
+    if (!branchIdToValidate) {
       setError("Branch selection is required")
-      toast.error("Branch selection is required")
+      toast.error("Please select a branch first")
       return false
     }
     if (!formData.unit_price.trim() || Number.parseFloat(formData.unit_price) <= 0) {
@@ -218,8 +207,14 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
     formDataToSend.append('gst_rate', formData.gst_percent || '0')
     formDataToSend.append('pack_size', validPackSize.toString())
     formDataToSend.append('stock', formData.stock || '0')
-    if (formData.branch_id) {
-      formDataToSend.append('branch_id', formData.branch_id.toString())
+    
+    // Use globally selected branch ID for add mode, or product's branch_id for edit mode
+    const branchIdToSend = mode === "edit" && formData.branch_id
+      ? formData.branch_id.toString()
+      : (selectedBranchId?.toString() || "")
+    
+    if (branchIdToSend) {
+      formDataToSend.append('branch_id', branchIdToSend)
     }
 
     imageFiles.forEach((file) => {
@@ -352,50 +347,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   }}
                   onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
                 />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-purple-600 rounded-full"></span>
-                    Branch Selection
-                  </h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <Label htmlFor="branch_id" className="text-sm font-medium">
-                        Branch <span className="text-red-500">*</span>
-                      </Label>
-                      <Select
-                        value={formData.branch_id}
-                        onValueChange={(value) => {
-                          handleInputChange("branch_id", value)
-                        }}
-                        disabled={isLoadingBranches || mode === "edit"}
-                      >
-                        <SelectTrigger className="mt-1.5 w-full">
-                          <SelectValue placeholder={isLoadingBranches ? "Loading branches..." : "Select branch"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {branches.length > 0 ? (
-                            branches.map((branch) => (
-                              <SelectItem key={branch.id} value={branch.id.toString()}>
-                                {branch.branch_name}
-                                {branch.branch_location && ` - ${branch.branch_location}`}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="no-branches" disabled>
-                              {isLoadingBranches ? "Loading branches..." : "No branches available"}
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {mode === "edit" && (
-                        <p className="text-xs text-muted-foreground mt-1.5">
-                          Note: Branch cannot be edited for existing products
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
