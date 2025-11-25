@@ -130,6 +130,11 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
   }
 
   const handleAddPrescription = () => {
+    // Allow editing if prescription already exists, but require customer for new prescription
+    if (!prescription && !customer) {
+      toast.error("Please add customer details first before adding prescription")
+      return
+    }
     setIsPrescriptionModalOpen(true)
   }
 
@@ -293,67 +298,69 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
             )}
           </div>
 
-          {/* Prescription Section */}
-          <div className="p-3 md:p-4 rounded-lg bg-muted/50 border border-dashed border-border">
-            {prescription &&
-              (prescription.prescription || prescription.doctor_name || prescription.prescription_notes) ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 md:space-x-3">
-                    <div className="p-2 md:p-3 rounded-full bg-teal-100 dark:bg-teal-900">
-                      <FileText className="h-5 w-5 md:h-6 md:w-6 text-teal-600 dark:text-teal-400" />
+          {/* Prescription Section - Only show when customer is selected */}
+          {customer && (
+            <div className="p-3 md:p-4 rounded-lg bg-muted/50 border border-dashed border-border">
+              {prescription &&
+                (prescription.prescription || prescription.doctor_name || prescription.prescription_notes) ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 md:space-x-3">
+                      <div className="p-2 md:p-3 rounded-full bg-teal-100 dark:bg-teal-900">
+                        <FileText className="h-5 w-5 md:h-6 md:w-6 text-teal-600 dark:text-teal-400" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm md:text-base">Prescription Added</p>
+                        {prescription.doctor_name && (
+                          <p className="text-xs md:text-sm text-muted-foreground">{prescription.doctor_name}</p>
+                        )}
+                        {prescription.prescription && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50 p-0 h-auto mt-1"
+                            onClick={handleViewPrescriptionImage}
+                          >
+                            <ImageIcon className="h-3 w-3 mr-1" />
+                            View Image
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm md:text-base">Prescription Added</p>
-                      {prescription.doctor_name && (
-                        <p className="text-xs md:text-sm text-muted-foreground">{prescription.doctor_name}</p>
-                      )}
-                      {prescription.prescription && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50 p-0 h-auto mt-1"
-                          onClick={handleViewPrescriptionImage}
-                        >
-                          <ImageIcon className="h-3 w-3 mr-1" />
-                          View Image
-                        </Button>
-                      )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-teal-600 hover:text-teal-700 text-xs md:text-sm"
+                      onClick={handleAddPrescription}
+                    >
+                      Edit
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-3 md:py-4">
+                  <div className="flex flex-col items-center space-y-2 md:space-y-3">
+                    <div className="p-2 md:p-3 rounded-full bg-muted">
+                      <FileText className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
                     </div>
+                    <div>
+                      <p className="text-xs md:text-sm font-medium text-muted-foreground">No prescription added</p>
+                      <p className="text-xs text-muted-foreground">Optional: Add prescription details</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddPrescription}
+                      className="text-teal-600 hover:text-teal-700 border-teal-200 bg-transparent"
+                    >
+                      <FileText className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+                      Add Prescription
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-teal-600 hover:text-teal-700 text-xs md:text-sm"
-                    onClick={handleAddPrescription}
-                  >
-                    Edit
-                  </Button>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-3 md:py-4">
-                <div className="flex flex-col items-center space-y-2 md:space-y-3">
-                  <div className="p-2 md:p-3 rounded-full bg-muted">
-                    <FileText className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-xs md:text-sm font-medium text-muted-foreground">No prescription added</p>
-                    <p className="text-xs text-muted-foreground">Optional: Add prescription details</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddPrescription}
-                    className="text-teal-600 hover:text-teal-700 border-teal-200 bg-transparent"
-                  >
-                    <FileText className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-                    Add Prescription
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Cart Items */}
           <div className="space-y-2 md:space-y-3">
