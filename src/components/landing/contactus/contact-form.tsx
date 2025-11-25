@@ -3,11 +3,14 @@
 import type React from "react"
 
 import { useState } from "react"
+import axios from "axios"
+import { toast } from "react-toastify"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { API } from "@/app/utils/constants"
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
@@ -17,11 +20,58 @@ export function ContactForm() {
     subject: "",
     message: "",
   })
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Form submitted:", formData)
-    // Handle form submission
+    
+    setIsLoading(true)
+    
+    try {
+      const payload = {
+        name: formData.name,
+        phone_number: formData.phone,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      }
+
+      const response = await axios.post(`${API}/api/v1/admin/contact-us`, payload)
+      
+      if (response.status === 200 || response.status === 201) {
+        toast.success("Message sent successfully! We'll get back to you within 24 hours.")
+        
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        })
+      }
+    } catch (err: unknown) {
+      console.error("Error submitting contact form:", err)
+      const error = err as { 
+        response?: { 
+          data?: { 
+            message?: string
+            error?: string
+          } 
+        }
+        message?: string
+      }
+      
+      const errorMessage = 
+        error?.response?.data?.message || 
+        error?.response?.data?.error || 
+        error?.message || 
+        "Failed to send message. Please try again."
+      
+      toast.error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -112,9 +162,10 @@ export function ContactForm() {
 
             <Button
               type="submit"
-              className="w-full bg-[#0f766e] text-white hover:bg-[#0f766e]/90 h-12 text-base font-medium"
+              disabled={isLoading}
+              className="w-full bg-[#0f766e] text-white hover:bg-[#0f766e]/90 h-12 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send Message
+              {isLoading ? "Sending..." : "Send Message"}
             </Button>
           </form>
         </Card>
