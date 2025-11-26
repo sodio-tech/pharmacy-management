@@ -1,10 +1,12 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { backendApi } from '@/lib/axios-config'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
 import { setAccessToken } from '@/store/slices/authSlice'
 import { logout } from '@/lib/auth'
+import { RESTRICTED_PATHS } from '@/app/utils/constants'
 
 // User Interface (matches API response exactly)
 export interface User {
@@ -46,6 +48,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [error, setError] = useState<string | null>(null)
   const accessToken = useAppSelector((state) => state.auth.access_token)
   const dispatch = useAppDispatch()
+  const pathname = usePathname()
 
   // Refresh access token using refresh token
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
@@ -147,8 +150,14 @@ export function UserProvider({ children }: UserProviderProps) {
   }, [accessToken, dispatch, refreshAccessToken])
 
   useEffect(() => {
+    // Don't run API calls on restricted paths
+    if (RESTRICTED_PATHS.includes(pathname)) {
+      setIsLoading(false)
+      return
+    }
+    
     fetchUserData()
-  }, [fetchUserData])
+  }, [fetchUserData, pathname])
 
   return (
     <UserContext.Provider value={{ user, isLoading, error, refetch: fetchUserData }}>
