@@ -1,8 +1,9 @@
 import { API } from '@/app/utils/constants';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { store } from '@/store/store';
-import { setAccessToken, clearAuth } from '@/store/slices/authSlice';
-import { getRefreshToken, clearAuthCookies } from '@/lib/cookies';
+import { setAccessToken } from '@/store/slices/authSlice';
+import { logout } from '@/lib/auth';
+import { getAccessTokenFromStorage } from './utils';
 
 // Backend API base URL
 const BACKEND_API_BASE = `${API}/api`;
@@ -27,38 +28,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-const getAccessTokenFromStorage = (): string | null => {
-  if (typeof window === "undefined") return null;
-  
-  try {
-    const state = store.getState();
-    const tokenFromRedux = state.auth?.access_token;
-    
-    if (tokenFromRedux) {
-      return tokenFromRedux;
-    }
-    
-    // Fallback to localStorage if not in Redux state  
-    return localStorage.getItem("access_token");
-  } catch {
-    return null;
-  }
-};
-
 // Refresh access token using refresh token
 const refreshAccessToken = async (): Promise<string | null> => {
   try {
-    const refreshToken = getRefreshToken();
-    
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await axios.get(`${BACKEND_API_BASE}/v1/auth/refresh-token`, {
-      headers: {
-        'Authorization': `Bearer ${refreshToken}`,
-      },
-    });
+    const response = await backendApi.get(`/v1/auth/refresh-token`);
 
     if (response.data && response.data.success) {
       const newAccessToken = response.data.data?.access_token;
@@ -72,20 +45,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
     
     throw new Error('Failed to refresh token');
   } catch (error) {
-    // Refresh failed - clear auth and logout
-    store.dispatch(clearAuth());
-    clearAuthCookies();
-    
-    // Clear entire localStorage
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.clear();
-      } catch (err) {
-        console.error("Failed to clear localStorage:", err);
-      }
-      window.location.href = '/login';
-    }
-    
+    logout(true);
     throw error;
   }
 };
@@ -97,6 +57,7 @@ export const backendApi = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Request interceptor to add access token

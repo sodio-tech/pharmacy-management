@@ -226,7 +226,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                 className="w-full justify-start gap-2 text-[#6b7280] hover:text-[#111827] hover:bg-white"
                 onClick={() => {
                   // Clear Redux auth state
-                  dispatch(clearAuth())
+                  // dispatch(clearAuth())
                   logout()
                 }}
               >

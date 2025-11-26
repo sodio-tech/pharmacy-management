@@ -1,3 +1,4 @@
+import { store } from "@/store/store"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -16,3 +17,22 @@ export function formatPercentage(value: number | null | undefined): string {
   }
   return `${Number(value).toFixed(2)}%`
 }
+
+
+export const getAccessTokenFromStorage = (): string | null => {
+  if (typeof window === "undefined") return null;
+  
+  try {
+    const state = store.getState();
+    const tokenFromRedux = state.auth?.access_token;
+    
+    if (tokenFromRedux) {
+      return tokenFromRedux;
+    }
+    
+    // Fallback to localStorage if not in Redux state  
+    return localStorage.getItem("access_token");
+  } catch {
+    return null;
+  }
+};

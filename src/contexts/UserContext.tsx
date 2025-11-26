@@ -2,11 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { backendApi } from '@/lib/axios-config'
-import { clearAuthCookies, getRefreshToken } from '@/lib/cookies'
 import { useAppSelector, useAppDispatch } from '@/store/hooks'
-import { clearAuth, setAccessToken } from '@/store/slices/authSlice'
-import axios from 'axios'
-import { API } from '@/app/utils/constants'
+import { setAccessToken } from '@/store/slices/authSlice'
+import { logout } from '@/lib/auth'
 
 // User Interface (matches API response exactly)
 export interface User {
@@ -52,17 +50,7 @@ export function UserProvider({ children }: UserProviderProps) {
   // Refresh access token using refresh token
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
     try {
-      const refreshToken = getRefreshToken();
-      
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await axios.get(`${API}/api/v1/auth/refresh-token`, {
-        headers: {
-          'Authorization': `Bearer ${refreshToken}`,
-        },
-      });
+      const response = await backendApi.get(`/v1/auth/refresh-token`);
 
       if (response.data && response.data.success) {
         const newAccessToken = response.data.data?.access_token;
@@ -76,21 +64,10 @@ export function UserProvider({ children }: UserProviderProps) {
       
       throw new Error('Failed to refresh token');
     } catch (error) {
-      // Refresh failed - clear auth and logout
-      dispatch(clearAuth());
-      clearAuthCookies();
+      // Refresh failed - use global logout function
+      // silent=true to avoid console errors during automatic logout
       setUser(null);
-      
-      // Clear entire localStorage and redirect to login
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.clear();
-        } catch (err) {
-          console.error("Failed to clear localStorage:", err);
-        }
-        window.location.href = '/login';
-      }
-      
+      logout(true);
       return null;
     }
   }, [dispatch]);
@@ -152,32 +129,14 @@ export function UserProvider({ children }: UserProviderProps) {
             setUser(userData);
             setError(null);
           } catch (retryErr) {
-            // If retry also fails, clear auth
-            clearAuthCookies();
-            dispatch(clearAuth());
+            // If retry also fails, use global logout function
             setUser(null);
-            // Clear entire localStorage
-            if (typeof window !== "undefined") {
-              try {
-                localStorage.clear();
-              } catch (err) {
-                console.error("Failed to clear localStorage:", err);
-              }
-            }
+            logout(true);
           }
         } else {
           // Refresh token failed, already handled in refreshAccessToken
-          clearAuthCookies();
-          dispatch(clearAuth());
           setUser(null);
-          // Clear entire localStorage
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.clear();
-            } catch (err) {
-              console.error("Failed to clear localStorage:", err);
-            }
-          }
+          logout(true);
         }
       } else {
         setError(error.response?.data?.message || 'Failed to fetch user data')

@@ -2,36 +2,44 @@
  * Authentication Utilities
  */
 
-import { clearAuthCookies, isAuthenticated } from "./cookies";
 import { backendApi } from "./axios-config";
+import { store } from "@/store/store";
+import { clearAuth } from "@/store/slices/authSlice";
+import { getAccessTokenFromStorage } from "./utils";
 
 /**
- * Logout user - clear cookies, localStorage, and redirect to login
+ * Global logout function
+ * Performs complete logout: sends backend request, clears Redux state, 
+ * clears localStorage, clears cookies, and redirects to login page
+ * 
+ * @param silent - If true, suppresses console errors (useful for automatic logouts)
  */
-export const logout = () => {
-  clearAuthCookies();
-  
-  // Clear entire localStorage
-  if (typeof window !== "undefined") {
+export const logout = async (silent: boolean = false): Promise<void> => {
+  try {
+    // Send logout request to backend
+    // This will invalidate the refresh token on the server
     try {
-      localStorage.clear();
+      const response = await backendApi.post('/v1/auth/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${getAccessTokenFromStorage()}`
+        }
+      });
+      if (response.status === 200 && response.data.success) {
+        // Clear Redux state (access_token)
+        store.dispatch(clearAuth());
+
+        // Redirect to login page
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      }
     } catch (error) {
-      console.error("Failed to clear localStorage:", error);
+      console.log(error);
     }
-  }
-  
-  if (typeof window !== "undefined") {
-    window.location.href = "/login";
+  } catch (error) {
+    console.log(error);
   }
 };
-
-/**
- * Check if user is logged in
- */
-export const checkAuth = (): boolean => {
-  return isAuthenticated();
-};
-
 /**
  * Resend verification email
  * @param email - Email address to send verification email to

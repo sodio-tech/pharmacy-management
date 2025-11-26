@@ -10,9 +10,8 @@ import { z } from "zod"
 import { toast } from "react-toastify"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import axios from "axios"
-import { API, DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
-import { setAuthCookies } from "@/lib/cookies"
+import { backendApi } from "@/lib/axios-config"
+import { DEFAULT_REDIRECT_PATH } from "@/app/utils/constants"
 import { resendVerificationEmail } from "@/lib/auth"
 import { useAppDispatch } from "@/store/hooks"
 import { setAccessToken } from "@/store/slices/authSlice"
@@ -52,7 +51,7 @@ const LoginForm = () => {
     const verifyEmail = async (token: string) => {
         try {
             setIsVerifying(true)
-            const response = await axios.post(`${API}/api/v1/auth/verify-email`, { token })
+            const response = await backendApi.post(`/v1/auth/verify-email`, { token })
 
             if (response.status === 200) {
                 toast.success("Email verified successfully! You can now login.")
@@ -69,12 +68,9 @@ const LoginForm = () => {
         try {
             setIsLoading(true)
 
-            const response = await axios.post(`${API}/api/v1/auth/sign-in`, userData)
+            const response = await backendApi.post(`/v1/auth/sign-in`, userData)
             if (response.status === 200 && response.data.success) {
-                const { access_token, refresh_token } = response.data.data
-
-                // Store refresh_token in cookie
-                setAuthCookies({ refresh_token })
+                const { access_token } = response.data.data
 
                 // Store access_token in Redux state (with persistence)
                 dispatch(setAccessToken(access_token))

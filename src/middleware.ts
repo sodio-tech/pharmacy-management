@@ -7,7 +7,7 @@ import {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const refreshTokenCookie = request.cookies.get("token");
+  const refreshTokenCookie = request.cookies.get("refresh_token");
   
   const isCookieExpired = !refreshTokenCookie || !refreshTokenCookie.value;
 

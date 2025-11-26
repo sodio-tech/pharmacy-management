@@ -39,10 +39,9 @@ const authSlice = createSlice({
     },
     clearAuth: (state) => {
       state.access_token = null
-      // Clear from localStorage
       if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem("access_token")
+          localStorage.clear();
         } catch (error) {
           console.error("Failed to clear access token:", error)
         }
