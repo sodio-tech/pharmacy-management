@@ -70,130 +70,127 @@ export function ComplianceDashboard() {
         </Card> */}
       </div>
 
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
-        {/* Drug License & Permits */}
-        <Card className="border-[#e5e7eb]">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-lg font-semibold text-[#111827]">Drug License & Permits</CardTitle>
-              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] border-[#16a34a] w-fit">
+      {/* Drug License & Permits */}
+      <Card className="border-[#e5e7eb]">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-lg font-semibold text-[#111827]">Drug License & Permits</CardTitle>
+            <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] border-[#16a34a] w-fit">
+              Valid
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
+            <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">Retail Drug License</p>
+              <p className="text-sm text-[#6b7280] break-words">License No: DL-2024-001234</p>
+            </div>
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
                 Valid
               </Badge>
+              <p className="text-xs text-[#6b7280]">Expires: Mar 15, 2025</p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
-              <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">Retail Drug License</p>
-                <p className="text-sm text-[#6b7280] break-words">License No: DL-2024-001234</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                  Valid
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Expires: Mar 15, 2025</p>
-              </div>
-            </div>
+          </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
-              <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">Trade License</p>
-                <p className="text-sm text-[#6b7280] break-words">License No: TL-2024-5678</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                  Valid
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Expires: Dec 31, 2024</p>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
+            <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-white" />
             </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#fef9c3] rounded-lg">
-              <div className="w-8 h-8 bg-[#ca8a04] rounded-full flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">Fire Safety Certificate</p>
-                <p className="text-sm text-[#6b7280] break-words">Certificate No: FSC-2024-9012</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#fef9c3] text-[#ca8a04] w-fit">
-                  Renewal Due
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Expires: Jan 30, 2025</p>
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">Trade License</p>
+              <p className="text-sm text-[#6b7280] break-words">License No: TL-2024-5678</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Tax Compliance */}
-        <Card className="border-[#e5e7eb]">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-lg font-semibold text-[#111827]">Tax Compliance</CardTitle>
-              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] border-[#16a34a] w-fit">
-                Up to Date
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
+                Valid
               </Badge>
+              <p className="text-xs text-[#6b7280]">Expires: Dec 31, 2024</p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#dbeafe] rounded-lg">
-              <div className="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">GST Return - December</p>
-                <p className="text-sm text-[#6b7280]">GSTR-1, GSTR-3B</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                  Filed
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Filed: Jan 10, 2025</p>
-              </div>
-            </div>
+          </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f3e8ff] rounded-lg">
-              <div className="w-8 h-8 bg-[#9333ea] rounded-full flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">Income Tax Return</p>
-                <p className="text-sm text-[#6b7280]">AY 2024-25</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                  Filed
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Filed: Jul 15, 2024</p>
-              </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#fef9c3] rounded-lg">
+            <div className="w-8 h-8 bg-[#ca8a04] rounded-full flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-4 h-4 text-white" />
             </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">Fire Safety Certificate</p>
+              <p className="text-sm text-[#6b7280] break-words">Certificate No: FSC-2024-9012</p>
+            </div>
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#fef9c3] text-[#ca8a04] w-fit">
+                Renewal Due
+              </Badge>
+              <p className="text-xs text-[#6b7280]">Expires: Jan 30, 2025</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
-              <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#111827]">TDS Compliance</p>
-                <p className="text-sm text-[#6b7280]">Monthly TDS returns</p>
-              </div>
-              <div className="flex flex-col sm:text-right gap-1">
-                <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                  Current
-                </Badge>
-                <p className="text-xs text-[#6b7280]">Last: Dec 2024</p>
-              </div>
+      {/* Tax Compliance */}
+      <Card className="border-[#e5e7eb]">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <CardTitle className="text-lg font-semibold text-[#111827]">Tax Compliance</CardTitle>
+            <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] border-[#16a34a] w-fit">
+              Up to Date
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#dbeafe] rounded-lg">
+            <div className="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-white" />
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">GST Return - December</p>
+              <p className="text-sm text-[#6b7280]">GSTR-1, GSTR-3B</p>
+            </div>
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
+                Filed
+              </Badge>
+              <p className="text-xs text-[#6b7280]">Filed: Jan 10, 2025</p>
+            </div>
+          </div>
+
+          {/* <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f3e8ff] rounded-lg">
+            <div className="w-8 h-8 bg-[#9333ea] rounded-full flex items-center justify-center flex-shrink-0">
+              <FileText className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">Income Tax Return</p>
+              <p className="text-sm text-[#6b7280]">AY 2024-25</p>
+            </div>
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
+                Filed
+              </Badge>
+              <p className="text-xs text-[#6b7280]">Filed: Jul 15, 2024</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-[#f0fdf4] rounded-lg">
+            <div className="w-8 h-8 bg-[#16a34a] rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-[#111827]">TDS Compliance</p>
+              <p className="text-sm text-[#6b7280]">Monthly TDS returns</p>
+            </div>
+            <div className="flex flex-col sm:text-right gap-1">
+              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
+                Current
+              </Badge>
+              <p className="text-xs text-[#6b7280]">Last: Dec 2024</p>
+            </div>
+          </div> */}
+        </CardContent>
+      </Card>
 
       {/* Controlled Substances Tracking */}
       {/* <Card className="border-[#e5e7eb]">
@@ -361,7 +358,7 @@ export function ComplianceDashboard() {
 
       {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 sm:gap-8">
         {/* Recent Audit Trail */}
-        {/* <Card className="border-[#e5e7eb]">
+      {/* <Card className="border-[#e5e7eb]">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between gap-3">
               <CardTitle className="text-lg font-semibold text-[#111827]">Recent Audit Trail</CardTitle>
@@ -418,7 +415,7 @@ export function ComplianceDashboard() {
         </Card>
 
         {/* Compliance Reports */}
-        {/* <Card className="border-[#e5e7eb]">
+      {/* <Card className="border-[#e5e7eb]">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-lg font-semibold text-[#111827]">Compliance Reports</CardTitle>
