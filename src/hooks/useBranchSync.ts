@@ -9,7 +9,14 @@ import { useBranches } from "./useBranches"
  */
 export function useBranchSync(pharmacyId: number | undefined) {
   const dispatch = useAppDispatch()
-  const { branches, isLoading, error } = useBranches(pharmacyId)
+  const { branches, isLoading, error, fetchBranches } = useBranches(pharmacyId)
+
+  // Explicitly fetch when pharmacyId becomes available
+  useEffect(() => {
+    if (pharmacyId) {
+      fetchBranches()
+    }
+  }, [pharmacyId, fetchBranches])
 
   useEffect(() => {
     dispatch(setLoading(isLoading))

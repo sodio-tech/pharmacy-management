@@ -50,8 +50,12 @@ export function useBranches(pharmacyId: number | undefined): UseBranchesReturn {
   }, [pharmacyId])
 
   useEffect(() => {
-    fetchBranches()
-  }, [fetchBranches])
+    if (pharmacyId) {
+      fetchBranches()
+    } else {
+      setBranches([])
+    }
+  }, [pharmacyId, fetchBranches])
 
   return { branches, isLoading, error, fetchBranches }
 }
