@@ -367,16 +367,16 @@ export function InventoryTable({
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 md:gap-3">
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center text-base md:text-lg flex-shrink-0">
-                            {product.image_url ? (
-                              <img
-                                src={product.image_url || "/placeholder.svg"}
-                                alt={product.name || ""}
-                                className="w-full h-full object-cover rounded-lg"
-                              />
-                            ) : (
-                              "💊"
-                            )}
+                          <div className="w-8 h-8 md:w-10 md:h-10 bg-[#dbeafe] rounded-lg flex items-center justify-center text-base md:text-lg flex-shrink-0 overflow-hidden">
+                            <img
+                              src={product.image_url || "/assets/fallback.jpg"}
+                              alt={product.name || ""}
+                              className="w-full h-full object-cover rounded-lg"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement
+                                target.src = "/assets/fallback.jpg"
+                              }}
+                            />
                           </div>
                           <div className="min-w-0">
                             <div className="font-medium text-[#111827] text-sm md:text-base truncate">

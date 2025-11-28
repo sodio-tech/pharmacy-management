@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2, Search } from "lucide-react"
-import Image from "next/image"
 import { backendApi } from "@/lib/axios-config"
 
 interface Product {
@@ -329,24 +328,17 @@ export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            {product.image ? (
-                              <div className="relative w-12 h-12 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
-                                <Image
-                                  src={product.image}
-                                  alt={product.product_name}
-                                  fill
-                                  className="object-cover"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement
-                                    target.style.display = "none"
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                <span className="text-gray-400 text-xs">No Image</span>
-                              </div>
-                            )}
+                            <div className="relative w-12 h-12 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
+                              <img
+                                src={product.image || "/assets/fallback.jpg"}
+                                alt={product.product_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement
+                                  target.src = "/assets/fallback.jpg"
+                                }}
+                              />
+                            </div>
                             <div className="min-w-0">
                               <div className="font-medium text-gray-900 truncate">
                                 {product.product_name}

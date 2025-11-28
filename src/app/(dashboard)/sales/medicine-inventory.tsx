@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import Image from "next/image"
 import { toast } from "react-toastify"
 import { backendApi } from "@/lib/axios-config"
 import { Product } from "@/types/sales"
@@ -144,11 +143,14 @@ export function MedicineInventory({
           onClick={() => handleDoubleTap(product)}
         >
           <div className="relative aspect-square overflow-hidden bg-muted">
-            <Image
-              src={product.image_url || "/placeholder.svg"}
+            <img
+              src={product.image_url || "/assets/fallback.jpg"}
               alt={product.name}
-              fill
-              className="object-cover group-hover:scale-110 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = "/assets/fallback.jpg"
+              }}
             />
             {product.is_active && (
               <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5">

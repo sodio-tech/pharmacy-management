@@ -157,9 +157,13 @@ export function ProductCategories({
             >
               <div className="relative aspect-square overflow-hidden bg-muted">
                 <img
-                  src={product.image || "/placeholder.svg"}
+                  src={product.image || "/assets/fallback.jpg"}
                   alt={product.product_name}
                   className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = "/assets/fallback.jpg"
+                  }}
                 />
                 {product.available_stock > 0 && (
                   <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1.5">

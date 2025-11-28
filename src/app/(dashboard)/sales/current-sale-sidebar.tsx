@@ -206,7 +206,12 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
         setCustomer(null)
         setPrescription(null)
         setCustomerId(null)
-        clearCart(true) 
+        clearCart(true)
+        
+        // Reload the page after 3.5 seconds
+        setTimeout(() => {
+          window.location.reload()
+        }, 3500)
       } else {
         toast.error(responseData?.message || "Failed to complete sale")
       }
@@ -392,23 +397,15 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                   className="flex items-start space-x-2 md:space-x-3 p-3 md:p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors"
                 >
                   <div className="p-2 md:p-3 rounded-lg bg-muted flex-shrink-0 w-12 h-12 md:w-14 md:h-14 flex items-center justify-center overflow-hidden relative">
-                    {item.product.image_url ? (
-                      <>
-                        <span className="text-lg md:text-xl absolute inset-0 flex items-center justify-center z-0">💊</span>
-                        <img
-                          src={item.product.image_url}
-                          alt={item.product.name}
-                          className="w-full h-full object-cover rounded-lg relative z-10"
-                          onError={(e) => {
-                            // Hide image if it fails to load, emoji will show as fallback
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <span className="text-lg md:text-xl">💊</span>
-                    )}
+                    <img
+                      src={item.product.image_url || "/assets/fallback.jpg"}
+                      alt={item.product.name}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = "/assets/fallback.jpg"
+                      }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0 w-full">
                     <p className="font-semibold text-xs md:text-sm mb-1 line-clamp-2">{item.product.name}</p>

@@ -207,12 +207,12 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
     formDataToSend.append('gst_rate', formData.gst_percent || '0')
     formDataToSend.append('pack_size', validPackSize.toString())
     formDataToSend.append('stock', formData.stock || '0')
-    
+
     // Use globally selected branch ID for add mode, or product's branch_id for edit mode
     const branchIdToSend = mode === "edit" && formData.branch_id
       ? formData.branch_id.toString()
       : (selectedBranchId?.toString() || "")
-    
+
     if (branchIdToSend) {
       formDataToSend.append('branch_id', branchIdToSend)
     }
@@ -348,6 +348,15 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   onInputChange={(field, value) => handleInputChange(field as keyof typeof formData, value)}
                 />
 
+                <PricingSection
+                  unitPrice={formData.unit_price}
+                  sellingPrice={formData.selling_price}
+                  gstPercent={formData.gst_percent}
+                  onUnitPriceChange={(value) => handleInputChange("unit_price", value)}
+                  onSellingPriceChange={(value) => handleInputChange("selling_price", value)}
+                  onGstPercentChange={(value) => handleInputChange("gst_percent", value)}
+                />
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CategoryMultiSelect
@@ -367,24 +376,6 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   isLoading={isLoading}
                 />
 
-                <IdentificationSection
-                  barcode={formData.barcode}
-                  qrCode={formData.qr_code}
-                  onBarcodeChange={(value) => handleInputChange("barcode", value)}
-                  onQRCodeChange={(value) => handleInputChange("qr_code", value)}
-                  onGenerateBarcode={generateBarcode}
-                  onGenerateQRCode={generateQRCode}
-                />
-
-                <PricingSection
-                  unitPrice={formData.unit_price}
-                  sellingPrice={formData.selling_price}
-                  gstPercent={formData.gst_percent}
-                  onUnitPriceChange={(value) => handleInputChange("unit_price", value)}
-                  onSellingPriceChange={(value) => handleInputChange("selling_price", value)}
-                  onGstPercentChange={(value) => handleInputChange("gst_percent", value)}
-                />
-
                 <PackagingStockSection
                   unitId={formData.unit_id}
                   packSize={formData.pack_size}
@@ -393,13 +384,22 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
                   onPackSizeChange={(value) => handleInputChange("pack_size", value)}
                   onStockChange={(value) => handleInputChange("stock", value)}
                 />
+
+                <IdentificationSection
+                  barcode={formData.barcode}
+                  qrCode={formData.qr_code}
+                  onBarcodeChange={(value) => handleInputChange("barcode", value)}
+                  onQRCodeChange={(value) => handleInputChange("qr_code", value)}
+                  onGenerateBarcode={generateBarcode}
+                  onGenerateQRCode={generateQRCode}
+                />
               </div>
             )}
           </div>
 
           <div className="flex items-center justify-end p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
             <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+              <Button variant="outline" onClick={handleClose} disabled={isLoading}>
                 Cancel
               </Button>
               <Button onClick={handleSave} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700 text-white">
