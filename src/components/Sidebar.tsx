@@ -59,6 +59,7 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
 
   const isPharmacist = user?.role === "PHARMACIST"
   const isAdminOrSuperAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
+  const isSuperAdmin = user?.role === "SUPER_ADMIN"
 
   // Reset image error when user changes
   useEffect(() => {
@@ -66,9 +67,17 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
   }, [user?.id, user?.image, user?.profile_image])
 
   // Filter sidebar items based on user role
-  const filteredSidebarItems = isPharmacist
-    ? sidebarItems.filter((item) => item.label !== "Subscription")
-    : sidebarItems
+  const filteredSidebarItems = sidebarItems.filter((item) => {
+    // Hide Subscription for Pharmacist
+    if (isPharmacist && item.label === "Subscription") {
+      return false
+    }
+    // Hide User Management for all roles except SUPER_ADMIN
+    if (item.label === "User Management" && !isSuperAdmin) {
+      return false
+    }
+    return true
+  })
 
   const handleNavigation = (href: string) => {
     router.push(href)
@@ -171,12 +180,14 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {branches.map((branch) => (
-                    <SelectItem key={branch.id} value={branch.id.toString()}>
-                      {branch.branch_name}
-                      {branch.branch_location && ` - ${branch.branch_location}`}
-                    </SelectItem>
-                  ))}
+                  {branches
+                    .filter((branch) => branch?.id != null)
+                    .map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id.toString()}>
+                        {branch.branch_name}
+                        {branch.branch_location && ` - ${branch.branch_location}`}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>

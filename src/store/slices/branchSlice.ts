@@ -72,10 +72,21 @@ const branchSlice = createSlice({
       state.selectedBranchId = null
       state.error = null
     },
+    addBranch: (state, action: PayloadAction<Branch>) => {
+      // Only add branch if it has a valid id
+      if (!action.payload?.id) {
+        return
+      }
+      // Check if branch already exists to avoid duplicates
+      const branchExists = state.branches.some((branch) => branch.id === action.payload.id)
+      if (!branchExists) {
+        state.branches.push(action.payload)
+      }
+    },
   },
 })
 
-export const { setSelectedBranch, setBranches, setLoading, setError, clearBranches } =
+export const { setSelectedBranch, setBranches, setLoading, setError, clearBranches, addBranch } =
   branchSlice.actions
 
 export default branchSlice.reducer
