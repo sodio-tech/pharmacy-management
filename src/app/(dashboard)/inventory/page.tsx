@@ -127,9 +127,8 @@ function InventoryContent({
           setSelectedProduct(null)
         }}
         onSuccess={(product) => {
-          // Trigger table refresh when product is added/updated
-          setRefreshTrigger((prev) => prev + 1)
           setSelectedProduct(null)
+          // Page will reload automatically from AddProductModal
         }}
       />
 

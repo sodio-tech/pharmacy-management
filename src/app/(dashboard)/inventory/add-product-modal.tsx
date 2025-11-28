@@ -257,6 +257,11 @@ export function AddProductModal({ isOpen, onClose, product, branchId, onSuccess 
       }
 
       onClose()
+      
+      // Reload the page to refresh stats and inventory
+      setTimeout(() => {
+        window.location.reload()
+      }, 500)
     } catch (err: unknown) {
       console.error("Error saving product:", err)
       const error = err as { message?: string; response?: { data?: { message?: string } } }
