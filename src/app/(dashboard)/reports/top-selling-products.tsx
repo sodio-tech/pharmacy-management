@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Loader2, Search } from "lucide-react"
+import Image from "next/image"
 import { backendApi } from "@/lib/axios-config"
 
 interface Product {
@@ -45,6 +48,11 @@ export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [loadingAll, setLoadingAll] = useState(false)
+  const [errorAll, setErrorAll] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("")
 
   const fetchTopSellingProducts = useCallback(async () => {
     if (!branchId) {
@@ -91,17 +99,75 @@ export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
     fetchTopSellingProducts()
   }, [fetchTopSellingProducts])
 
-  const handleApplyFilters = () => {
-    fetchTopSellingProducts()
-    setDialogOpen(false)
-  }
-
   const handleClearFilters = () => {
     setStartDate("")
     setEndDate("")
-    setDialogOpen(false)
+    setSearchTerm("")
     // Filters will be cleared and data will refetch automatically via useEffect
   }
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const fetchAllProducts = useCallback(async () => {
+    if (!branchId) {
+      setAllProducts([])
+      return
+    }
+
+    try {
+      setLoadingAll(true)
+      setErrorAll(null)
+
+      const params = new URLSearchParams()
+      params.append("branch_id", branchId.toString())
+      params.append("limit", "100") // Higher limit for "View All"
+
+      if (startDate) {
+        params.append("start_date", startDate)
+      }
+      if (endDate) {
+        params.append("end_date", endDate)
+      }
+      if (debouncedSearchTerm.trim()) {
+        params.append("search", debouncedSearchTerm.trim())
+      }
+
+      const response = await backendApi.get<ApiResponse>(
+        `/v1/reports/top-selling-products?${params.toString()}`
+      )
+
+      if (response.data.success && response.data.data?.products) {
+        const sortedProducts = [...response.data.data.products].sort(
+          (a, b) => parseInt(b.units_sold) - parseInt(a.units_sold)
+        )
+        setAllProducts(sortedProducts)
+      } else {
+        setAllProducts([])
+      }
+    } catch (err: unknown) {
+      console.error("Failed to fetch all products:", err)
+      const errorMessage =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to load products"
+      setErrorAll(errorMessage)
+      setAllProducts([])
+    } finally {
+      setLoadingAll(false)
+    }
+  }, [branchId, startDate, endDate, debouncedSearchTerm])
+
+  useEffect(() => {
+    if (dialogOpen) {
+      fetchAllProducts()
+    }
+  }, [dialogOpen, branchId, startDate, endDate, debouncedSearchTerm, fetchAllProducts])
 
   const hasActiveFilters = startDate || endDate
 
@@ -174,37 +240,135 @@ export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Date Filters</DialogTitle>
+            <DialogTitle>Top Selling Products</DialogTitle>
+            <DialogDescription>View all top selling products with search and date filters</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end-date">End Date</Label>
-              <Input
-                id="end-date"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || undefined}
-              />
+          
+          {/* Search and Date Filters */}
+          <div className="space-y-4 py-4 border-b">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex-1 w-full sm:max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="space-y-2 sm:min-w-[150px]">
+                  <Label htmlFor="start-date" className="text-xs">Start Date</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-2 sm:min-w-[150px]">
+                  <Label htmlFor="end-date" className="text-xs">End Date</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || undefined}
+                    className="h-9"
+                  />
+                </div>
+                <div className="flex gap-2 items-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="h-9"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClearFilters}>
-              Clear
-            </Button>
-            <Button onClick={handleApplyFilters}>Apply Filters</Button>
-          </DialogFooter>
+
+          {/* Products Table */}
+          <div className="py-4">
+            {loadingAll ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Loading products...</span>
+              </div>
+            ) : errorAll ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-destructive">{errorAll}</p>
+              </div>
+            ) : allProducts.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-muted-foreground">No products found</p>
+              </div>
+            ) : (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16 text-center">Rank</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-right">Units Sold</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allProducts.map((product, index) => (
+                      <TableRow key={product.product_id}>
+                        <TableCell className="text-center font-semibold text-gray-600">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {product.image ? (
+                              <div className="relative w-12 h-12 rounded-md overflow-hidden border border-gray-200 flex-shrink-0">
+                                <Image
+                                  src={product.image}
+                                  alt={product.product_name}
+                                  fill
+                                  className="object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = "none"
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <span className="text-gray-400 text-xs">No Image</span>
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900 truncate">
+                                {product.product_name}
+                              </div>
+                              {product.generic_name && (
+                                <div className="text-sm text-gray-500 truncate">
+                                  {product.generic_name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold text-gray-900">
+                          {parseInt(product.units_sold).toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
