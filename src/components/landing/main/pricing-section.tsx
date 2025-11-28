@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 
 const pricingPlans = [
   {
-    name: "Free Plan",
+    name: "Free Plan (3 Days Trial)",
     price: "₹0",
     period: "",
     popular: false,

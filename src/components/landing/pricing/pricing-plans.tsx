@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button"
 
 const pricingPlans = [
   {
-    name: "Free Plan",
-    badge: "Free Forever",
+    name: "Free Plan (3 Days Trial)",
+    // badge: "Free Forever",
     badgeColor: "bg-[#0f766e]",
     price: "₹0",
     period: "",
