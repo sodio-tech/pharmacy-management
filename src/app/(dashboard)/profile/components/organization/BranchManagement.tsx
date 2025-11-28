@@ -10,6 +10,7 @@ interface BranchManagementProps {
   isLoading: boolean
   onAddBranch: () => void
   onAddEmployee: (branchId: number) => void
+  onBranchUpdate?: () => void
 }
 
 export default function BranchManagement({
@@ -17,6 +18,7 @@ export default function BranchManagement({
   isLoading,
   onAddBranch,
   onAddEmployee,
+  onBranchUpdate,
 }: BranchManagementProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
@@ -44,6 +46,7 @@ export default function BranchManagement({
               branch={branch}
               index={index}
               onAddEmployee={onAddEmployee}
+              onBranchUpdate={onBranchUpdate}
             />
           ))
         )}

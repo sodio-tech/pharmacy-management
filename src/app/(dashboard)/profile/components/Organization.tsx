@@ -55,6 +55,29 @@ export default function Organization() {
     fetchBranches()
   }
 
+  const handleBranchUpdate = async () => {
+    // Refetch branches in Organization component
+    fetchBranches()
+    // Also update Redux store
+    if (sessionUser?.pharmacy_id) {
+      try {
+        const response = await backendApi.get(`/v1/org/branches/${sessionUser.pharmacy_id}`)
+        if (response.data.success) {
+          const fetchedBranches = response.data.data.branches || []
+          const reduxBranches: ReduxBranch[] = fetchedBranches.map((branch: Branch) => ({
+            id: branch.id,
+            branch_name: branch.branch_name,
+            branch_location: branch.branch_location,
+            drug_license_number: branch.drug_license_number,
+          }))
+          dispatch(setBranches(reduxBranches))
+        }
+      } catch (error) {
+        console.error("Error fetching branches after update:", error)
+      }
+    }
+  }
+
   const handleAddEmployee = (branchId: number) => {
     setSelectedBranchId(branchId)
     setIsAddEmployeeOpen(true)
@@ -75,6 +98,7 @@ export default function Organization() {
         isLoading={isLoading}
         onAddBranch={() => setIsAddBranchOpen(true)}
         onAddEmployee={handleAddEmployee}
+        onBranchUpdate={handleBranchUpdate}
       />
 
       <AddBranchDialog

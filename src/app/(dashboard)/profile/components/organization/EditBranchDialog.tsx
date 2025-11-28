@@ -14,7 +14,11 @@ import {
 import { Loader2 } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
+import { useAppDispatch } from "@/store/hooks"
+import { setBranches } from "@/store/slices/branchSlice"
+import { useUser } from "@/contexts/UserContext"
 import type { Branch } from "../organization.types"
+import type { Branch as ReduxBranch } from "@/hooks/useBranches"
 
 interface EditBranchDialogProps {
   open: boolean
@@ -25,6 +29,7 @@ interface EditBranchDialogProps {
 
 interface BranchFormData {
   branch_name: string
+  branch_location: string
   drug_license_number: string
   drug_license_expiry: string
   trade_license_number: string
@@ -71,10 +76,13 @@ export default function EditBranchDialog({
   branch,
   onSuccess,
 }: EditBranchDialogProps) {
+  const { user } = useUser()
+  const dispatch = useAppDispatch()
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(false)
   const [formData, setFormData] = useState<BranchFormData>({
     branch_name: "",
+    branch_location: "",
     drug_license_number: "",
     drug_license_expiry: "",
     trade_license_number: "",
@@ -100,6 +108,7 @@ export default function EditBranchDialog({
           const data = response.data.data
           setFormData({
             branch_name: data.branch_name || "",
+            branch_location: data.branch_location || "",
             drug_license_number: data.drug_license_number || "",
             drug_license_expiry: formatDateForInput(data.drug_license_expiry),
             trade_license_number: data.trade_license_number || "",
@@ -141,6 +150,7 @@ export default function EditBranchDialog({
       // Prepare data with dates in YYYY-MM-DD format
       const updateData = {
         branch_name: formData.branch_name,
+        branch_location: formData.branch_location,
         drug_license_number: formData.drug_license_number,
         drug_license_expiry: formData.drug_license_expiry || null,
         trade_license_number: formData.trade_license_number,
@@ -156,6 +166,28 @@ export default function EditBranchDialog({
 
       if (response.data.success) {
         toast.success(response.data.message || "Branch updated successfully!")
+        
+        // Refetch branches at both places (Organization component and Redux/Sidebar)
+        if (user?.pharmacy_id) {
+          try {
+            const branchesResponse = await backendApi.get(`/v1/org/branches/${user.pharmacy_id}`)
+            
+            if (branchesResponse.data.success) {
+              const fetchedBranches = branchesResponse.data.data.branches || []
+              // Update Redux store so Sidebar updates
+              const reduxBranches: ReduxBranch[] = fetchedBranches.map((b: Branch) => ({
+                id: b.id,
+                branch_name: b.branch_name,
+                branch_location: b.branch_location,
+                drug_license_number: b.drug_license_number,
+              }))
+              dispatch(setBranches(reduxBranches))
+            }
+          } catch (error) {
+            console.error("Error fetching branches after update:", error)
+          }
+        }
+        
         onOpenChange(false)
         onSuccess?.()
       } else {
@@ -203,66 +235,79 @@ export default function EditBranchDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="drug_license_number">Drug License Number</Label>
+            <Label htmlFor="branch_location">Branch Location</Label>
             <Input
-              id="drug_license_number"
-              value={formData.drug_license_number}
-              onChange={(e) => handleInputChange("drug_license_number", e.target.value)}
+              id="branch_location"
+              value={formData.branch_location}
+              onChange={(e) => handleInputChange("branch_location", e.target.value)}
               disabled={isLoading || isFetching}
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="drug_license_expiry">Drug License Expiry</Label>
-            <Input
-              id="drug_license_expiry"
-              type="date"
-              value={formData.drug_license_expiry}
-              onChange={(e) => handleInputChange("drug_license_expiry", e.target.value)}
-              disabled={isLoading || isFetching}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="drug_license_number">Drug License Number</Label>
+              <Input
+                id="drug_license_number"
+                value={formData.drug_license_number}
+                onChange={(e) => handleInputChange("drug_license_number", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="drug_license_expiry">Drug License Expiry</Label>
+              <Input
+                id="drug_license_expiry"
+                type="date"
+                value={formData.drug_license_expiry}
+                onChange={(e) => handleInputChange("drug_license_expiry", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="trade_license_number">Trade License Number</Label>
-            <Input
-              id="trade_license_number"
-              value={formData.trade_license_number}
-              onChange={(e) => handleInputChange("trade_license_number", e.target.value)}
-              disabled={isLoading || isFetching}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="trade_license_number">Trade License Number</Label>
+              <Input
+                id="trade_license_number"
+                value={formData.trade_license_number}
+                onChange={(e) => handleInputChange("trade_license_number", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="trade_license_expiry">Trade License Expiry</Label>
+              <Input
+                id="trade_license_expiry"
+                type="date"
+                value={formData.trade_license_expiry}
+                onChange={(e) => handleInputChange("trade_license_expiry", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="trade_license_expiry">Trade License Expiry</Label>
-            <Input
-              id="trade_license_expiry"
-              type="date"
-              value={formData.trade_license_expiry}
-              onChange={(e) => handleInputChange("trade_license_expiry", e.target.value)}
-              disabled={isLoading || isFetching}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="fire_certificate_number">Fire Certificate Number</Label>
-            <Input
-              id="fire_certificate_number"
-              value={formData.fire_certificate_number}
-              onChange={(e) => handleInputChange("fire_certificate_number", e.target.value)}
-              disabled={isLoading || isFetching}
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="fire_certificate_expiry">Fire Certificate Expiry</Label>
-            <Input
-              id="fire_certificate_expiry"
-              type="date"
-              value={formData.fire_certificate_expiry}
-              onChange={(e) => handleInputChange("fire_certificate_expiry", e.target.value)}
-              disabled={isLoading || isFetching}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="fire_certificate_number">Fire Certificate Number</Label>
+              <Input
+                id="fire_certificate_number"
+                value={formData.fire_certificate_number}
+                onChange={(e) => handleInputChange("fire_certificate_number", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="fire_certificate_expiry">Fire Certificate Expiry</Label>
+              <Input
+                id="fire_certificate_expiry"
+                type="date"
+                value={formData.fire_certificate_expiry}
+                onChange={(e) => handleInputChange("fire_certificate_expiry", e.target.value)}
+                disabled={isLoading || isFetching}
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading || isFetching}>

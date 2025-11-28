@@ -10,9 +10,10 @@ interface BranchCardProps {
   branch: Branch
   index: number
   onAddEmployee: (branchId: number) => void
+  onBranchUpdate?: () => void
 }
 
-export default function BranchCard({ branch, index, onAddEmployee }: BranchCardProps) {
+export default function BranchCard({ branch, index, onAddEmployee, onBranchUpdate }: BranchCardProps) {
   const isPrimary = index === 0
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
@@ -61,6 +62,7 @@ export default function BranchCard({ branch, index, onAddEmployee }: BranchCardP
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         branch={branch}
+        onSuccess={onBranchUpdate}
       />
     </div>
   )
