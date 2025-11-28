@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
 import { Building2, Users, UserCog, UserCheck, Loader2 } from "lucide-react"
 import { backendApi } from "@/lib/axios-config"
 import { toast } from "react-toastify"
@@ -20,7 +20,11 @@ interface ApiResponse {
   data: UserManagementData
 }
 
-export default function OrganizationOverview() {
+export interface OrganizationOverviewRef {
+  refetch: () => void
+}
+
+const OrganizationOverview = forwardRef<OrganizationOverviewRef>((props, ref) => {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({
     teamMembers: 0,
@@ -29,29 +33,33 @@ export default function OrganizationOverview() {
     pharmacists: 0,
   })
 
-  useEffect(() => {
-    const fetchUserManagement = async () => {
-      setIsLoading(true)
-      try {
-        const response = await backendApi.get<ApiResponse>("/v1/org/user-management")
-        
-        if (response.data.success && response.data.data) {
-          const data = response.data.data
-          setStats({
-            teamMembers: data.total_users || 0,
-            branches: data.branch_count || 0,
-            admins: data.admin_count || 0,
-            pharmacists: data.pharmacist_count || 0,
-          })
-        }
-      } catch (error) {
-        console.error("Error fetching user management data:", error)
-        toast.error("Failed to load organization overview")
-      } finally {
-        setIsLoading(false)
+  const fetchUserManagement = async () => {
+    setIsLoading(true)
+    try {
+      const response = await backendApi.get<ApiResponse>("/v1/org/user-management")
+      
+      if (response.data.success && response.data.data) {
+        const data = response.data.data
+        setStats({
+          teamMembers: data.total_users || 0,
+          branches: data.branch_count || 0,
+          admins: data.admin_count || 0,
+          pharmacists: data.pharmacist_count || 0,
+        })
       }
+    } catch (error) {
+      console.error("Error fetching user management data:", error)
+      toast.error("Failed to load organization overview")
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useImperativeHandle(ref, () => ({
+    refetch: fetchUserManagement,
+  }))
+
+  useEffect(() => {
     fetchUserManagement()
   }, [])
 
@@ -120,5 +128,9 @@ export default function OrganizationOverview() {
       )}
     </div>
   )
-}
+})
+
+OrganizationOverview.displayName = "OrganizationOverview"
+
+export default OrganizationOverview
 

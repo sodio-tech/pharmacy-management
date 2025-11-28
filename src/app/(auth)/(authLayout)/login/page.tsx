@@ -4,10 +4,6 @@ import { motion } from "motion/react"
 import Link from "next/link"
 import { Suspense } from "react"
 
-function LoginFormWrapper() {
-    return <LoginForm />
-}
-
 export default function LoginPage() {
     return (
         <motion.div
@@ -37,7 +33,7 @@ export default function LoginPage() {
                         </svg>
                     </div>
                 }>
-                    <LoginFormWrapper />
+                    <LoginForm />
                 </Suspense>
 
                 {/* Divider */}

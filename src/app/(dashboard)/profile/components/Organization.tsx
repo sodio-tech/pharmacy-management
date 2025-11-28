@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useUser } from "@/contexts/UserContext"
 import { useBranches } from "./hooks/useBranches"
 import { useAppDispatch } from "@/store/hooks"
@@ -8,7 +8,7 @@ import { setBranches } from "@/store/slices/branchSlice"
 import { backendApi } from "@/lib/axios-config"
 import type { Branch as ReduxBranch } from "@/hooks/useBranches"
 import OrganizationDetails from "./organization/OrganizationDetails"
-import OrganizationOverview from "./organization/OrganizationOverview"
+import OrganizationOverview, { type OrganizationOverviewRef } from "./organization/OrganizationOverview"
 import RolePermissions from "./organization/RolePermissions"
 import BranchManagement from "./organization/BranchManagement"
 import AddBranchDialog from "./organization/AddBranchDialog"
@@ -19,6 +19,7 @@ export default function Organization() {
   const { user: sessionUser } = useUser()
   const { branches, isLoading, fetchBranches } = useBranches(sessionUser?.pharmacy_id)
   const dispatch = useAppDispatch()
+  const overviewRef = useRef<OrganizationOverviewRef>(null)
   const [isAddBranchOpen, setIsAddBranchOpen] = useState(false)
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false)
   const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null)
@@ -53,6 +54,8 @@ export default function Organization() {
   const handleEmployeeSuccess = () => {
     setSelectedBranchId(null)
     fetchBranches()
+    // Refetch organization overview to update stats
+    overviewRef.current?.refetch()
   }
 
   const handleBranchUpdate = async () => {
@@ -88,7 +91,7 @@ export default function Organization() {
       {/* Organization Details and Overview */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <OrganizationDetails />
-        <OrganizationOverview />
+        <OrganizationOverview ref={overviewRef} />
       </div>
 
       <RolePermissions />

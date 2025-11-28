@@ -90,7 +90,7 @@ const LoginForm = () => {
                 }
                 router.push(`/verify-email?email=${userData.email}`)
             } else {
-                console.error("Login error:", err)
+              toast.error(err.response?.data?.message || "Something went wrong")
             }
         } finally {
             setIsLoading(false)
