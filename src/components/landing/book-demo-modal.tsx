@@ -17,12 +17,18 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import axios from "axios"
 import { useState, useMemo } from "react"
 import { toast } from "react-toastify"
-import countries from "world-countries"
+import { all } from "country-codes-list"
+
+interface Country {
+  name: string
+  flag: string
+  code: string
+  dialingCode: string
+}
 
 interface BookDemoModalProps {
   children: React.ReactNode
@@ -30,51 +36,85 @@ interface BookDemoModalProps {
 
 export function BookDemoModal({ children }: BookDemoModalProps) {
   const [name, setName] = useState("")
-  const [contactNumber, setContactNumber] = useState("")
-  const [countryCode, setCountryCode] = useState("")
-  const [countryName, setCountryName] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [selectedCountryCode, setSelectedCountryCode] = useState("US")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const countriesList = useMemo(() => {
-    return countries
+    const seenCodes = new Set<string>()
+    return all()
       .map((c) => ({
-        name: c.name.common,
-        flag: c.flag,
-        code: c.cca2,
+        name: c.countryNameEn || "",
+        flag: c.flag || "",
+        code: c.countryCode || "",
+        dialingCode: c.countryCallingCode ? `+${c.countryCallingCode}` : "",
       }))
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .filter((c: Country) => {
+        // Only include countries with dialing codes and remove duplicates
+        if (!c.dialingCode || !c.code || !c.name) return false
+        if (seenCodes.has(c.code)) return false
+        seenCodes.add(c.code)
+        return true
+      })
+      .sort((a: Country, b: Country) => a.name.localeCompare(b.name))
   }, [])
+
+  const selectedCountry = useMemo(() => {
+    return countriesList.find((c) => c.code === selectedCountryCode) || countriesList[0]
+  }, [selectedCountryCode, countriesList])
+
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "") // Only allow digits
+    if (value.length <= 10) {
+      setPhoneNumber(value)
+    }
+  }
+
+  const formatPhoneNumber = (value: string) => {
+    if (value.length === 0) return ""
+    if (value.length <= 3) return value
+    if (value.length <= 6) return `${value.slice(0, 3)}-${value.slice(3)}`
+    return `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6)}`
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!countryCode || !countryName) {
+    if (!selectedCountry) {
       toast.error("Please select a country")
+      return
+    }
+
+    if (phoneNumber.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number")
       return
     }
 
     setIsLoading(true)
 
     try {
+      const fullPhoneNumber = `${selectedCountry.dialingCode}${phoneNumber}`
+      
       const payload = {
         name: name,
-        phone_number: contactNumber,
-        country_code: countryCode,
-        country_name: countryName,
+        phone_number: fullPhoneNumber,
+        country_code: selectedCountry.code,
+        country_name: selectedCountry.name,
       }
 
       const response = await axios.post(`${API}/api/v1/admin/book-demo`, payload)
 
-      if (response.status === 200 || response.status === 201) {
+      if (response.data.success) {
         toast.success("Details submitted successfully! We'll get back to you shortly.")
 
         setIsLoading(false)
         setName("")
-        setContactNumber("")
-        setCountryCode("")
-        setCountryName("")
+        setPhoneNumber("")
+        setSelectedCountryCode("US")
         setIsOpen(false)
+      }else{
+        toast.error("Failed to submit demo booking. Please try again.")
       }
     } catch (err: unknown) {
       console.error("Error submitting demo booking:", err)
@@ -125,50 +165,51 @@ export function BookDemoModal({ children }: BookDemoModalProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="contact" className="text-sm font-medium text-gray-900">
-              Contact Number
+            <Label htmlFor="phone" className="text-sm font-medium text-gray-900">
+              Phone Number
             </Label>
-            <Input
-              id="contact"
-              type="tel"
-              placeholder="Enter your contact number"
-              value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
-              required
-              className="border-gray-300"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="country" className="text-sm font-medium text-gray-900">
-              Select Country
-            </Label>
-            <Select
-              value={countryCode}
-              onValueChange={(value) => {
-                const selectedCountry = countriesList.find((c) => c.code === value)
-                setCountryCode(value)
-                setCountryName(selectedCountry?.name || "")
-              }}
-            >
-              <SelectTrigger className="w-full border-gray-300 bg-white">
-                <SelectValue placeholder="Select country..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-[300px]">
-                {countriesList.map((c) => (
-                  <SelectItem key={c.code} value={c.code} textValue={c.name}>
-                    <span className="flex items-center gap-2">
-                      <span className="text-lg">{c.flag}</span>
-                      <span>{c.name}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative flex items-center border border-gray-300 rounded-md bg-white focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500">
+              <Select
+                value={selectedCountryCode}
+                onValueChange={(value) => {
+                  setSelectedCountryCode(value)
+                }}
+              >
+                <SelectTrigger className="w-auto min-w-[100px] border-0 border-r border-gray-300 rounded-r-none rounded-l-md bg-transparent focus:ring-0 focus:ring-offset-0 h-full px-3 py-2 hover:bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{selectedCountry?.flag}</span>
+                    <span className="text-sm font-medium">{selectedCountry?.dialingCode}</span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {countriesList.map((c, index) => (
+                    <SelectItem key={`${c.code}-${index}`} value={c.code} textValue={c.name}>
+                      <span className="flex items-center gap-2 w-full">
+                        <span className="text-lg">{c.flag}</span>
+                        <span className="flex-1">{c.name}</span>
+                        <span className="text-gray-500">{c.dialingCode}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder={formatPhoneNumber("2015555555")}
+                value={formatPhoneNumber(phoneNumber)}
+                onChange={handlePhoneNumberChange}
+                required
+                className="border-0 rounded-l-none rounded-r-md focus-visible:ring-0 focus-visible:ring-offset-0 pl-3 flex-1"
+                maxLength={12}
+              />
+            </div>
+            <p className="text-xs text-gray-500">Enter 10-digit phone number</p>
           </div>
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isLoading || !name || !contactNumber || !countryCode}
+            disabled={isLoading || !name || !phoneNumber || phoneNumber.length !== 10}
             className="w-full bg-teal-700 hover:bg-teal-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Submitting..." : "Submit"}
