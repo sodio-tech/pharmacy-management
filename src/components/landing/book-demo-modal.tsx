@@ -60,8 +60,8 @@ export function BookDemoModal({ children }: BookDemoModalProps) {
       const payload = {
         name: name,
         phone_number: contactNumber,
-        countryCode: countryCode,
-        countryName: countryName,
+        country_code: countryCode,
+        country_name: countryName,
       }
 
       const response = await axios.post(`${API}/api/v1/admin/book-demo`, payload)
