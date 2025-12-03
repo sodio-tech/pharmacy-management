@@ -308,12 +308,12 @@ export function OrderDetailsSheet({
                       <th className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-3">
                         Pack Size
                       </th>
-                      <th className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">
+                      <th className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-2 py-3">
                         Price
                       </th>
-                      {/* <th className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">
+                      <th className="text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground px-4 py-3">
                         Amount
-                      </th> */}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -338,12 +338,12 @@ export function OrderDetailsSheet({
                         </td>
                         <td className="px-2 py-3 text-sm text-center">{item.quantity}</td>
                         <td className="px-2 py-3 text-sm text-center">{item.pack_size || item?.product?.pack_size || 1}</td>
-                        <td className="px-4 py-3 text-sm text-right">
+                        <td className="px-2 py-3 text-sm text-right">
                           ₹{getUnitPrice(item).toFixed(2)}
                         </td>
-                        {/* <td className="px-4 py-3 text-sm font-semibold text-right">
+                        <td className="px-4 py-3 text-sm font-semibold text-right">
                           ₹{getLineTotal(item).toFixed(2)}
-                        </td> */}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
