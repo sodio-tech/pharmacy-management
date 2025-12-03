@@ -28,14 +28,30 @@ export function PricingSection({
   let profitMargin = null
   let totalSellingPrice = null
   let gstAmount = null
+  let profitAmount = null
+  let basePrice = null
 
   if (unitPriceNum > 0 && sellingPriceNum > 0) {
-    gstAmount = (sellingPriceNum * gstPercentNum) / 100
-    // Total selling price including GST (what customer pays)
-    totalSellingPrice = sellingPriceNum + gstAmount
-    // Profit margin = (profit / cost price) * 100
+    // Selling price already includes GST, so total price = selling price
+    totalSellingPrice = sellingPriceNum
+    
+    if (gstPercentNum > 0) {
+      // GST Amount = Selling Price * (GST% / 100)
+      gstAmount = (sellingPriceNum * gstPercentNum) / 100
+      // Base Price = Selling Price - GST Amount
+      basePrice = sellingPriceNum - gstAmount
+      // Profit amount = Base Price - Cost Price (GST is already included in selling price)
+      profitAmount = basePrice - unitPriceNum
+    } else {
+      // No GST case
+      gstAmount = 0
+      basePrice = sellingPriceNum
+      profitAmount = sellingPriceNum - unitPriceNum
+    }
+    
+    // Profit margin = (profit amount / cost price) * 100
     if (unitPriceNum > 0) {
-      profitMargin = formatPercentage(((sellingPriceNum - unitPriceNum) / unitPriceNum) * 100)
+      profitMargin = formatPercentage((profitAmount / unitPriceNum) * 100)
     }
   }
 
@@ -65,7 +81,7 @@ export function PricingSection({
 
         <div>
           <Label htmlFor="selling_price" className="text-sm font-medium">
-            Selling Price <span className="text-red-500">*</span>
+           Total Price (with GST) <span className="text-red-500">*</span>
           </Label>
           <Input
             id="selling_price"
@@ -132,19 +148,23 @@ export function PricingSection({
 
         {profitMargin && totalSellingPrice !== null && (
           <div className="md:col-span-3 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {gstAmount !== null && gstAmount > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">GST Amount</p>
-                  <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                    ₹{gstAmount.toFixed(2)}
-                  </p>
-                </div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Price (with GST)</p>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">GST Amount</p>
                 <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
-                  ₹{totalSellingPrice.toFixed(2)}
+                  ₹{gstAmount !== null ? gstAmount.toFixed(2) : '0.00'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Total Price (without GST)</p>
+                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                  ₹{sellingPrice !== null ? Number(sellingPrice).toFixed(2) : '0.00'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Profit Amount</p>
+                <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                  ₹{profitAmount !== null ? profitAmount.toFixed(2) : '0.00'}
                 </p>
               </div>
               <div>
