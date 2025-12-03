@@ -37,7 +37,7 @@ interface BookDemoModalProps {
 export function BookDemoModal({ children }: BookDemoModalProps) {
   const [name, setName] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
-  const [selectedCountryCode, setSelectedCountryCode] = useState("US")
+  const [selectedCountryCode, setSelectedCountryCode] = useState("IN")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -111,7 +111,7 @@ export function BookDemoModal({ children }: BookDemoModalProps) {
         setIsLoading(false)
         setName("")
         setPhoneNumber("")
-        setSelectedCountryCode("US")
+        setSelectedCountryCode("IN")
         setIsOpen(false)
       }else{
         toast.error("Failed to submit demo booking. Please try again.")
