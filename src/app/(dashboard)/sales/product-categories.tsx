@@ -168,11 +168,11 @@ export function ProductCategories({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xxl:grid-cols-4 w-full max-w-full gap-3 md:gap-4">
           {filteredProducts.map((product) => (
             <Card
               key={product.product_id}
-              className="group relative overflow-hidden py-0 hover:shadow-lg transition-all duration-300"
+              className="group relative w-full overflow-hidden py-0 "
             >
               <div className="relative aspect-square overflow-hidden bg-muted">
                 <img

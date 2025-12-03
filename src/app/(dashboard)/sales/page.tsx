@@ -1,17 +1,12 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-// import { Plus, Scan, BarChart3 } from "lucide-react";
-// import { HeaderActions, HeaderAction } from "@/components/HeaderActions";
+import { useState, Suspense } from "react"
 import { SalesStats } from "./sales-stats";
 import { ProductCategories } from "./product-categories";
 import { RecentTransactions } from "./recent-transactions";
 import { CurrentSaleSidebar } from "./current-sale-sidebar";
 import LayoutSkeleton from "@/components/layout-skeleton";
 import DynamicHeader from "@/components/DynamicHeader";
-import { MedicineInventory } from "./medicine-inventory";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useAppSelector } from "@/store/hooks";
 import { useUser } from "@/contexts/UserContext";
@@ -27,14 +22,13 @@ function SalesContent() {
   
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
-  const { addToCart } = useCart()
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 lg:gap-6 w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-7 gap-4 xl:gap-6 w-full">
         {/* Main Content */}
 
-        <div className="lg:col-span-4 bg-[#f9fafb] rounded-lg w-full">
+        <div className="xl:col-span-4 bg-[#f9fafb] rounded-lg w-full">
 
           <SalesStats branchId={selectedBranchId} />
           <div className="mb-8">
@@ -47,16 +41,10 @@ function SalesContent() {
               selectedBranchId={selectedBranchId}
             />
           </div>
-          <MedicineInventory
-            selectedCategory={selectedCategory}
-            searchTerm={searchTerm}
-            onAddToCart={addToCart}
-          />
-
         </div>
 
         {/* Sidebar */}
-        <div className="lg:col-span-3 w-full">
+        <div className="xl:col-span-3 w-full">
           <CurrentSaleSidebar branchId={selectedBranchId} />
         </div>
       </div>

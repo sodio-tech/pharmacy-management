@@ -219,11 +219,7 @@ export function TopSellingProducts({ branchId }: TopSellingProductsProps) {
                   <XAxis 
                     dataKey="name" 
                     type="category" 
-                    angle={0}
-                    textAnchor="end"
-                    height={100}
-                    interval={0}
-                    tick={{ fontSize: 13 }}
+                    hide={true}
                   />
                   <YAxis 
                     type="number" 
