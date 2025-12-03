@@ -48,6 +48,9 @@ export default function Organization() {
       console.error("Error fetching branches:", error)
       // Still try to refetch using the hook
       fetchBranches()
+    } finally {
+      // Refetch organization overview to update branch count
+      overviewRef.current?.refetch()
     }
   }
 
