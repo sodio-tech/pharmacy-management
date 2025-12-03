@@ -107,14 +107,16 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
     }
   }, [])
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (skipLoading = false) => {
     if (!branchId) {
       setTransactions([])
       return
     }
 
     try {
-      setLoading(true)
+      if (!skipLoading) {
+        setLoading(true)
+      }
       const response = await backendApi.get<ApiResponse>(`/v1/sales/list/${branchId?.toString()}?page=1&limit=2`)
       const data = response.data?.data
 
@@ -128,13 +130,30 @@ export function RecentTransactions({ branchId }: RecentTransactionsProps) {
       console.error('Error fetching recent transactions:', error)
       setTransactions([])
     } finally {
-      setLoading(false)
+      if (!skipLoading) {
+        setLoading(false)
+      }
     }
   }, [branchId, mapApiSaleToTransaction])
 
   useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
+
+  // Listen for sale completion event to refresh transactions
+  useEffect(() => {
+    const handleSaleCompleted = () => {
+      // Refresh transactions in background without showing loading state
+      if (branchId) {
+        fetchTransactions(true)
+      }
+    }
+
+    window.addEventListener('saleCompleted', handleSaleCompleted)
+    return () => {
+      window.removeEventListener('saleCompleted', handleSaleCompleted)
+    }
+  }, [branchId, fetchTransactions])
 
   const getStatusColor = (status: string) => {
     switch (status) {

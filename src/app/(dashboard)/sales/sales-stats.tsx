@@ -29,14 +29,16 @@ export function SalesStats({ branchId }: SalesStatsProps) {
   const [stats, setStats] = useState<ApiAnalyticsResponse['data'] | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (skipLoading = false) => {
     if (!branchId) {
       setStats(null)
       return
     }
 
     try {
-      setLoading(true)
+      if (!skipLoading) {
+        setLoading(true)
+      }
       const response = await backendApi.get<ApiAnalyticsResponse>(`/v1/sales/general-analytics/${branchId?.toString()}`)
       const data = response.data?.data
 
@@ -49,13 +51,30 @@ export function SalesStats({ branchId }: SalesStatsProps) {
       console.error('Error fetching sales stats:', error)
       setStats(null)
     } finally {
-      setLoading(false)
+      if (!skipLoading) {
+        setLoading(false)
+      }
     }
   }, [branchId])
 
   useEffect(() => {
     fetchStats()
   }, [fetchStats])
+
+  // Listen for sale completion event to refresh stats
+  useEffect(() => {
+    const handleSaleCompleted = () => {
+      // Refresh stats in background without showing loading state
+      if (branchId) {
+        fetchStats(true)
+      }
+    }
+
+    window.addEventListener('saleCompleted', handleSaleCompleted)
+    return () => {
+      window.removeEventListener('saleCompleted', handleSaleCompleted)
+    }
+  }, [branchId, fetchStats])
 
   const formatChange = (percent: number): { text: string; type: "positive" | "negative" | "neutral" } => {
     const formatted = formatPercentage(percent)

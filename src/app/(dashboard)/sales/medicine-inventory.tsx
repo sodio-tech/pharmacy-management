@@ -135,7 +135,7 @@ export function MedicineInventory({
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 max-w-full">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 w-full max-w-full">
       {products.map((product) => (
         <Card
           key={product.id}

@@ -208,10 +208,13 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
         setCustomerId(null)
         clearCart(true)
         
-        // Reload the page after 3.5 seconds
-        setTimeout(() => {
-          window.location.reload()
-        }, 3500)
+        // Dispatch custom event to refresh all APIs in background
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('saleCompleted', { 
+            detail: { branchId, saleId } 
+          }))
+        }
+        
       } else {
         toast.error(responseData?.message || "Failed to complete sale")
       }

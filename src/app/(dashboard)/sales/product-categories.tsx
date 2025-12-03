@@ -56,11 +56,13 @@ export function ProductCategories({
     )
   }, [products, searchTerm])
 
-  const fetchBranchStock = useCallback(async (branchId: number | string | null) => {
+  const fetchBranchStock = useCallback(async (branchId: number | string | null, skipLoading = false) => {
     if (!branchId) return
 
     try {
-      setLoading(true)
+      if (!skipLoading) {
+        setLoading(true)
+      }
       const response = await backendApi.get(`/v1/inventory/branch-stock/${branchId.toString()}`)
       const data = response.data?.data
 
@@ -77,13 +79,30 @@ export function ProductCategories({
       const err = error as { response?: { data?: { message?: string } }; message?: string }
       setProducts([])
     } finally {
-      setLoading(false)
+      if (!skipLoading) {
+        setLoading(false)
+      }
     }
   }, [onProductsLoad])
 
   useEffect(() => {
     if (selectedBranchId) {
       fetchBranchStock(selectedBranchId)
+    }
+  }, [selectedBranchId, fetchBranchStock])
+
+  // Listen for sale completion event to refresh branch stock
+  useEffect(() => {
+    const handleSaleCompleted = () => {
+      // Refresh branch stock in background without showing loading state
+      if (selectedBranchId) {
+        fetchBranchStock(selectedBranchId, true)
+      }
+    }
+
+    window.addEventListener('saleCompleted', handleSaleCompleted)
+    return () => {
+      window.removeEventListener('saleCompleted', handleSaleCompleted)
     }
   }, [selectedBranchId, fetchBranchStock])
 
@@ -123,10 +142,10 @@ export function ProductCategories({
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
-        <Button className="bg-teal-600 hover:bg-teal-700">
+        {/* <Button className="bg-teal-600 hover:bg-teal-700">
           <Scan className="h-4 w-4 mr-2" />
           Scan
-        </Button>
+        </Button> */}
       </div>
 
       {/* Products Grid */}

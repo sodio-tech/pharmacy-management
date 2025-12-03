@@ -31,16 +31,14 @@ function SalesContent() {
 
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 lg:gap-6 w-full">
         {/* Main Content */}
 
-        <div className="lg:col-span-2 bg-[#f9fafb] rounded-lg">
+        <div className="lg:col-span-4 bg-[#f9fafb] rounded-lg w-full">
 
           <SalesStats branchId={selectedBranchId} />
           <div className="mb-8">
             <RecentTransactions branchId={selectedBranchId} />
-
-
 
             <ProductCategories
               onCategorySelect={setSelectedCategory}
@@ -58,7 +56,7 @@ function SalesContent() {
         </div>
 
         {/* Sidebar */}
-        <div className="lg:col-span-1 w-full">
+        <div className="lg:col-span-3 w-full">
           <CurrentSaleSidebar branchId={selectedBranchId} />
         </div>
       </div>
