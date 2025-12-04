@@ -1,10 +1,111 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 // import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 // import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CheckCircle, AlertTriangle, FileText } from "lucide-react"
+import backendApi from "@/lib/axios-config"
+
+type LicensesData = {
+  drug_license_number: string
+  trade_license_number: string
+  fire_certificate_number: string
+  drug_license_expiry: string
+  trade_license_expiry: string
+  fire_certificate_expiry: string
+}
+
+type ComplianceApiResponse = {
+  success: boolean
+  message: string
+  data: {
+    licenses: LicensesData
+  }
+}
+
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return "-"
+  const d = new Date(dateString)
+  if (Number.isNaN(d.getTime())) return "-"
+  return d.toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  })
+}
+
+const isExpired = (dateString: string | null | undefined) => {
+  if (!dateString) return true
+  const expiry = new Date(dateString)
+  if (Number.isNaN(expiry.getTime())) return true
+  const now = new Date()
+  return expiry < now
+}
 
 export function ComplianceDashboard() {
+  const [licenses, setLicenses] = useState<LicensesData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchCompliance = async () => {
+      try {
+        const res = await backendApi.get<ComplianceApiResponse>("/v1/org/compliance/general-report")
+        if (isMounted && res.data?.success && res.data.data?.licenses) {
+          setLicenses(res.data.data.licenses)
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError("अनुपालन रिपोर्ट लाते समय समस्या हुई।")
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchCompliance()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const drugExpired = licenses ? isExpired(licenses.drug_license_expiry) : false
+  const tradeExpired = licenses ? isExpired(licenses.trade_license_expiry) : false
+  const fireExpired = licenses ? isExpired(licenses.fire_certificate_expiry) : false
+
+  const overallValid = licenses && !drugExpired && !tradeExpired && !fireExpired
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-[#6b7280]">Compliance डेटा लोड हो रहा है...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    )
+  }
+
+  if (!licenses) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-[#6b7280]">कोई compliance डेटा उपलब्ध नहीं है।</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Status Cards */}
@@ -14,11 +115,23 @@ export function ComplianceDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#6b7280] mb-1">Drug License Status</p>
-                <p className="text-2xl font-bold text-[#16a34a]">Valid</p>
-                <p className="text-xs text-[#6b7280] mt-1">Expires: Mar 15, 2025</p>
+                <p
+                  className={`text-2xl font-bold ${
+                    drugExpired ? "text-[#dc2626]" : "#16a34a" ? "text-[#16a34a]" : "text-[#16a34a]"
+                  }`}
+                >
+                  {drugExpired ? "Expired" : "Valid"}
+                </p>
+                <p className="text-xs text-[#6b7280] mt-1">
+                  Expires: {formatDate(licenses.drug_license_expiry)}
+                </p>
               </div>
-              <div className="w-12 h-12 bg-[#dcfce7] rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-[#16a34a]" />
+              <div
+                className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  drugExpired ? "bg-[#fee2e2]" : "bg-[#dcfce7]"
+                }`}
+              >
+                <CheckCircle className={`w-6 h-6 ${drugExpired ? "text-[#dc2626]" : "text-[#16a34a]"}`} />
               </div>
             </div>
           </CardContent>
@@ -29,8 +142,12 @@ export function ComplianceDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-[#6b7280] mb-1">GST Compliance</p>
-                <p className="text-2xl font-bold text-[#16a34a]">100%</p>
-                <p className="text-xs text-[#6b7280] mt-1">All returns filed</p>
+                <p className="text-2xl font-bold text-[#16a34a]">
+                  {overallValid ? "100%" : "Needs Review"}
+                </p>
+                <p className="text-xs text-[#6b7280] mt-1">
+                  {overallValid ? "All returns filed" : "कुछ लाइसेंस expire हो चुके हैं"}
+                </p>
               </div>
               <div className="w-12 h-12 bg-[#dbeafe] rounded-lg flex items-center justify-center">
                 <FileText className="w-6 h-6 text-[#2563eb]" />
@@ -75,8 +192,13 @@ export function ComplianceDashboard() {
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-lg font-semibold text-[#111827]">Drug License & Permits</CardTitle>
-            <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] border-[#16a34a] w-fit">
-              Valid
+            <Badge
+              variant="secondary"
+              className={`w-fit border ${
+                overallValid ? "bg-[#dcfce7] text-[#16a34a] border-[#16a34a]" : "bg-[#fee2e2] text-[#dc2626] border-[#dc2626]"
+              }`}
+            >
+              {overallValid ? "Valid" : "Some Licenses Expired"}
             </Badge>
           </div>
         </CardHeader>
@@ -87,13 +209,22 @@ export function ComplianceDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-[#111827]">Retail Drug License</p>
-              <p className="text-sm text-[#6b7280] break-words">License No: DL-2024-001234</p>
+              <p className="text-sm text-[#6b7280] break-words">
+                License No: {licenses.drug_license_number || "-"}
+              </p>
             </div>
             <div className="flex flex-col sm:text-right gap-1">
-              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                Valid
+              <Badge
+                variant="secondary"
+                className={`w-fit ${
+                  drugExpired ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#dcfce7] text-[#16a34a]"
+                }`}
+              >
+                {drugExpired ? "Expired" : "Valid"}
               </Badge>
-              <p className="text-xs text-[#6b7280]">Expires: Mar 15, 2025</p>
+              <p className="text-xs text-[#6b7280]">
+                Expires: {formatDate(licenses.drug_license_expiry)}
+              </p>
             </div>
           </div>
 
@@ -103,13 +234,22 @@ export function ComplianceDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-[#111827]">Trade License</p>
-              <p className="text-sm text-[#6b7280] break-words">License No: TL-2024-5678</p>
+              <p className="text-sm text-[#6b7280] break-words">
+                License No: {licenses.trade_license_number || "-"}
+              </p>
             </div>
             <div className="flex flex-col sm:text-right gap-1">
-              <Badge variant="secondary" className="bg-[#dcfce7] text-[#16a34a] w-fit">
-                Valid
+              <Badge
+                variant="secondary"
+                className={`w-fit ${
+                  tradeExpired ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#dcfce7] text-[#16a34a]"
+                }`}
+              >
+                {tradeExpired ? "Expired" : "Valid"}
               </Badge>
-              <p className="text-xs text-[#6b7280]">Expires: Dec 31, 2024</p>
+              <p className="text-xs text-[#6b7280]">
+                Expires: {formatDate(licenses.trade_license_expiry)}
+              </p>
             </div>
           </div>
 
@@ -119,13 +259,22 @@ export function ComplianceDashboard() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-[#111827]">Fire Safety Certificate</p>
-              <p className="text-sm text-[#6b7280] break-words">Certificate No: FSC-2024-9012</p>
+              <p className="text-sm text-[#6b7280] break-words">
+                Certificate No: {licenses.fire_certificate_number || "-"}
+              </p>
             </div>
             <div className="flex flex-col sm:text-right gap-1">
-              <Badge variant="secondary" className="bg-[#fef9c3] text-[#ca8a04] w-fit">
-                Renewal Due
+              <Badge
+                variant="secondary"
+                className={`w-fit ${
+                  fireExpired ? "bg-[#fee2e2] text-[#dc2626]" : "bg-[#fef9c3] text-[#ca8a04]"
+                }`}
+              >
+                {fireExpired ? "Expired" : "Renewal Due"}
               </Badge>
-              <p className="text-xs text-[#6b7280]">Expires: Jan 30, 2025</p>
+              <p className="text-xs text-[#6b7280]">
+                Expires: {formatDate(licenses.fire_certificate_expiry)}
+              </p>
             </div>
           </div>
         </CardContent>
