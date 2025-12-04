@@ -5,6 +5,7 @@ import { backendApi } from "@/lib/axios-config"
 import { useUser } from "@/contexts/UserContext"
 import { useAppSelector } from "@/store/hooks"
 import { useBranchSync } from "@/hooks/useBranchSync"
+import { formatCompactNumber } from "./utils"
 
 interface InventoryAnalytics {
   active_products: number
@@ -117,7 +118,7 @@ export function InventoryStats() {
     // },
     {
       title: "Stock Value",
-      value: loading ? "..." : `₹${stats.totalStockValue.toLocaleString()}`,
+      value: loading ? "..." : formatCompactNumber(stats.totalStockValue, { showCurrency: true, currency: "₹" }),
       change: `${stats.totalStockUnits} units`,
       changeType: "positive" as const,
       icon: "💰",
@@ -130,7 +131,7 @@ export function InventoryStats() {
     <div className="mb-6 w-full">
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {statsCards.map((stat, index) => (
           <Card key={index} className="p-6 bg-white border border-[#e5e7eb] hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
