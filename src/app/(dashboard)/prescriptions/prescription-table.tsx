@@ -203,9 +203,7 @@ export function PrescriptionTable({ onViewPrescription, searchTerm, statusFilter
     setSelectedPrescription(prescription)
     setIsImageModalOpen(true)
   }
-
-  console.log(items,"items")
-
+  
   return (
     <div className="bg-white rounded-lg border border-[#e5e7eb]">
       <div className="p-6 border-b border-[#e5e7eb]">
