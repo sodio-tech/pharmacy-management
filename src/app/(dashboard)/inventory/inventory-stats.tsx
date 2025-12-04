@@ -28,10 +28,10 @@ interface InventorySummary {
 export function InventoryStats() {
   const { user } = useUser()
   const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
-  
+
   // Sync branches to Redux
   useBranchSync(user?.pharmacy_id)
-  
+
   const [stats, setStats] = useState<InventorySummary>({
     totalProducts: 0,
     lowStockCount: 0,
@@ -53,17 +53,17 @@ export function InventoryStats() {
         setLoading(true)
         const response = await backendApi.get(`/v1/inventory/general-analytics/${selectedBranchId}`)
         const data = response.data?.data || response.data
-        
+
         if (data) {
           const analytics = data as InventoryAnalytics
           setStats({
-            totalProducts: analytics.active_products || analytics.total_products || 0,
+            totalProducts: analytics.active_products || 0,
             lowStockCount: analytics.low_stock_batches || 0,
             outOfStockCount: analytics.out_of_stock_batches || 0,
             expiringSoonCount: analytics.batches_expiring_within_30_days || 0,
             totalStockValue: analytics.total_stock_value || 0,
-            totalStockUnits: 0, // Not provided in API response
-            turnoverRate: 0, // Not provided in API response
+            totalStockUnits: 0,
+            turnoverRate: 0,
           })
           setRealTimeUpdates(true)
         }
@@ -144,9 +144,9 @@ export function InventoryStats() {
             </div>
             <div className="flex items-center gap-1">
               <span className={`text-xs ${stat.changeType === "positive" ? "text-green-600" :
-                  stat.changeType === "negative" ? "text-red-600" :
-                    stat.changeType === "warning" ? "text-yellow-600" :
-                      "text-gray-600"
+                stat.changeType === "negative" ? "text-red-600" :
+                  stat.changeType === "warning" ? "text-yellow-600" :
+                    "text-gray-600"
                 }`}>
                 {stat.changeType === "positive" && "↗"}
                 {stat.changeType === "negative" && "↘"}
