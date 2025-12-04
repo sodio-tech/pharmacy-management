@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { X, Plus, Minus, User, FileText, Image as ImageIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/contexts/CartContext"
 import { toast } from "react-toastify"
 import { CustomerModal } from "./customer-modal"
@@ -458,7 +459,7 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                       </div>
                       <div className="flex items-center gap-2">
                         <label className="text-xs text-muted-foreground whitespace-nowrap">Pack Size:</label>
-                        <Input
+                        {/* <Input
                           type="number"
                           min="1"
                           max={item.product.pack_size && item.product.pack_size > 0 ? item.product.pack_size : 1}
@@ -470,7 +471,28 @@ export function CurrentSaleSidebar({ branchId }: CurrentSaleSidebarProps) {
                             updatePackSize(item.id, newPackSize)
                           }}
                           className="h-7 w-20 text-xs"
-                        />
+                        /> */}
+                        <Select
+                          value={item.packSize.toString()}
+                          onValueChange={(value) => {
+                            const newPackSize = parseInt(value) || 1
+                            updatePackSize(item.id, newPackSize)
+                          }}
+                        >
+                          <SelectTrigger className="h-7 w-20 text-xs" size="sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[350px]">
+                            {Array.from(
+                              { length: item.product.pack_size && item.product.pack_size > 0 ? item.product.pack_size : 1 },
+                              (_, i) => i + 1
+                            ).map((size) => (
+                              <SelectItem key={size} value={size.toString()}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>
