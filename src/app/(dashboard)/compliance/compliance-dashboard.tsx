@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { CheckCircle, AlertTriangle, FileText } from "lucide-react"
 import backendApi from "@/lib/axios-config"
 import { useAppSelector } from "@/store/hooks"
+import { MembershipLock } from "@/components/membership-lock"
+import { useRouter } from "next/navigation"
 import { StatusCards } from "./components/StatusCards"
 import { LicensePermitsSection } from "./components/LicensePermitsSection"
 import { TaxComplianceCard } from "./components/TaxComplianceCard"
@@ -17,6 +19,12 @@ export function ComplianceDashboard() {
 
   // Refetch when global selected branch changes
   const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+  const router = useRouter()
+
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -129,19 +137,40 @@ export function ComplianceDashboard() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <StatusCards
-        drugHasExpiry={drugHasExpiry}
-        drugExpired={drugExpired}
-        drugExpiry={licenses.drug_license_expiry}
-      />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to view compliance status"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <StatusCards
+          drugHasExpiry={drugHasExpiry}
+          drugExpired={drugExpired}
+          drugExpiry={licenses.drug_license_expiry}
+        />
+      </MembershipLock>
 
-      <LicensePermitsSection
-        entries={licenseEntries}
-        missingExpiryData={missingExpiryData}
-        overallValid={overallValid}
-      />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to view license permits"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <LicensePermitsSection
+          entries={licenseEntries}
+          missingExpiryData={missingExpiryData}
+          overallValid={overallValid}
+        />
+      </MembershipLock>
 
-      <TaxComplianceCard />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to view tax compliance"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <TaxComplianceCard />
+      </MembershipLock>
 
       {/* <ControlledSubstancesSection /> */}
       {/* <AdditionalComplianceGrid /> */}

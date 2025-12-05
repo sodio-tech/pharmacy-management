@@ -8,24 +8,53 @@ import { TopSellingProducts } from "./top-selling-products"
 // import { RecentReportsTable } from "./recent-reports-table"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
+import { MembershipLock } from "@/components/membership-lock"
 import { useAppSelector } from "@/store/hooks"
 import { useUser } from "@/contexts/UserContext"
 import { useBranchSync } from "@/hooks/useBranchSync"
+import { useRouter } from "next/navigation"
 import { LoadingFallback } from "@/components/loading-fallback"
 
 function ReportsContent() {
   const { user } = useUser()
   const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+  const router = useRouter()
   
   // Sync branches to Redux
   useBranchSync(user?.pharmacy_id)
 
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
+
   return (
     <div className="bg-[#f9fafb]">
-      <ReportsStats branchId={selectedBranchId} />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to view reports statistics"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <ReportsStats branchId={selectedBranchId} />
+      </MembershipLock>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <SalesTrendChart branchId={selectedBranchId} />
-        <TopSellingProducts branchId={selectedBranchId} />
+        <MembershipLock
+          isLocked={isMembershipExpired}
+          description="Upgrade to view sales trends"
+          actionText="Upgrade Now"
+          onAction={handleUpgrade}
+        >
+          <SalesTrendChart branchId={selectedBranchId} />
+        </MembershipLock>
+        <MembershipLock
+          isLocked={isMembershipExpired}
+          description="Upgrade to view top selling products"
+          actionText="Upgrade Now"
+          onAction={handleUpgrade}
+        >
+          <TopSellingProducts branchId={selectedBranchId} />
+        </MembershipLock>
       </div>
       {/* <ReportCategories />
       <RecentReportsTable /> */}

@@ -10,9 +10,11 @@ import { BatchTracking } from "./batch-tracking"
 import { AddBatchModal } from "./components/AddBatchModal"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
+import { MembershipLock } from "@/components/membership-lock"
 import { useState, Suspense } from "react"
 import { useUser } from "@/contexts/UserContext"
 import { useAppSelector } from "@/store/hooks"
+import { useRouter } from "next/navigation"
 import { LoadingFallback } from "@/components/loading-fallback"
 
 type InventoryContentProps = {
@@ -32,6 +34,12 @@ function InventoryContent({
   const [selectedProductForBatch, setSelectedProductForBatch] = useState<string | null>(null)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+  const router = useRouter()
+
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
 
   const handleEditProduct = (product: any, branchId?: number | string | null) => {
     setSelectedProduct(product)
@@ -90,17 +98,40 @@ function InventoryContent({
         <div className="bg-white rounded-lg p-3 sm:p-6">
           {activeTab === "inventory" && (
             <>
-              <InventoryStats />
-              <InventoryTable
-                onAddProduct={() => setIsAddProductModalOpen(true)}
-                onEditProduct={handleEditProduct}
-                canAddProducts={canAddProducts}
-                refreshTrigger={refreshTrigger}
-              />
+              <MembershipLock
+                isLocked={isMembershipExpired}
+                description="Upgrade to view inventory statistics"
+                actionText="Upgrade Now"
+                onAction={handleUpgrade}
+              >
+                <InventoryStats />
+              </MembershipLock>
+              <MembershipLock
+                isLocked={isMembershipExpired}
+                description="Upgrade to access inventory management"
+                actionText="Upgrade Now"
+                onAction={handleUpgrade}
+              >
+                <InventoryTable
+                  onAddProduct={() => setIsAddProductModalOpen(true)}
+                  onEditProduct={handleEditProduct}
+                  canAddProducts={canAddProducts}
+                  refreshTrigger={refreshTrigger}
+                />
+              </MembershipLock>
             </>
           )}
 
-          {activeTab === "alerts" && <StockAlerts />}
+          {activeTab === "alerts" && (
+            <MembershipLock
+              isLocked={isMembershipExpired}
+              description="Upgrade to view stock alerts"
+              actionText="Upgrade Now"
+              onAction={handleUpgrade}
+            >
+              <StockAlerts />
+            </MembershipLock>
+          )}
           {activeTab === "batch-tracking" && <BatchTracking />}
         </div>
       </div>

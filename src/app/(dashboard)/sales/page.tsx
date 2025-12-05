@@ -7,15 +7,19 @@ import { RecentTransactions } from "./recent-transactions";
 import { CurrentSaleSidebar } from "./current-sale-sidebar";
 import LayoutSkeleton from "@/components/layout-skeleton";
 import DynamicHeader from "@/components/DynamicHeader";
+import { MembershipLock } from "@/components/membership-lock";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useAppSelector } from "@/store/hooks";
 import { useUser } from "@/contexts/UserContext";
 import { useBranchSync } from "@/hooks/useBranchSync";
+import { useRouter } from "next/navigation";
 import { LoadingFallback } from "@/components/loading-fallback";
 
 function SalesContent() {
   const { user } = useUser()
   const selectedBranchId = useAppSelector((state) => state.branch.selectedBranchId)
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+  const router = useRouter()
   
   // Sync branches to Redux
   useBranchSync(user?.pharmacy_id)
@@ -23,29 +27,60 @@ function SalesContent() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
 
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 xl:grid-cols-7 gap-4 xl:gap-6 w-full">
         {/* Main Content */}
 
         <div className="xl:col-span-4 bg-[#f9fafb] rounded-lg w-full">
-
-          <SalesStats branchId={selectedBranchId} />
+          <MembershipLock
+            isLocked={isMembershipExpired}
+            description="Upgrade to view sales statistics"
+            actionText="Upgrade Now"
+            onAction={handleUpgrade}
+          >
+            <SalesStats branchId={selectedBranchId} />
+          </MembershipLock>
           <div className="mb-8">
-            <RecentTransactions branchId={selectedBranchId} />
+            <MembershipLock
+              isLocked={isMembershipExpired}
+              description="Upgrade to view recent transactions"
+              actionText="Upgrade Now"
+              onAction={handleUpgrade}
+            >
+              <RecentTransactions branchId={selectedBranchId} />
+            </MembershipLock>
 
-            <ProductCategories
-              onCategorySelect={setSelectedCategory}
-              onSearchChange={setSearchTerm}
-              selectedCategory={selectedCategory}
-              selectedBranchId={selectedBranchId}
-            />
+            <MembershipLock
+              isLocked={isMembershipExpired}
+              description="Upgrade to browse product categories"
+              actionText="Upgrade Now"
+              onAction={handleUpgrade}
+            >
+              <ProductCategories
+                onCategorySelect={setSelectedCategory}
+                onSearchChange={setSearchTerm}
+                selectedCategory={selectedCategory}
+                selectedBranchId={selectedBranchId}
+              />
+            </MembershipLock>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="xl:col-span-3 w-full">
-          <CurrentSaleSidebar branchId={selectedBranchId} />
+          <MembershipLock
+            isLocked={isMembershipExpired}
+            description="Upgrade to process sales"
+            actionText="Upgrade Now"
+            onAction={handleUpgrade}
+          >
+            <CurrentSaleSidebar branchId={selectedBranchId} />
+          </MembershipLock>
         </div>
       </div>
     </>

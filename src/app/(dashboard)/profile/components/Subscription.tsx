@@ -7,19 +7,18 @@ import { Card } from "@/components/ui/card"
 export default function Subscription() {
   const plans = [
     {
-      name: "Community",
-      badge: "Free Forever",
-      badgeColor: "bg-[#22c55e]",
+      name: "Free Plan (3 Days Trial)",
+      badge: null,
+      badgeColor: "bg-[#0f766e]",
       subtitle: "Perfect to get started",
-      price: "Free",
+      price: "₹0",
       period: "",
       features: [
-        "1 Branch",
-        "Up to 20 items",
-        "10 invoices/month",
-        "5 suppliers max",
-        "Basic expiry alerts",
-        "Sales reports only",
+        "Full Platform Access",
+        "Unlimited Pharmacy Operations",
+        "Multi-Branch Management",
+        "Staff Role Control",
+        "No-Restriction Trial",
       ],
       buttonText: "Your Current Plan",
       buttonVariant: "current" as const,
@@ -27,64 +26,39 @@ export default function Subscription() {
       isPopular: false,
     },
     {
-      name: "Basic",
-      badge: null,
-      subtitle: "For independent pharmacies",
-      price: "$49",
-      period: "/month",
-      features: [
-        "1 Branch",
-        "Admin + Pharmacist roles",
-        "Unlimited inventory",
-        "Multi-payment support",
-        "Manual prescriptions",
-        "Basic + expiry reports",
-        "Email/SMS alerts",
-      ],
-      buttonText: "Get Started",
-      buttonVariant: "secondary" as const,
-      isCurrent: false,
-      isPopular: false,
-    },
-    {
-      name: "Pro",
+      name: "Pro Plan",
       badge: "Most Popular",
       badgeColor: "bg-[#0f766e]",
       subtitle: "For growing pharmacies",
-      price: "$99",
-      period: "/month",
+      price: "₹3999",
+      period: "/year",
       features: [
-        "Up to 5 branches",
-        "Everything in Basic +",
-        "AI-powered OCR",
-        "Stock forecasting",
-        "Supplier management",
-        "Advanced analytics",
-        "WhatsApp alerts",
+        "Unlimited Pharmacy Operations",
+        "Full Inventory Control",
+        "Advanced Sales & Reports",
+        "Multi-Branch Management",
+        "Unlimited Staff Accounts",
       ],
-      buttonText: "Start Free Trial",
+      buttonText: "Get Started",
       buttonVariant: "primary" as const,
       isCurrent: false,
       isPopular: true,
     },
     {
-      name: "Enterprise",
+      name: "Additional Branch",
       badge: null,
-      subtitle: "For large networks",
-      price: "Custom",
-      period: "",
+      subtitle: "Expand your network",
+      price: "₹1999",
+      period: "/year",
       features: [
-        "Unlimited branches",
-        "Everything in Pro +",
-        "Franchise dashboard",
-        "Custom integrations",
-        "Fraud detection",
-        "Voice search",
-        "Dedicated manager",
-        "Priority support",
+        "Expand your pharmacy network",
+        "Add unlimited branches",
+        "Centralized inventory & reports",
+        "Seamless branch switching",
+        "Unified staff & role management",
       ],
-      buttonText: "Contact Sales",
-      buttonVariant: "enterprise" as const,
+      buttonText: "Add Branch",
+      buttonVariant: "secondary" as const,
       isCurrent: false,
       isPopular: false,
     },
@@ -94,19 +68,19 @@ export default function Subscription() {
     {
       id: "#INV-2024-003",
       date: "Sep 15, 2024",
-      amount: "$0.00",
+      amount: "₹0.00",
       status: "Paid",
     },
     {
       id: "#INV-2024-002",
       date: "Aug 15, 2024",
-      amount: "$0.00",
+      amount: "₹0.00",
       status: "Paid",
     },
     {
       id: "#INV-2024-001",
       date: "Jul 15, 2024",
-      amount: "$0.00",
+      amount: "₹0.00",
       status: "Paid",
     },
   ]
@@ -115,14 +89,14 @@ export default function Subscription() {
     <div className="space-y-8 mt-6">
       {/* Pricing Section */}
       <div className="text-center space-y-3 mb-8">
-        <h2 className="text-3xl font-bold text-[#111827]">Find the perfect plan for your pharmacy</h2>
+        <h2 className="text-3xl font-bold text-[#111827]">Choose Your Plan</h2>
         <p className="text-[#6b7280] text-base">
-          Start for free and scale as you grow. All plans include our core features.
+          Start free and upgrade as you grow
         </p>
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <Card
             key={plan.name}
@@ -172,9 +146,7 @@ export default function Subscription() {
                   ? "bg-[#0f766e] text-white hover:bg-[#0f766e] opacity-100"
                   : plan.buttonVariant === "primary"
                     ? "bg-[#0f766e] text-white hover:bg-[#0d6560]"
-                    : plan.buttonVariant === "enterprise"
-                      ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8]"
-                      : "bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]"
+                    : "bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]"
               }`}
               disabled={plan.buttonVariant === "current"}
             >

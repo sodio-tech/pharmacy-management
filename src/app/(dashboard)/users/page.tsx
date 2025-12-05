@@ -4,24 +4,53 @@ import { Suspense, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import LayoutSkeleton from "@/components/layout-skeleton"
 import DynamicHeader from "@/components/DynamicHeader"
+import { MembershipLock } from "@/components/membership-lock"
 import { UserStats } from "./user-stats"
 import { UserTable } from "./user-table"
 import { RoleManagement } from "./role-management"
 import { LoadingFallback } from "@/components/loading-fallback"
 import { useUser } from "@/contexts/UserContext"
+import { useAppSelector } from "@/store/hooks"
 import { Shield, AlertCircle } from "lucide-react"
 // import { Users } from "lucide-react"
 // import { HeaderActions, HeaderAction } from "@/components/HeaderActions"
 
 function UserManagementContent() {
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+  const router = useRouter()
+
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
+
   return (
     <div className="bg-[#f9fafb] min-h-screen">
-
-      <UserStats />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to view user statistics"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <UserStats />
+      </MembershipLock>
       <div className="mb-6">
-        <UserTable />
+        <MembershipLock
+          isLocked={isMembershipExpired}
+          description="Upgrade to manage users"
+          actionText="Upgrade Now"
+          onAction={handleUpgrade}
+        >
+          <UserTable />
+        </MembershipLock>
       </div>
-      <RoleManagement />
+      <MembershipLock
+        isLocked={isMembershipExpired}
+        description="Upgrade to manage roles"
+        actionText="Upgrade Now"
+        onAction={handleUpgrade}
+      >
+        <RoleManagement />
+      </MembershipLock>
     </div>
   )
 }

@@ -81,10 +81,6 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
     return true
   })
 
-  // Add Admin menu item for PHARMY_ADMIN
-  const adminMenuItem = isPharmyAdmin
-    ? { icon: Settings, label: "Admin", href: "/admin/demolist" }
-    : null
 
   const handleNavigation = (href: string) => {
     router.push(href)
@@ -163,23 +159,6 @@ const Sidebar = ({ isMobileMenuOpen = false, onCloseMobileMenu }: SidebarProps) 
                 </li>
               )
             })}
-            {/* Admin menu item for PHARMY_ADMIN */}
-            {adminMenuItem && (
-              <li>
-                <button
-                  onClick={() => handleNavigation(adminMenuItem.href)}
-                  className={cn(
-                    "w-full flex items-center cursor-pointer gap-3 px-4 py-3 rounded-lg text-left transition-colors",
-                    pathname.startsWith("/admin") 
-                      ? "bg-[#0f766e] text-white" 
-                      : "text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]",
-                  )}
-                >
-                  <adminMenuItem.icon className="w-5 h-5" />
-                  <span className="font-medium">{adminMenuItem.label}</span>
-                </button>
-              </li>
-            )}
           </ul>
         </nav>
 

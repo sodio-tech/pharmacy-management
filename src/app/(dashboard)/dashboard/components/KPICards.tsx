@@ -3,6 +3,9 @@
 import { TrendingUp, TrendingDown, AlertTriangle, Clock, ShoppingCart } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn, formatPercentage } from "@/lib/utils"
+import { MembershipLock } from "@/components/membership-lock"
+import { useRouter } from "next/navigation"
+import { useAppSelector } from "@/store/hooks"
 
 interface SalesAnalytics {
   today_transactions: number
@@ -17,6 +20,13 @@ interface KPICardsProps {
 }
 
 export function KPICards({ salesAnalytics, lowStockCount }: KPICardsProps) {
+  const router = useRouter()
+  const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+
+  const handleUpgrade = () => {
+    router.push("/pricing")
+  }
+
   const kpiCards = [
     {
       title: "Total Revenue",
@@ -55,47 +65,56 @@ export function KPICards({ salesAnalytics, lowStockCount }: KPICardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
       {kpiCards.map((card, index) => (
-        <Card key={index} className="bg-white border-[#e5e7eb] py-0">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div
-                className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center", card.color)}
-              >
-                {typeof card.icon === "string" ? (
-                  <span className="text-white text-lg sm:text-xl font-bold">{card.icon}</span>
-                ) : (
-                  <card.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                )}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm text-[#6b7280] mb-1">{card.title}</p>
-              <p className="text-2xl sm:text-3xl font-bold text-[#111827] mb-2">{card.value}</p>
-              <div className="flex items-center gap-1">
-                {card.trend === "up" && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#16a34a]" />}
-                {card.trend === "down" && <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-[#dc2626]" />}
-                {card.trend === "warning" && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-[#ea580c]" />}
-                {card.trend === "danger" && <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-[#dc2626]" />}
-                <span
-                  className={cn(
-                    "text-xs sm:text-sm",
-                    card.trend === "up"
-                      ? "text-[#16a34a]"
-                      : card.trend === "down"
-                        ? "text-[#dc2626]"
-                        : card.trend === "warning"
-                          ? "text-[#ea580c]"
-                          : card.trend === "danger"
-                            ? "text-[#dc2626]"
-                            : "text-[#6b7280]",
-                  )}
+        <MembershipLock
+          key={index}
+          isLocked={isMembershipExpired}
+          description={`Upgrade to view ${card.title.toLowerCase()}`}
+          actionText="Upgrade Now"
+          onAction={handleUpgrade}
+          className="h-full"
+        >
+          <Card className="bg-white border-[#e5e7eb] py-0 h-full">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div
+                  className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center", card.color)}
                 >
-                  {card.change}
-                </span>
+                  {typeof card.icon === "string" ? (
+                    <span className="text-white text-lg sm:text-xl font-bold">{card.icon}</span>
+                  ) : (
+                    <card.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                  )}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <p className="text-xs sm:text-sm text-[#6b7280] mb-1">{card.title}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-[#111827] mb-2">{card.value}</p>
+                <div className="flex items-center gap-1">
+                  {card.trend === "up" && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#16a34a]" />}
+                  {card.trend === "down" && <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-[#dc2626]" />}
+                  {card.trend === "warning" && <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-[#ea580c]" />}
+                  {card.trend === "danger" && <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-[#dc2626]" />}
+                  <span
+                    className={cn(
+                      "text-xs sm:text-sm",
+                      card.trend === "up"
+                        ? "text-[#16a34a]"
+                        : card.trend === "down"
+                          ? "text-[#dc2626]"
+                          : card.trend === "warning"
+                            ? "text-[#ea580c]"
+                            : card.trend === "danger"
+                              ? "text-[#dc2626]"
+                              : "text-[#6b7280]",
+                    )}
+                  >
+                    {card.change}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </MembershipLock>
       ))}
     </div>
   )

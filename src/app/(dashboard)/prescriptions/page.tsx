@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { toast } from 'react-toastify';
 import DynamicHeader from '@/components/DynamicHeader'
 import LayoutSkeleton from '@/components/layout-skeleton'
+import { MembershipLock } from '@/components/membership-lock'
 import { Button } from '@/components/ui/button'
 import PrescriptionContent from './prescription-content'
 import { PrescriptionUpload } from './prescription-upload'
@@ -16,6 +17,8 @@ import {
   DispensePrescriptionRequest 
 } from './types'
 import { backendApi } from "@/lib/axios-config"
+import { useAppSelector } from "@/store/hooks"
+import { useRouter } from "next/navigation"
 import { LoadingFallback } from "@/components/loading-fallback"
 
 const page = () => {
@@ -23,6 +26,12 @@ const page = () => {
     const [selectedPrescription, setSelectedPrescription] = useState<Prescription | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const isMembershipExpired = useAppSelector((state) => state.ui.isMembershipExpired)
+    const router = useRouter()
+
+    const handleUpgrade = () => {
+        router.push("/pricing")
+    }
 
     const handleUploadPrescription = async (prescriptionData: CreatePrescriptionRequest) => {
         try {
@@ -325,9 +334,16 @@ const page = () => {
             }
         >
             <Suspense fallback={<LoadingFallback />}>
-                <PrescriptionContent 
-                    onViewPrescription={handleViewPrescription}
-                />
+                <MembershipLock
+                    isLocked={isMembershipExpired}
+                    description="Upgrade to manage prescriptions"
+                    actionText="Upgrade Now"
+                    onAction={handleUpgrade}
+                >
+                    <PrescriptionContent 
+                        onViewPrescription={handleViewPrescription}
+                    />
+                </MembershipLock>
             </Suspense>
         </LayoutSkeleton>
     )
