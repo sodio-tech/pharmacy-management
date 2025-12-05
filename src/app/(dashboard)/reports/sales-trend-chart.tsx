@@ -10,6 +10,7 @@ interface TrendData {
   [key: string]: {
     total_sales: number
     total_amount: number
+    date?: string
   }
 }
 
@@ -26,6 +27,7 @@ interface ChartDataPoint {
   label: string
   amount: number
   sales: number
+  date?: string
 }
 
 interface SalesTrendChartProps {
@@ -79,16 +81,36 @@ export function SalesTrendChart({ branchId }: SalesTrendChartProps) {
     const keys = Object.keys(trendData).sort((a, b) => Number(a) - Number(b))
     const numPeriods = keys.length
 
-    // Generate labels based on actual number of periods from API
-    const labels = generateLabels(timeframe, numPeriods)
-
     // Create data points for each period returned by API
     keys.forEach((key, index) => {
       const periodData = trendData[key] || { total_sales: 0, total_amount: 0 }
+      
+      let label: string
+      
+      // For Daily timeframe, use the date from API response if available
+      if (timeframe === "Daily" && periodData.date) {
+        const date = new Date(periodData.date)
+        // Format as "DD MMM" (e.g., "24 Nov")
+        label = date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+      } else if (timeframe === "Weekly" && periodData.date) {
+        // For Weekly, show date range or week info
+        const date = new Date(periodData.date)
+        label = date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+      } else if (timeframe === "Monthly" && periodData.date) {
+        // For Monthly, show month and year
+        const date = new Date(periodData.date)
+        label = date.toLocaleDateString("en-IN", { month: "short", year: "numeric" })
+      } else {
+        // Generate labels for Weekly/Monthly or fallback for Daily
+        const labels = generateLabels(timeframe, numPeriods)
+        label = labels[index] || `Period ${key}`
+      }
+      
       dataPoints.push({
-        label: labels[index] || `Period ${key}`,
+        label,
         amount: periodData.total_amount || 0,
         sales: periodData.total_sales || 0,
+        date: periodData.date,
       })
     })
 
@@ -172,7 +194,19 @@ export function SalesTrendChart({ branchId }: SalesTrendChartProps) {
                     }
                     return [value, "Sales"]
                   }}
-                  labelFormatter={(label) => `Period: ${label}`}
+                  labelFormatter={(label, payload) => {
+                    if (payload && payload[0] && payload[0].payload?.date) {
+                      const date = new Date(payload[0].payload.date)
+                      const formattedDate = date.toLocaleDateString("en-IN", {
+                        weekday: "long",
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric"
+                      })
+                      return formattedDate
+                    }
+                    return `Period: ${label}`
+                  }}
                 />
                 <Line
                   type="monotone"
